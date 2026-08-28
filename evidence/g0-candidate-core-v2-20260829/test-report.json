@@ -1,47 +1,22 @@
 {
-  "artifacts": [
-    {
-      "artifact_id": "junit-clean-junit",
-      "kind": "junit",
-      "name": "clean-junit.xml",
-      "path": "evidence/clean-smoke/clean-junit.xml",
-      "sha256": "7e7453ee5ef8c40db0d51ee68f2508c9ad7df453b77f07af4d6293405c9bbeda",
-      "size_bytes": 13362
-    },
-    {
-      "artifact_id": "coverage-clean-coverage",
-      "kind": "coverage",
-      "name": "clean-coverage.xml",
-      "path": "evidence/clean-smoke/clean-coverage.xml",
-      "sha256": "2d0382d57e7be6070b2d8a0a9eb509f18540c2d916582364952ba2f377695596",
-      "size_bytes": 68446
-    }
-  ],
+  "artifacts": [],
   "bundle_id": "candidate-core-v2-20260829-shadow",
   "checks": [
     {
       "command": "python -m pytest --junitxml=<junit.xml> --cov=maple_automation_core",
       "details": {
-        "errors": 0,
-        "executed": 104,
-        "failures": 0,
-        "skipped": 0,
-        "tests": 104
+        "reason": "JUnit XML was not supplied."
       },
       "name": "pytest",
-      "status": "passed"
+      "status": "not-run"
     },
     {
       "command": "python -m coverage xml",
       "details": {
-        "line_percent": 94.61,
-        "line_rate": 0.9461,
-        "lines_covered": 1684,
-        "lines_valid": 1780,
-        "minimum_line_rate": 0.9
+        "reason": "Coverage XML was not supplied."
       },
       "name": "coverage",
-      "status": "passed"
+      "status": "not-run"
     }
   ],
   "environment": {
@@ -55,8 +30,8 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "test",
   "schema_version": "1.0.0",
-  "source_commit": "6fbb7ff000591dd39648c82fa46775419349cf26",
-  "status": "passed",
+  "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452",
+  "status": "not-run",
   "subject_id": "subject-01",
   "summary": {
     "claim_scope": "local quality evidence only; no field or input-control claim."

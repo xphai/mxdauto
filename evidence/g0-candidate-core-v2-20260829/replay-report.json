@@ -1,11 +1,11 @@
 {
   "artifacts": [
     {
-      "artifact_id": "replay-result-clean-replay-report",
+      "artifact_id": "replay-result-golden-replay-result",
       "kind": "evidence-report",
-      "name": "clean-replay-report.json",
-      "path": "evidence/clean-smoke/clean-replay-report.json",
-      "sha256": "208729216604560b26609563e44d19ba7d65ce31d7a0be1c6de6afcee55b44b3",
+      "name": "golden-replay-result.json",
+      "path": "evidence/g0-candidate-core-v2-20260829/raw/golden-replay-result.json",
+      "sha256": "dec033ff219c12feb63cc114df156650d9f323d45ccc3e831e89b1ae2b6c0da2",
       "size_bytes": 4789
     }
   ],
@@ -17,9 +17,9 @@
         "deterministic": true,
         "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
         "repeat_count": 3,
-        "report_digest": "a0208db985b88d7c6c85952e42e62cce0069a21ea83df2a8f6feea53abd94d9e",
+        "report_digest": "3ab52ec8767c846339e856f550aebfe044cd200a0fd17d1a404bd061b280ed3c",
         "report_id": "replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
-        "runtime_manifest_sha256": "2e9835b52a8e3eef9c769e375ac1bd04ac5cc3a2c35272cc0ba6f6d814a0f315"
+        "runtime_manifest_sha256": "c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007"
       },
       "name": "deterministic-replay",
       "status": "passed"
@@ -36,7 +36,7 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "replay",
   "schema_version": "1.0.0",
-  "source_commit": "6fbb7ff000591dd39648c82fa46775419349cf26",
+  "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452",
   "status": "passed",
   "subject_id": "subject-01",
   "summary": {
