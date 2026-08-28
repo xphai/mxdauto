@@ -1,12 +1,13 @@
 # G0 Gate Charter：可复现工程与最小证据流水线
 
 **Charter ID**：`G0-CHARTER-001`
-**版本**：`1.3`
+**版本**：`1.4`
 **签发日期**：2026-08-29
 **证据快照**：2026-08-29 03:46（Asia/Shanghai）
+**治理收口**：2026-08-29 07:47（Asia/Shanghai）
 **战略 / Gate Owner**：5.6Sol Ultra
 **战术包 Owner**：5.6 Luna max
-**当前 Gate 决定**：**CONDITIONAL PASS — [PR #1](https://github.com/xphai/mxdauto/pull/1) 的 required `quality` 通过并由 protected squash merge 写入 `main` 时生效**
+**当前 Gate 决定**：**PASS — [PR #1](https://github.com/xphai/mxdauto/pull/1) 已通过 required `quality` 并由 protected squash merge 写入 `main`**
 
 ## 1. Gate 目的与阶段边界
 
@@ -52,8 +53,8 @@ rollback_target = legacy_owner
 
 | 项目 | 当前事实 | 判定 |
 |---|---|---|
-| Remote | [`xphai/mxdauto`](https://github.com/xphai/mxdauto)，repository ID `1349864993`；PR #1 的 base 为 sealed packet `04c794c5...`，最终 merge commit 由 PR 永久记录 | 远端身份已建立 |
-| Branch / PR | [main API](https://api.github.com/repos/xphai/mxdauto/branches/main) 返回 `protected=true`；required check=`quality`、strict up-to-date、PR review、conversation resolution、linear history、admins constrained、force-push/delete disabled；实际评审为 [PR #1](https://github.com/xphai/mxdauto/pull/1) | SCM 治理已建立；合并动作形成 Owner countersign |
+| Remote | [`xphai/mxdauto`](https://github.com/xphai/mxdauto)，repository ID `1349864993`；PR #1 的 base 为 sealed packet `04c794c5...`，squash merge commit 为 [`9fc36ab1...`](https://github.com/xphai/mxdauto/commit/9fc36ab15fde1d335072ea22852797e9da92fb41) | 远端身份已建立 |
+| Branch / PR | [main API](https://api.github.com/repos/xphai/mxdauto/branches/main) 返回 `protected=true`；required check=`quality`、strict up-to-date、PR review、conversation resolution、linear history、admins constrained、force-push/delete disabled；[PR #1](https://github.com/xphai/mxdauto/pull/1) 已合并 | SCM 治理与 Owner countersign 已完成 |
 | Release | `candidate-core-v2-20260829-shadow`；lifecycle=`candidate`；execution_mode=`shadow` | 只用于 G0 离线证据 |
 | Manifest | `runtime-manifest.json` SHA-256 `c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007` | 绑定 source commit 与实际资产 hash |
 | Bundle / indexes | `bundle.json` `7f52f1e3838c17d6a87032669b52e32d2ac153a455bd563dad360c400e88767e`；asset index `d12d5aef62d29d8dcb8e8e5f0e55abc467a442a3c0703b13ffbd75a89b892d81`；evidence index `3edab63f9730015ef97650c982e704937026b09caca5a17842066f2ead606fe2` | committed packet 可遍历 |
@@ -86,11 +87,15 @@ rollback_target = legacy_owner
 
 修复已包含在 source commit `7da29f4...`：按 report kind 校验、正常化 GitHub step outcome、分离绑定 candidate source 与实际 checkout，并在 metadata 总状态不是 `passed` 时让 collector 以非零退出，形成 fail-closed 行为。后继 run `33204844985` 是修复后的首个可绑定远端事实。run `33201956865` 与 `33202897083` 的原始失败材料、artifact digest、根因和关闭谱系已登记在 `evidence/failures/failure-index.json`。
 
+### 3.5 治理合并与主线复验
+
+[PR #1](https://github.com/xphai/mxdauto/pull/1) 的治理 head `cac8037e7997a98f560cc4ddca41aee6403d7fe2` 通过 required [`quality` run 33221344548](https://github.com/xphai/mxdauto/actions/runs/33221344548)，随后以 protected squash merge 生成 `main` commit [`9fc36ab15fde1d335072ea22852797e9da92fb41`](https://github.com/xphai/mxdauto/commit/9fc36ab15fde1d335072ea22852797e9da92fb41)。该主线 commit 又通过 [`quality` run 33221465306](https://github.com/xphai/mxdauto/actions/runs/33221465306)。合并链同时提供 required-check 证明、Owner countersign 与线性主线记录。
+
 ## 4. 战术包状态
 
 | ID | 输出 | 当前状态 |
 |---|---|---|
-| G0-SCM-004 | source/packet commit、remote、protected main、PR required checks | 已完成；PR #1 进入 required `quality` 与 protected merge 流程 |
+| G0-SCM-004 | source/packet commit、remote、protected main、PR required checks | 已完成；PR #1 required `quality`、protected merge 与 main 复验均成功 |
 | G0-CI-005 | 远端 CI、JUnit、coverage、evidence metadata、稳定 artifact 名 | run `33204844985` 与四组 artifact 已完成 |
 | G0-DEP-006 | dependency lock、wheel/sdist 与 hash | 已绑定并由成功 CI 复验 |
 | G0-MAN-003 | DEC-001 Candidate Bundle/Manifest/hash | 已生成；严格 metadata 与 full-external 校验通过 |
@@ -154,8 +159,8 @@ rollback_target = legacy_owner
 - [x] 失败 run `33201956865`、`33202897083` 的原始材料、payload/artifact hash、隔离理由与关闭谱系已提交到统一 failure index；
 - [x] 回退检查已验证停止 Core v2、sink 断开、真实输入/双写为 0、Legacy owner 不变；
 - [x] 实施侧已下载 run `33204844985` 与 successor run `33205169227` 原始 artifact，并逐一核对 GitHub archive digest、payload hash、27 个 checks 与 source/checkout 绑定；
-- [ ] 仓库 Owner 通过 PR #1 的 protected squash merge 完成发布 countersign；
-- [x] Sol-U 已签发条件性 `PASS`：仅在 PR #1 required `quality` 成功且 protected squash merge 完成时生效。
+- [x] 仓库 Owner 已通过 PR #1 的 protected squash merge 完成发布 countersign；
+- [x] Sol-U 的合并条件已满足，G0 `PASS` 已生效。
 
 ## 6. Gate 指标
 
@@ -173,14 +178,14 @@ rollback_target = legacy_owner
 
 ## 7. 当前差距与 Gate 决定
 
-| Open finding | 当前事实 | 关闭条件 |
+| Finding | 当前事实 | 关闭条件 |
 |---|---|---|
-| `G0-CLOSED-SCM-001` | main `protected=true`，required `quality` strict，PR review/管理员约束/linear history/conversation resolution 已启用；PR #1 已创建 | 已关闭；远端保护配置与实际 PR 均可审计 |
+| `G0-CLOSED-SCM-001` | main `protected=true`，required `quality` strict，PR review/管理员约束/linear history/conversation resolution 已启用；PR #1 已合并 | 已关闭；远端保护配置、required run 与 merge commit 均可审计 |
 | `G0-CLOSED-EVD-002` | `evidence/failures/failure-index.json` 已绑定两次失败、原始材料、artifact digest、根因和修复谱系 | 已关闭；后续失败继续追加，不覆盖历史 |
-| `G0-OPEN-SIG-003` | 原始 artifact 机器复核与 Sol-U 条件签发已完成；Owner 合并待记录 | PR #1 required `quality` 成功后 protected squash merge，条件性 `PASS` 同步生效 |
+| `G0-CLOSED-SIG-003` | 原始 artifact 机器复核完成；PR #1 required `quality` 成功并 protected squash merge；Sol-U 条件已满足 | 已关闭；Owner countersign 与 `PASS` 已记录 |
 | `G0-CLOSED-DOC-004` | 状态收口文档与失败索引已进入 PR #1 | 已关闭；由 required `quality` 和 protected merge 约束 |
 
-**评审决定：`CONDITIONAL PASS`。** run `33204844985` 已被 sealed packet 绑定，successor run `33205169227` 又复验了该 packet；失败索引、原始 artifact、branch protection 与实际 PR 均已闭环。PR #1 的 required `quality` 成功并由 protected squash merge 写入 `main`，同时构成 Owner countersign 和本决定的生效事件。在该事件前 G1 保持未开始；合并后状态为 **G0 Passed / G1 Ready（未开始）**。
+**评审决定：`PASS`。** run `33204844985` 已被 sealed packet 绑定，successor run `33205169227` 又复验了该 packet；失败索引、原始 artifact、branch protection 与实际 PR 均已闭环。PR #1 的 required `quality` 与 protected squash merge 已完成，`main` 的 post-merge `quality` 也成功。当前状态为 **G0 Passed / G1 Ready（未开始）**。
 
 ## 8. 回退计划
 
@@ -193,4 +198,4 @@ rollback_target = legacy_owner
 → Legacy 继续保持唯一输入 owner
 ```
 
-本 Charter 采用自验证发布语义：它仅能在 required `quality` 成功后通过 protected squash merge 进入 `main`；因此该版本出现在 `main` 即表示 Owner countersign 完成、`decision=PASS` 生效。G1 由独立战术包启动，G0 PASS 只把它置为 Ready。
+G0 已完成工程、证据与治理闭环。G1 由独立战术包启动，G0 PASS 只把它置为 Ready；Core v2 的真实输入调用仍保持为 0。

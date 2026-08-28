@@ -103,7 +103,7 @@ IP、设备名和内容矩形是当前实验环境事实；它们仅通过环境
 2. Forest 评估部分 truth 来自与标签生成相同的启发式流程；它适合诊断，不构成独立泛化结论。
 3. G0 已冻结最小 synthetic fixture 并生成 Replay/Shadow/clean engineering smoke；这些报告只验证证据管道，不满足 G1 完整录像 corpus、人工 truth、独立 holdout 或现场验收。
 4. Core v2 source commit 为 `7da29f4cfae0bd984b00c394b78e637088a7e452`，sealed packet 为 `04c794c59eb98af6e739415e1ecb72a335795bb9`。远端 run [`33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985) 以 `checkout=4317c478...` 生成 passed metadata，并被 sealed packet 纳入；successor run [`33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227) 又以 `checkout=04c794c59...` 复验最终 packet。前序失败已进入 `evidence/failures/failure-index.json`，collector 修复在 source commit 中并 fail-closed。
-5. GitHub `main protected=true`，required `quality` strict 与 [PR #1](https://github.com/xphai/mxdauto/pull/1) 已建立；Sol-U 已条件签发，PR #1 protected squash merge 时形成 Owner countersign 与 G0 `PASS`。G1 在后继战术包中启动，真实输入边界保持不变。
+5. GitHub `main protected=true`；[PR #1](https://github.com/xphai/mxdauto/pull/1) 已通过 required `quality` 并 protected squash merge，形成 Owner countersign 与 G0 `PASS`；main post-merge run 也成功。G1 在后继战术包中启动，真实输入边界保持不变。
 6. Legacy 长日志包含多次重启、stuck、路线回归和登录等待，不计作 Core v2 现场证据。
 
 ## 5. 变更控制

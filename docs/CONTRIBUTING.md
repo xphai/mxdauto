@@ -4,7 +4,7 @@
 
 ## 0. 当前阶段的硬边界
 
-截至 2026-08-29，仓库处于 **G-1 Strategic PASS / G0 CONDITIONAL PASS / G1 Ready（未开始）**：
+截至 2026-08-29，仓库处于 **G-1 Strategic PASS / G0 PASS / G1 Ready（未开始）**：
 
 - Core v2 任务的允许输出限定为不可变状态、动作计划和 dry-run 结果；G0 最小 synthetic Replay、Shadow 与 clean smoke 已接入，但只属于工程证据；
 - Core v2 不得调用真实 `InputSink`、键盘、receiver 或游戏窗口；
@@ -12,7 +12,7 @@
 - Legacy 仅接受阻塞缺陷修复和迁移桥接，不接受新的控制逻辑；
 - 未经 Stage Gate 批准，不得宣称 Canary、Certified 或 Core v2 接管已经开始。
 - 当前可绑定远端事实为 run [`33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985)，最终 sealed packet 的 successor 复验为 run [`33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227)；失败运行统一登记在 `evidence/failures/failure-index.json`。
-- `main protected=true`；required `quality` strict、PR review、管理员约束、linear history、conversation resolution 已启用，force-push/delete 已关闭；[PR #1](https://github.com/xphai/mxdauto/pull/1) protected squash merge 时 G0 PASS 生效。
+- `main protected=true`；required `quality` strict、PR review、管理员约束、linear history、conversation resolution 已启用，force-push/delete 已关闭；[PR #1](https://github.com/xphai/mxdauto/pull/1) 已通过 required `quality` 并 protected squash merge，G0 PASS 已生效。
 
 当前战略事实源：
 
@@ -20,7 +20,7 @@
 - `docs/adr/ADR-004-input-authority-and-bounded-lease.md`：输入所有权与双写 0；
 - `docs/decisions/DEC-001-pilot-baseline.md`：唯一 Pilot 候选；
 - `docs/REQUIREMENTS-TRACEABILITY.md`：需求—Gate—证据状态；
-- `docs/gates/G0-GATE-CHARTER.md`：G0 强制门禁，当前决定为 `CONDITIONAL PASS`。
+- `docs/gates/G0-GATE-CHARTER.md`：G0 强制门禁，当前决定为 `PASS`。
 
 违反上述任一项的任务必须先暂停并升级到战略负责人，禁止通过“临时开关”绕过。
 
