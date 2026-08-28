@@ -1,14 +1,28 @@
 {
-  "artifacts": [],
+  "artifacts": [
+    {
+      "artifact_id": "replay-result-golden-replay-result",
+      "kind": "evidence-report",
+      "name": "golden-replay-result.json",
+      "path": "evidence/g0-candidate-core-v2-20260829/raw/golden-replay-result.json",
+      "sha256": "f16b275a4d3b1a935c911b204a5c0c70f1f712cf8bc184d09a12aa52ade3d66c",
+      "size_bytes": 4789
+    }
+  ],
   "bundle_id": "candidate-core-v2-20260829-shadow",
   "checks": [
     {
       "command": "python tools/run_golden_replay.py --runs 3 --manifest <runtime-manifest> --report <replay-result>",
       "details": {
-        "reason": "replay result was not supplied."
+        "deterministic": true,
+        "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "repeat_count": 3,
+        "report_digest": "8ff614c729c97592a2cd5387edeabaf14e873e2d644258f97a6a3b104cc90e5e",
+        "report_id": "replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
+        "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10"
       },
       "name": "deterministic-replay",
-      "status": "not-run"
+      "status": "passed"
     }
   ],
   "environment": {
@@ -23,7 +37,7 @@
   "report_kind": "replay",
   "schema_version": "1.0.0",
   "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4",
-  "status": "not-run",
+  "status": "passed",
   "subject_id": "subject-01",
   "summary": {
     "claim_scope": "Deterministic offline Replay only; no field claim."

@@ -1,14 +1,29 @@
 {
-  "artifacts": [],
+  "artifacts": [
+    {
+      "artifact_id": "shadow-result-shadow-result",
+      "kind": "evidence-report",
+      "name": "shadow-result.json",
+      "path": "evidence/g0-candidate-core-v2-20260829/raw/shadow-result.json",
+      "sha256": "c3924d60f93550653639c70dec778b8e50eb699a84f330765cb03e9e5fe4efb6",
+      "size_bytes": 5456
+    }
+  ],
   "bundle_id": "candidate-core-v2-20260829-shadow",
   "checks": [
     {
       "command": "python tools/run_shadow.py --manifest <runtime-manifest> --report <shadow-result>",
       "details": {
-        "reason": "shadow result was not supplied."
+        "diff_count": 2,
+        "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "real_input_call_count": 0,
+        "report_digest": "60eb19045c95d528b131ac715899ca59a714408eab6c71138e9a4791b8fd2658",
+        "report_id": "shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
+        "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+        "unclassified_diff_count": 0
       },
       "name": "shadow-runner",
-      "status": "not-run"
+      "status": "passed"
     }
   ],
   "environment": {
@@ -23,7 +38,7 @@
   "report_kind": "shadow",
   "schema_version": "1.0.0",
   "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4",
-  "status": "not-run",
+  "status": "passed",
   "subject_id": "subject-01",
   "summary": {
     "claim_scope": "Offline Shadow comparison only; no field claim.",

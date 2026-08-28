@@ -15,27 +15,27 @@
     },
     {
       "claims": [
-        "report_status:not-run",
+        "report_status:passed",
         "report_kind:replay"
       ],
       "evidence_id": "replay-report-g0-candidate-shadow-20260829",
       "kind": "replay",
       "path": "evidence/g0-candidate-core-v2-20260829/replay-report.json",
-      "sha256": "06f3ac258c67e89e792f59c45f46fcf4d7ecbb3a1d45734a0acbaa6d3c52caef",
-      "size_bytes": 958,
-      "status": "not-run"
+      "sha256": "bee8a354d9d1f4ad74b539bd0d17831ffb4c0cb1fa49e8e5c70be0065c6b0b1b",
+      "size_bytes": 1685,
+      "status": "passed"
     },
     {
       "claims": [
-        "report_status:not-run",
+        "report_status:passed",
         "report_kind:shadow"
       ],
       "evidence_id": "shadow-report-g0-candidate-shadow-20260829",
       "kind": "shadow",
       "path": "evidence/g0-candidate-core-v2-20260829/shadow-report.json",
-      "sha256": "ddae226b49c25ac82323876557dbecb4d3aa2a1ab008de5eb4cddf1700f5a3b6",
-      "size_bytes": 994,
-      "status": "not-run"
+      "sha256": "3f42438e002ea88530c8327dcf8a1045e6b2e457cabd980d1a3402e47b863752",
+      "size_bytes": 1741,
+      "status": "passed"
     },
     {
       "claims": [
