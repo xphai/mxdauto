@@ -10,7 +10,7 @@
     "test_report_id": "test-report-g0-candidate-shadow-20260829"
   },
   "evidence_index_path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
-  "evidence_index_sha256": "7d4544cd7f967e26b7a9bdeaf3c838bb01224a538cdf16b34d2b7149ff8b5090",
+  "evidence_index_sha256": "b80119694417363a7e64e2fc84579bf336b062e3302779c51c7614670752efcb",
   "execution_mode": "shadow",
   "generated_at": "2026-08-29T00:00:00Z",
   "generator": {
@@ -50,14 +50,49 @@
       "size_bytes": 904
     },
     {
+      "path": "evidence/clean-smoke/artifacts/maple_automation_core-0.1.0-py3-none-any.whl",
+      "sha256": "dedde2c1dd258954af52357b32263106f4d58f6ddb8a96a730af9251831c673a",
+      "size_bytes": 33330
+    },
+    {
+      "path": "evidence/clean-smoke/artifacts/maple_automation_core-0.1.0.tar.gz",
+      "sha256": "e2c107cdf310d0329fd71f3b4d42e051f726709ad32eb2528d7e02318eb5925f",
+      "size_bytes": 43673
+    },
+    {
+      "path": "evidence/clean-smoke/clean-coverage.xml",
+      "sha256": "2d0382d57e7be6070b2d8a0a9eb509f18540c2d916582364952ba2f377695596",
+      "size_bytes": 68446
+    },
+    {
+      "path": "evidence/clean-smoke/clean-junit.xml",
+      "sha256": "7e7453ee5ef8c40db0d51ee68f2508c9ad7df453b77f07af4d6293405c9bbeda",
+      "size_bytes": 13362
+    },
+    {
+      "path": "evidence/clean-smoke/clean-replay-report.json",
+      "sha256": "208729216604560b26609563e44d19ba7d65ce31d7a0be1c6de6afcee55b44b3",
+      "size_bytes": 4789
+    },
+    {
+      "path": "evidence/clean-smoke/clean-shadow-report.json",
+      "sha256": "86bcadf29fc43c06ac75ffedbc4a2e3517caf58ce336dc6b4b6cef9aac0baedd",
+      "size_bytes": 5456
+    },
+    {
+      "path": "evidence/clean-smoke/clean-smoke-report.json",
+      "sha256": "5798eb44af08953ad6fb7d52ae0ceeead0a8a52e7721965dbc8089bec3a99b9b",
+      "size_bytes": 35370
+    },
+    {
       "path": "evidence/g0-candidate-core-v2-20260829/build-report.json",
-      "sha256": "3245d51075ac49495aa2fea17775dc5b303a42c23f631b1d1cda2d467d0b15d5",
-      "size_bytes": 868
+      "sha256": "4952ded99492606a8e90726fa9b92c599d0c078c2977d33ba5d2545e0aee5834",
+      "size_bytes": 1628
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/clean-report.json",
-      "sha256": "05ceb66cdf0fdeac4321db57f06f34b19e2fc5d86a1915f155602f4de5a40485",
-      "size_bytes": 946
+      "sha256": "e914536d8c75c9fb100ba1758b0dda8affa75a668c14e175f08bf0ad1feb81fc",
+      "size_bytes": 1413
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/dependency-report.json",
@@ -66,8 +101,8 @@
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
-      "sha256": "7d4544cd7f967e26b7a9bdeaf3c838bb01224a538cdf16b34d2b7149ff8b5090",
-      "size_bytes": 4989
+      "sha256": "b80119694417363a7e64e2fc84579bf336b062e3302779c51c7614670752efcb",
+      "size_bytes": 6417
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/hash-report.json",
@@ -80,29 +115,19 @@
       "size_bytes": 1251
     },
     {
-      "path": "evidence/g0-candidate-core-v2-20260829/raw/golden-replay-result.json",
-      "sha256": "208729216604560b26609563e44d19ba7d65ce31d7a0be1c6de6afcee55b44b3",
-      "size_bytes": 4789
-    },
-    {
-      "path": "evidence/g0-candidate-core-v2-20260829/raw/shadow-result.json",
-      "sha256": "86bcadf29fc43c06ac75ffedbc4a2e3517caf58ce336dc6b4b6cef9aac0baedd",
-      "size_bytes": 5456
-    },
-    {
       "path": "evidence/g0-candidate-core-v2-20260829/replay-report.json",
-      "sha256": "dcc4ec285e15b8c6a46e2517af64e604209cd9e797629b629fdf1b22c355f473",
-      "size_bytes": 1685
+      "sha256": "8587c6b087c10c017eb35cb7b93c69ac59161e762eaf59bc30badce297486cce",
+      "size_bytes": 1660
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/shadow-report.json",
-      "sha256": "95388d5e7f02ce0d17d6da654a44e19c8c954ea1cddc7fd7d1eb74474afeccb6",
-      "size_bytes": 1741
+      "sha256": "935110b45080d0f99441e5717a8581bf749ea94de3f64fb1317762d993a15bf2",
+      "size_bytes": 1737
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/test-report.json",
-      "sha256": "21255d918a6e33a31df9126ad4a4145a42e264f05ac43b797bb4cd02dc5c93f7",
-      "size_bytes": 1104
+      "sha256": "6bd9880d3499e21de8e7cc69cf2f26989421f4fe26ffc44fe203953c28e664c6",
+      "size_bytes": 1834
     }
   ],
   "manifest_asset_bindings": {
