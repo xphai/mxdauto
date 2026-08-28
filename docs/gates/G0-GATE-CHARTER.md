@@ -1,23 +1,22 @@
 # G0 Gate Charter：可复现工程与最小证据流水线
 
-**Charter ID**：`G0-CHARTER-001`  
-**版本**：`1.0`  
-**签发日期**：2026-08-29  
-**战略 / Gate Owner**：5.6Sol Ultra  
-**战术包 Owner**：5.6 Luna max  
-**当前 Gate 决定**：**HOLD — G0 进行中，尚未授予 PASS**
+**Charter ID**：`G0-CHARTER-001`
+**版本**：`1.3`
+**签发日期**：2026-08-29
+**证据快照**：2026-08-29 03:46（Asia/Shanghai）
+**战略 / Gate Owner**：5.6Sol Ultra
+**战术包 Owner**：5.6 Luna max
+**当前 Gate 决定**：**CONDITIONAL PASS — [PR #1](https://github.com/xphai/mxdauto/pull/1) 的 required `quality` 通过并由 protected squash merge 写入 `main` 时生效**
 
-## 1. Gate 目的
+## 1. Gate 目的与阶段边界
 
-G0 证明一个 Core v2 commit 能在受控 CI 与独立 Windows 环境中重复完成静态质量、契约测试、真实 Candidate Manifest 校验、最小确定性 Replay、最小 Shadow 和 clean smoke，并把全部结果绑定到同一证据谱系。
+G0 证明一个 Core v2 **source commit** 能在受控 CI 与隔离 Windows 环境中重复完成静态质量、契约测试、实际 Candidate Manifest 校验、最小确定性 Replay、最小 Shadow 和 clean smoke，并由一个只含 packaging/evidence/docs 的 **sealed packet commit** 固化结果。
 
-G0 只放行进入 G1 的完整 Replay/Shadow 工作。它不证明模型已现场认证，不证明 4 小时稳定性，也不授予 Core v2 真实输入权。
+G0 只放行进入 G1 的完整感知、WorldState、Replay/Shadow 工作。它不证明模型已通过独立人工真值验收，不证明现场或 4 小时稳定性，也不授予 Core v2 真实输入权。G0～G2 仍由 Legacy 独占真实输入，Core v2 真实输入调用数必须为 0。
 
-## 2. 入口状态
+## 2. G-1 入口与受审对象
 
-### 2.1 G-1 战略封存
-
-以下战略决定已形成：
+G-1 已封存以下战略边界：
 
 - Core v2 唯一主线：ADR-001；
 - G0～G2 Legacy 独占、G3 有界独占租约、双写为 0：ADR-004；
@@ -25,218 +24,173 @@ G0 只放行进入 G1 的完整 Replay/Shadow 工作。它不证明模型已现�
 - 原始功能与 Gate/证据映射：`docs/REQUIREMENTS-TRACEABILITY.md`；
 - G-1～G6 晋级路线：`docs/ROADMAP.md`。
 
-G-1 战略结论允许 Luna-M 执行 G0 战术包。上述新增文档进入下一受控 commit 后，形成其 SCM 绑定；该绑定属于 G0 的证据工作，G0 当前结论仍为 `HOLD`。
+本轮 G0 使用双 commit 语义，二者不得混写：
 
-### 2.2 签发时观察到的事实
-
-| 项目 | 观察值 | 证据判定 |
+| 对象 | 不可变身份 | 作用 |
 |---|---|---|
-| 本地基线 commit | `c81011d2f047bc0cf3aec258f5662416f039838c` | 已存在的本地 SCM 起点 |
-| 当前评审 commit | `TBD` | 必须包含本 Charter、ADR-004、DEC-001、追踪矩阵及后续 G0 实现 |
-| Core v2 remote | `origin=https://github.com/xphai/mxdauto.git`；`origin/main=c81011d...` | 远端身份与首个 push 已建立；GitHub API 显示 main `protected=false` |
-| CI workflow/run | `.github/workflows/ci.yml`；run `33194720588`，attempt 1，commit `c81011d...`，conclusion=`success` | L2 范围证据；artifact 只有 `coverage-xml`，没有 JUnit/evidence metadata |
-| 本地契约测试 | 最近一次工作会话记录 `58 passed` | L1 开发反馈；缺少 commit/run/JUnit 绑定 |
-| 本地覆盖率 | `coverage.xml line-rate=0.9468` | L1；高于 90% 门槛但尚非远端 Gate 证据 |
-| Manifest | schema、example fixture、validator 已存在 | 实际 Candidate Bundle 为空 |
-| Event Tape | hash chain/严格 JSON/顺序校验已实现 | 记录契约存在；Replay runner/report 为空 |
-| Golden Replay | 当前工作树出现 fixture/runner 战术草案；已审 commit、3 次 digest 结果与 report 均为空 | 阻断 |
-| Shadow | 当前工作树出现战术实现草案；已审 commit、dry-run 调用审计与 report 均为空 | 阻断 |
-| clean machine | 独立 Windows report 为空 | 阻断 |
-| Core v2 field | session 为 0 | G0 不要求现场，但该事实禁止现场类表述 |
+| Candidate source | [`7da29f4cfae0bd984b00c394b78e637088a7e452`](https://github.com/xphai/mxdauto/commit/7da29f4cfae0bd984b00c394b78e637088a7e452) | 代码、测试、工具和 Candidate 运行语义；Manifest、报告及 CI metadata 的 `source_commit` 均绑定它 |
+| Sealed packet | [`04c794c59eb98af6e739415e1ecb72a335795bb9`](https://github.com/xphai/mxdauto/commit/04c794c59eb98af6e739415e1ecb72a335795bb9) | source 的 packaging/evidence 后继提交；固化 Bundle、clean artifacts、下载的远端 CI metadata 与报告；由 successor run 复验 |
 
-## 3. Gate 范围
+`7da29f4...` 是 `04c794c...` 的祖先；二者之间仅变更 `bundles/` 与 `evidence/`。因此运行代码身份仍是 source commit，而 checkout/packet 身份由 sealed commit 单独记录。后续代码字节变化必须生成新的 source commit；后续证据字节变化必须生成新的 packet commit 和远端 run。
 
-### 3.1 包含
-
-1. Git/remote/PR/branch protection 与可定位 commit；
-2. Ruff、Mypy、Manifest、Pytest/coverage 的远端 CI；
-3. JUnit、coverage、构建制品、evidence metadata 的 artifact 绑定；
-4. 使用真实 commit 与真实资产 hash 的 Candidate Runtime Bundle；
-5. 最小去标识 Golden fixture 与确定性 Replay；
-6. 最小 Shadow/dry-run，Core v2 真实输入调用数为 0；
-7. 独立 Windows clean install/test/replay/shadow smoke；
-8. 依赖锁、制品 hash、evidence index 与回退说明。
-
-### 3.2 排除
-
-- Core v2 真实键鼠/receiver 接管；
-- 现场 Canary、4 小时稳定性或 Certified 结论；
-- 模型在独立人工真值集上的最终 G1 晋级；
-- 登录、组队、换频道、符文、死亡/断线等 G5 workflow；
-- 跨地图、动态路线或其他 P2/P3 增强能力。
-
-## 4. 受审对象
-
-一次 G0 评审只接受一个不可变对象集合：
+一次 G0 评审只接受以下同一谱系对象：
 
 ```text
-candidate_commit
+source_commit / sealed_packet_commit
 dependency_lock_sha256
 build_artifact_sha256[]
-release_id
-runtime_manifest_sha256
+release_id / runtime_manifest_sha256
 golden_fixture_id / golden_fixture_sha256
-test_report_id
-replay_report_id
-shadow_report_id
-clean_report_id
+test_report_id / replay_report_id / shadow_report_id / clean_report_id
+ci_run / run_attempt / ci_evidence_sha256
 rollback_target = legacy_owner
 ```
 
-任一代码、依赖、模型、classes、阈值、地图、路线、Profile、receiver 或 fixture 字节变化都产生新的 candidate commit/release/evidence ID，并重新执行受影响检查。
+## 3. 当前事实快照
 
-## 5. 战术包与依赖
+### 3.1 SCM、Bundle 与本地结果
 
-| ID | 输出 | 前置 | 负责人 | 当前状态 |
-|---|---|---|---|---|
-| G0-SCM-004 | 受控 commit、Core v2 remote、protected main、PR required checks | G-1 seal | Luna-M + 发布 | remote/基线 push 已有；本轮 commit、PR/protection 待补 |
-| G0-CI-005 | 远端 CI、JUnit、coverage、evidence metadata、稳定 artifact 名 | SCM | Luna-M + QA | run `33194720588` 成功且有 coverage；其余 artifacts 待补 |
-| G0-DEP-006 | dependency lock、wheel/sdist 与 hash | SCM | Luna-M + 发布 | 工作树有 lock 草案；review/CI/制品 hash 待补 |
-| G0-MAN-003 | 使用 DEC-001 实际值的 Candidate Bundle/Manifest/hash | SCM、DEP、DEC-001 | Luna-M | schema/tool 已有；Candidate 待补 |
-| G0-RPL-007 | 去标识 Golden fixture、Replay runner、3 次相同 digest | MAN、Event Tape | Luna-M；Sol-U 冻结样本 | 工作树有 fixture/runner 草案；结果、报告、commit 待补 |
-| G0-SHD-008 | dry-run Shadow、计划/实际 diff、真实输入调用数 0 | RPL、ADR-004 | Luna-M + QA | 工作树有 runner 草案；diff/调用审计、报告、commit 待补 |
-| G0-CLN-009 | 独立 Windows clean install/test/manifest/replay/shadow report | CI、DEP、MAN、RPL、SHD | Luna-M + 发布 | 待补 |
-| G0-EVD-010 | evidence index、报告元数据、retention/hash 验证 | CI | Luna-M + QA | 工作树有 schema 草案；实际 index/报告、retention/CI 绑定待补 |
+| 项目 | 当前事实 | 判定 |
+|---|---|---|
+| Remote | [`xphai/mxdauto`](https://github.com/xphai/mxdauto)，repository ID `1349864993`；PR #1 的 base 为 sealed packet `04c794c5...`，最终 merge commit 由 PR 永久记录 | 远端身份已建立 |
+| Branch / PR | [main API](https://api.github.com/repos/xphai/mxdauto/branches/main) 返回 `protected=true`；required check=`quality`、strict up-to-date、PR review、conversation resolution、linear history、admins constrained、force-push/delete disabled；实际评审为 [PR #1](https://github.com/xphai/mxdauto/pull/1) | SCM 治理已建立；合并动作形成 Owner countersign |
+| Release | `candidate-core-v2-20260829-shadow`；lifecycle=`candidate`；execution_mode=`shadow` | 只用于 G0 离线证据 |
+| Manifest | `runtime-manifest.json` SHA-256 `c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007` | 绑定 source commit 与实际资产 hash |
+| Bundle / indexes | `bundle.json` `7f52f1e3838c17d6a87032669b52e32d2ac153a455bd563dad360c400e88767e`；asset index `d12d5aef62d29d8dcb8e8e5f0e55abc467a442a3c0703b13ffbd75a89b892d81`；evidence index `3edab63f9730015ef97650c982e704937026b09caca5a17842066f2ead606fe2` | committed packet 可遍历 |
+| Dependency / build | lock `00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa`；wheel `6c8148f05d1cec96416fb00c0187f0623483b8e8f8dabc4e1a70877563fddab3`；sdist `fad8441aeac2e953d4cf96c3e383e64371a46d4b26833335af195302e4d9da08` | 本地、packet 和成功 CI 一致 |
+| 本地质量 | 109 passed；coverage `94.61%`（1684/1780）；Ruff lint/format、Mypy 均通过 | L1 复现补充，不替代远端 run |
+| Bundle verification | `--metadata-only --strict-g0` 与加载全部 configured external roots 的 `--strict-g0` 均通过 | metadata 图与 8 个外置资产字节 hash 均已核验 |
 
-## 6. 强制门禁
+### 3.2 可绑定的远端 run
+
+[`core-v2-ci run 33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985)，attempt 1，event=`push`，head/`checkout_commit=4317c478d70422815162b7ca29d1e074fca188f0`，已于 2026-08-29 03:42:31（Asia/Shanghai）完成，workflow conclusion=`success`。该 run 的原始 `ci-evidence.json` 已按 SHA-256 下载到 sealed packet：
+
+- Windows runner、Python `3.12.10`；27 个记录检查和最终 workflow result 均为 `passed`；
+- JUnit：109 tests、0 failures、0 errors、0 skipped；coverage `94.61%`；
+- `ci-evidence-push-33204844985-1` 的 `status=passed`、`source_commit=7da29f4...`、`checkout_commit=4317c478...`；payload SHA-256 为 `9828d92bc01166db3f7e3ee9775e3596b2e9258a77e3451b40b20a4b89ac9fd1`；
+- artifact `g0-ci-evidence-33204844985`（ID `9699292429`）下载包 SHA-256 为 `186b73d641337c91a395889a21ef4cf6d556d2d840c1f499fab03c486add3d96`；另有 `quality-reports-33204844985`、`build-artifacts-33204844985`、`g0-clean-smoke-33204844985`；
+- Replay fixture SHA-256 `22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34`，3 次 deterministic，report digest `3ab52ec8767c846339e856f550aebfe044cd200a0fd17d1a404bd061b280ed3c`；
+- Shadow report digest `1391db6fb7ad2ec37d418c5619c102c4191ac41de7bc3b2a0673a1e365411521`，Core v2 真实输入、键盘、鼠标、receiver、窗口和双写事件均为 0；
+- cacheless Windows clean smoke 从 checkout-attested packet 创建新 venv、构建并安装 wheel，完成测试、Manifest、Replay、Shadow 与 rollback 检查，failed checks 为 0。
+
+### 3.3 Sealed packet 的 successor 复验
+
+[`core-v2-ci run 33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227) 以最终 sealed packet `04c794c59...` 为 `head/checkout_commit`，于 2026-08-29 03:45:48（Asia/Shanghai）完成，workflow conclusion=`success`。其 27 个 checks 全部 `passed`，payload SHA-256 为 `a0c1fd23233050be72645aca39aec8414885d35814992c0bf1e147218dc659b1`；artifact `g0-ci-evidence-33205169227`（ID `9699387349`）下载包 SHA-256 为 `b7e2a63b4d329b2f6095e4cf6caf0029f0a6a99b91dda43e95df7986f728c55f`。该 successor run 证明“纳入远端 CI 证据后的最终 packet”仍通过同一质量门禁；为避免无限自引用，packet 绑定前一 run，successor run 作为外层封印。
+
+### 3.4 被隔离的前序 run 与失败索引
+
+[`run 33202897083`](https://github.com/xphai/mxdauto/actions/runs/33202897083) 的 workflow conclusion 虽为 `success`，其 `ci-evidence-push-33202897083-1` 明确为 `status=failed`，payload SHA-256 `b279e8d522d8e8e0c78798a7e4c2c1ca1c8de372830d9a114d7b23c1fbd249f5`。该运行只保留为失败回归证据，**不参与 G0 绑定**。失败来自 collector 两处语义错误：
+
+1. `_parse_check_results` 把依赖安装结果字符串 `passed` 当作 parse error，生成失败的 `ci-step-outcomes`；
+2. clean-smoke 报告被错误套用仅属于 Replay/Shadow 的 fixture SHA 与 canonical `report_digest` 要求。
+
+修复已包含在 source commit `7da29f4...`：按 report kind 校验、正常化 GitHub step outcome、分离绑定 candidate source 与实际 checkout，并在 metadata 总状态不是 `passed` 时让 collector 以非零退出，形成 fail-closed 行为。后继 run `33204844985` 是修复后的首个可绑定远端事实。run `33201956865` 与 `33202897083` 的原始失败材料、artifact digest、根因和关闭谱系已登记在 `evidence/failures/failure-index.json`。
+
+## 4. 战术包状态
+
+| ID | 输出 | 当前状态 |
+|---|---|---|
+| G0-SCM-004 | source/packet commit、remote、protected main、PR required checks | 已完成；PR #1 进入 required `quality` 与 protected merge 流程 |
+| G0-CI-005 | 远端 CI、JUnit、coverage、evidence metadata、稳定 artifact 名 | run `33204844985` 与四组 artifact 已完成 |
+| G0-DEP-006 | dependency lock、wheel/sdist 与 hash | 已绑定并由成功 CI 复验 |
+| G0-MAN-003 | DEC-001 Candidate Bundle/Manifest/hash | 已生成；严格 metadata 与 full-external 校验通过 |
+| G0-RPL-007 | 去标识 Golden fixture、3 次相同 digest | 最小 synthetic fixture smoke 已完成；不替代 G1 完整 corpus |
+| G0-SHD-008 | dry-run Shadow、计划/实际 diff、真实输入调用数 0 | 最小离线 Shadow 已完成；不构成现场结论 |
+| G0-CLN-009 | 隔离 Windows install/test/manifest/replay/shadow | 本地 cacheless 与 GitHub Windows runner 均通过 |
+| G0-EVD-010 | evidence index、报告元数据、retention/hash | 成功谱系已绑定；失败 run 已纳入统一 failure index |
+
+## 5. 强制门禁审计
 
 ### G0-A：SCM 与远端身份
 
-- [ ] `candidate_commit` 为 40 位真实 commit，工作树清洁；
-- [x] Core v2 remote URL 可查，且与独立上游克隆的 GitHub origin 明确区分；
-- [ ] `main` 受保护，PR 与本 Charter 的 required checks 已启用；
-- [ ] Gate packet 记录 remote、repository ID、branch、commit 和评审 PR。
+- [x] `source_commit` 与 `sealed_packet_commit` 均为 40 位真实 commit，谱系和职责已记录；
+- [x] Core v2 remote URL、repository ID、branch 与独立 Legacy/upstream origin 明确区分；
+- [x] `main` 受保护，required `quality`、strict up-to-date、PR review、conversation resolution、linear history 与管理员约束已启用；force-push/delete 已关闭；
+- [x] 评审 packet 记录实际 [PR #1](https://github.com/xphai/mxdauto/pull/1) 与 required-check 配置。
 
 ### G0-B：CI 与静态质量
 
-- [ ] 同一远端 CI run/attempt 完成 Ruff lint、Ruff format、Mypy、Manifest 和 Pytest；
-- [ ] 所有必需步骤退出码为 0；
-- [ ] 覆盖率 `≥90%`；
-- [ ] JUnit、coverage XML、check summary 和 evidence metadata 均上传，artifact hash 可查；
-- [ ] CI run 记录 runner OS、Python 版本、依赖安装结果、开始/结束时间；
-- [ ] 本地输出只作复现补充，不替代远端 run。
+- [x] 同一远端 run/attempt 完成依赖锁、Ruff lint/format、Mypy、Manifest、strict Candidate metadata、Pytest、clean smoke、Replay、Shadow 和 build；
+- [x] 所有必需步骤、fail-closed collector 与 workflow result 均通过；
+- [x] JUnit 为 109/0/0/0，coverage `94.61% ≥ 90%`；
+- [x] JUnit、coverage、build、clean 与 evidence metadata 均上传，artifact/payload hash 可查；
+- [x] run 记录 runner OS、Python、依赖结果、开始/结束时间与 `source_commit`/`checkout_commit` 双绑定；
+- [x] 本地结果仅作为复现补充，不替代 run `33204844985`。
 
 ### G0-C：实际 Candidate Bundle
 
-- [ ] `runtime-manifest.json` 使用真实 `source_commit`、`upstream_commit`、Profile/model/classes/map/route/receiver hash；
-- [ ] `profile_id=pilot-subject-01`，不含真实账号或角色标识；
-- [ ] 模型/类别/输入尺寸符合 DEC-001：`best_forest_v3-candidate`、`[mob]`、`640×640`；
-- [ ] Bundle 内使用相对路径，不依赖 `F:\mxd` 绝对路径；
-- [ ] validator 校验 manifest schema 和每个实际资产字节；
-- [ ] `runtime-manifest.example.json` 继续只作为 schema fixture；
-- [ ] Candidate status 不提升为 Replay-valid/Shadow/Certified，直至对应证据完成。
+- [x] Manifest 使用真实 source/upstream commit 与 Profile/model/classes/map/route/receiver hash；
+- [x] `profile_id=pilot-subject-01`，无真实账号或角色标识；
+- [x] 模型/类别/输入尺寸符合 DEC-001；
+- [x] Bundle 使用 repository-relative path 或命名 external root，不把 `F:\mxd` 写成运行契约；
+- [x] schema、逐文件本地 hash、strict evidence graph 和全部 configured external asset bytes 均验证通过；
+- [x] example manifest 仍只作为 schema fixture；Candidate lifecycle 未提升为 Certified。
 
 ### G0-D：最小 Golden Replay
 
-- [ ] fixture 具有唯一 ID、SHA-256、来源会话、geometry、时间范围、许可/用途和去标识记录；
-- [ ] 原始调试叠加视频只进入 diagnostic 集，不作为独立 raw-model truth；
-- [ ] runner 使用固定 Bundle、注入 clock/randomness，并记录 Event Tape；
-- [ ] 同一 fixture + Bundle 连续 3 次输出相同事件序列与最终 digest；
-- [ ] `replay_report_id` 绑定 candidate commit、release、fixture、环境和命令；
-- [ ] 任何差异保留报告并将 Candidate 标记 `Quarantined`。
+- [x] fixture 具有唯一 ID、SHA-256、synthetic source、geometry、时间范围、用途/许可、truth/split 和去标识记录；
+- [x] runner 使用固定 Candidate Manifest，连续 3 次事件序列与 digest 相同；
+- [x] report 绑定 source commit、release、fixture、Manifest hash、环境和命令；
+- [x] 该结果明确限于最小 synthetic engineering smoke，不冒充 G1 完整感知/录像 corpus。
 
 ### G0-E：最小 Shadow 与输入所有权
 
-- [ ] Core v2 只产生 `WorldState/ActionSpec` 与模拟 `ActionResult`；
-- [ ] Legacy 实际动作和 Core v2 计划动作使用不同事件字段；
-- [ ] Core v2 真实 `InputSink`、键盘、鼠标、receiver 和游戏窗口调用数均为 0；
-- [ ] Legacy 保持唯一 owner；双写事件为 0；
-- [ ] `shadow_report_id` 记录 diff taxonomy、未分类差异和输入调用审计；
-- [ ] Shadow 不使用现场成功类措辞。
+- [x] Core v2 只产生计划与模拟结果；Legacy observed action 使用独立 provenance；
+- [x] Core v2 真实 InputSink/键鼠/receiver/窗口调用均为 0；Legacy 仍为 owner，双写为 0；
+- [x] diff count 为 2、unclassified diff 为 0，并记录输入边界 receipts；
+- [x] 报告只声明离线 Shadow，不使用现场成功类措辞。
 
-### G0-F：独立 Windows clean smoke
+### G0-F：隔离 Windows clean smoke
 
-- [ ] 环境为新 VM/主机或等价清洁快照，未复用项目 venv、pip cache、build/dist 或 `F:\mxd` 外置资产；
-- [ ] 从受审 remote/tag/commit 或签名 source artifact 开始；
-- [ ] 完成依赖安装、wheel 安装、静态检查、测试、Manifest、Replay 与 Shadow smoke；
-- [ ] 报告记录 OS build、Python、命令、耗时、exit code、artifact/hash；
-- [ ] 所有资源都从受审 checkout/Bundle 解析；
-- [ ] clean report 不等价于游戏端 receiver clean-host 认证，后者属于 G2。
+- [x] GitHub Windows runner 从 checkout-attested packet 开始，并使用无项目 venv、无 pip cache 的隔离环境；
+- [x] 构建并安装 wheel，验证导入来自临时 venv 而非 repository；
+- [x] 完成测试、coverage、Manifest、Replay、Shadow 与 rollback 检查；
+- [x] 报告记录 OS/Python、checkout/source、命令、耗时、exit code 和 artifact hash；
+- [x] 此结论只属于控制端工程 smoke，不等价于 G2 游戏端 receiver clean-host 认证。
 
-### G0-G：证据、回退与签字
+### G0-G：证据、失败保留、回退与签字
 
-- [ ] evidence index 可从 `release_id` 追到 commit、run、reports 和全部 artifact hash；
-- [ ] 失败报告得到保留，证据索引不只登记成功项；
-- [ ] G0 回退已验证：停止 Core v2 Replay/Shadow runner，Legacy 输入所有权保持不变；
-- [ ] Luna-M 提交战术完成报告；
-- [ ] QA 与发布负责人确认原始证据；
-- [ ] Sol-U 审计全部强制项并给出 `PASS`。
+- [x] 成功谱系可从 release 追到 source/packet、run、Manifest、报告和 artifact hash；
+- [x] 失败 run `33201956865`、`33202897083` 的原始材料、payload/artifact hash、隔离理由与关闭谱系已提交到统一 failure index；
+- [x] 回退检查已验证停止 Core v2、sink 断开、真实输入/双写为 0、Legacy owner 不变；
+- [x] 实施侧已下载 run `33204844985` 与 successor run `33205169227` 原始 artifact，并逐一核对 GitHub archive digest、payload hash、27 个 checks 与 source/checkout 绑定；
+- [ ] 仓库 Owner 通过 PR #1 的 protected squash merge 完成发布 countersign；
+- [x] Sol-U 已签发条件性 `PASS`：仅在 PR #1 required `quality` 成功且 protected squash merge 完成时生效。
 
-## 7. Gate 指标
+## 6. Gate 指标
 
-| 指标 | G0 门槛 |
-|---|---:|
-| 远端必需检查 | 100% 通过 |
-| Pytest failure | 0 |
-| 覆盖率 | `≥90%` |
-| Manifest schema/hash error | 0 |
-| Replay 重复次数 | 3 |
-| Replay digest 差异 | 0 |
-| Shadow Core v2 真实输入调用 | 0 |
-| Shadow 双写事件 | 0 |
-| clean smoke 必需步骤失败 | 0 |
-| 未绑定 commit/Bundle 的 Gate artifact | 0 |
-| Core v2 现场 session | G0 不要求；当前为 0 |
+| 指标 | 门槛 | 当前 |
+|---|---:|---:|
+| 远端必需检查 | 100% 通过 | 100%（run `33204844985`） |
+| Pytest failure/error | 0 | 0 / 0 |
+| 覆盖率 | `≥90%` | `94.61%` |
+| Manifest/schema/strict hash error | 0 | 0 |
+| Replay 重复次数 / digest 差异 | 3 / 0 | 3 / 0 |
+| Shadow 真实输入 / 双写 | 0 / 0 | 0 / 0 |
+| clean smoke 必需步骤失败 | 0 | 0 |
+| 未绑定工程 artifact | 0 | 0（当前成功 packet） |
+| Core v2 现场 session | G0 不要求 | 0 |
 
-## 8. 阻断与失效条件
+## 7. 当前差距与 Gate 决定
 
-任一条件出现时，Gate 保持 `HOLD` 或转为 `QUARANTINE`：
-
-- Core v2 remote/branch protection/required checks 或绑定候选 commit 的完整远端 run 缺失；
-- 仅有本地聊天输出、截图、缓存或 Markdown 数字；
-- example manifest 被当成实际 Candidate；
-- fixture 缺少 hash/来源/去标识记录；
-- Replay digest 非确定；
-- Shadow 到达真实输入边界；
-- clean smoke 读取开发机绝对路径或缓存；
-- 模型/classes/input size/按键与 DEC-001 漂移；
-- 工作树或 artifact 与 candidate commit 不一致；
-- 任一强制检查被跳过或阈值在运行后调整。
-
-## 9. 当前差距与 Gate 决定
-
-| 差距 | 当前状态 | 关闭条件 |
+| Open finding | 当前事实 | 关闭条件 |
 |---|---|---|
-| remote/PR/protection | remote 已有；PR/protection 缺失 | 提供 main protection、required checks 与 PR 证据 |
-| 远端 CI/JUnit | 首个 run/coverage 已有；JUnit/evidence metadata 缺失 | 新 candidate commit 的 green run + 完整 artifacts |
-| dependency lock/可追溯制品 | 工作树有 lock 草案；已审绑定与制品仍缺 | lock commit、CI 安装结果与 wheel/sdist hash |
-| 实际 Candidate Bundle | 缺失 | 真实 manifest + assets + hash report |
-| Golden Replay | fixture/runner 草案存在；Gate 结果缺失 | 已审固定 fixture/runner + 3 次相同 digest + report |
-| Shadow | runner 草案存在；Gate 结果缺失 | 已审 diff report + Core v2 input calls 0 |
-| clean machine | 缺失 | 独立 Windows report |
-| evidence index | schema 草案存在；实际 index 缺失 | 可遍历索引、稳定 IDs 与 artifact hash |
+| `G0-CLOSED-SCM-001` | main `protected=true`，required `quality` strict，PR review/管理员约束/linear history/conversation resolution 已启用；PR #1 已创建 | 已关闭；远端保护配置与实际 PR 均可审计 |
+| `G0-CLOSED-EVD-002` | `evidence/failures/failure-index.json` 已绑定两次失败、原始材料、artifact digest、根因和修复谱系 | 已关闭；后续失败继续追加，不覆盖历史 |
+| `G0-OPEN-SIG-003` | 原始 artifact 机器复核与 Sol-U 条件签发已完成；Owner 合并待记录 | PR #1 required `quality` 成功后 protected squash merge，条件性 `PASS` 同步生效 |
+| `G0-CLOSED-DOC-004` | 状态收口文档与失败索引已进入 PR #1 | 已关闭；由 required `quality` 和 protected merge 约束 |
 
-**签发决定：`HOLD`。** 当前本地契约、Event Tape、schema、validator、58 个本地测试、94.68% 本地覆盖率、Core v2 remote 和首个成功 CI run 说明 G0 已有良好工程起点；它们覆盖不了上表的 branch protection、完整 CI artifacts、Bundle、Replay、Shadow 和 clean 缺口。
+**评审决定：`CONDITIONAL PASS`。** run `33204844985` 已被 sealed packet 绑定，successor run `33205169227` 又复验了该 packet；失败索引、原始 artifact、branch protection 与实际 PR 均已闭环。PR #1 的 required `quality` 成功并由 protected squash merge 写入 `main`，同时构成 Owner countersign 和本决定的生效事件。在该事件前 G1 保持未开始；合并后状态为 **G0 Passed / G1 Ready（未开始）**。
 
-## 10. 回退计划
-
-G0 只运行无真实副作用的工具链。回退步骤为：
+## 8. 回退计划
 
 ```text
 停止 Replay/Shadow runner
-→ 终止 dry-run session
-→ 保留 Event Tape 与失败报告
-→ 标记 Candidate Quarantined
-→ 验证 Core v2 真实输入调用数仍为 0
+→ 终止 dry-run session并断开 sink
+→ 保留 Event Tape、成功与失败报告
+→ 必要时标记 Candidate Quarantined
+→ 验证 Core v2 真实输入调用数和双写仍为 0
 → Legacy 继续保持唯一输入 owner
 ```
 
-## 11. 评审输出
-
-最终 Gate packet 至少包含：
-
-```text
-gate_id = G0
-decision = PASS | HOLD | QUARANTINE | ROLLBACK
-candidate_commit
-remote / pr / ci_run / run_attempt
-release_id / runtime_manifest_sha256
-test_report_id / replay_report_id / shadow_report_id / clean_report_id
-artifact_sha256[]
-open_findings[]
-rollback_result
-Sol-U decision
-QA / release countersign
-```
-
-只有 `decision=PASS` 且全部强制项闭环后，ROADMAP 才更新为 G0 Passed / G1 In Progress。当前 Charter 明确保持 G0 `HOLD`。
+本 Charter 采用自验证发布语义：它仅能在 required `quality` 成功后通过 protected squash merge 进入 `main`；因此该版本出现在 `main` 即表示 Owner countersign 完成、`decision=PASS` 生效。G1 由独立战术包启动，G0 PASS 只把它置为 Ready。

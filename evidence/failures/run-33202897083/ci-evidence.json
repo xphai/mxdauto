@@ -1,0 +1,352 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "junit-junit",
+      "kind": "junit",
+      "name": "junit.xml",
+      "path": "evidence/ci-run/junit.xml",
+      "sha256": "bbbe363a67521d085f7fbee3c499eba1cd7946dd2bd74933fe9142e092b7f988",
+      "size_bytes": 12968
+    },
+    {
+      "artifact_id": "coverage-coverage",
+      "kind": "coverage",
+      "name": "coverage.xml",
+      "path": "evidence/ci-run/coverage.xml",
+      "sha256": "812b6ab87ca4f08f071115543c063dbf4f6643f7d05d3ba0cef046b0d896c3c7",
+      "size_bytes": 68430
+    },
+    {
+      "artifact_id": "dependency-lock-requirements",
+      "kind": "dependency-lock",
+      "name": "requirements.lock",
+      "path": "configs/requirements.lock",
+      "sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa",
+      "size_bytes": 904
+    },
+    {
+      "artifact_id": "build-maple-automation-core-0.1.0-py3-none-any",
+      "kind": "wheel",
+      "name": "maple_automation_core-0.1.0-py3-none-any.whl",
+      "path": "dist/maple_automation_core-0.1.0-py3-none-any.whl",
+      "sha256": "3c4b37fe04ec0e82bb85e4dab9faecf01044dcdc48f97f8001166ab851817b81",
+      "size_bytes": 33330
+    },
+    {
+      "artifact_id": "build-maple-automation-core-0.1.0.tar",
+      "kind": "sdist",
+      "name": "maple_automation_core-0.1.0.tar.gz",
+      "path": "dist/maple_automation_core-0.1.0.tar.gz",
+      "sha256": "8d06487f1cdc3791c439383c539435cacfdc2e505bc95d2ee97fe38b5aa7c708",
+      "size_bytes": 43329
+    },
+    {
+      "artifact_id": "manifest-runtime-manifest",
+      "kind": "manifest",
+      "name": "runtime-manifest.json",
+      "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+      "sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+      "size_bytes": 2702
+    },
+    {
+      "artifact_id": "asset-index-asset-index",
+      "kind": "asset-index",
+      "name": "asset-index.json",
+      "path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
+      "sha256": "ee7389391fbff9f16f8fd5aa447f9e749ff54a74e5cbe5ba03b95472342d78e3",
+      "size_bytes": 5207
+    },
+    {
+      "artifact_id": "evidence-index-evidence-index",
+      "kind": "evidence-index",
+      "name": "evidence-index.json",
+      "path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
+      "sha256": "8d42ca289222125e97882cb2bb2b11e43e02235bf4aa5a7c3ad33ed0cb796cf9",
+      "size_bytes": 6417
+    },
+    {
+      "artifact_id": "bundle-bundle",
+      "kind": "bundle",
+      "name": "bundle.json",
+      "path": "bundles/candidate-core-v2-20260829-shadow/bundle.json",
+      "sha256": "5bd0a6ca9dbe058825d241c439ba204034a043b423b5ca107155b03b225e5b2c",
+      "size_bytes": 6259
+    },
+    {
+      "artifact_id": "evidence-report-golden-replay-report",
+      "kind": "evidence-report",
+      "name": "golden-replay-report.json",
+      "path": "evidence/ci-run/golden-replay-report.json",
+      "sha256": "f16b275a4d3b1a935c911b204a5c0c70f1f712cf8bc184d09a12aa52ade3d66c",
+      "size_bytes": 4789
+    },
+    {
+      "artifact_id": "evidence-report-golden-shadow-report",
+      "kind": "evidence-report",
+      "name": "golden-shadow-report.json",
+      "path": "evidence/ci-run/golden-shadow-report.json",
+      "sha256": "c3924d60f93550653639c70dec778b8e50eb699a84f330765cb03e9e5fe4efb6",
+      "size_bytes": 5456
+    },
+    {
+      "artifact_id": "evidence-report-clean-smoke-report",
+      "kind": "evidence-report",
+      "name": "clean-smoke-report.json",
+      "path": "evidence/ci-run/clean-smoke-report.json",
+      "sha256": "32c3fdbafef2f7029dfba838403b86ab1dc2444bc5b5815bbca9fddf13be569b",
+      "size_bytes": 35291
+    }
+  ],
+  "bundle_id": "candidate-core-v2-20260829-shadow",
+  "checks": [
+    {
+      "command": "collect CI step outcomes",
+      "details": {
+        "reason": "passed"
+      },
+      "name": "ci-step-outcomes",
+      "status": "failed"
+    },
+    {
+      "command": "python -m pytest --junitxml=evidence/ci/junit.xml",
+      "details": {
+        "errors": 0,
+        "failures": 0,
+        "path": "evidence/ci-run/junit.xml",
+        "sha256": "bbbe363a67521d085f7fbee3c499eba1cd7946dd2bd74933fe9142e092b7f988",
+        "size_bytes": 12968,
+        "skipped": 0,
+        "tests": 101
+      },
+      "name": "junit",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pytest --cov=maple_automation_core --cov-report=xml:evidence/ci/coverage.xml",
+      "details": {
+        "line_percent": 94.61,
+        "line_rate": 0.9461,
+        "lines_covered": 1684,
+        "lines_valid": 1780,
+        "path": "evidence/ci-run/coverage.xml",
+        "sha256": "812b6ab87ca4f08f071115543c063dbf4f6643f7d05d3ba0cef046b0d896c3c7",
+        "size_bytes": 68430
+      },
+      "name": "coverage",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pip install --requirement configs/requirements.lock",
+      "details": {
+        "path": "configs/requirements.lock",
+        "sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa",
+        "size_bytes": 904
+      },
+      "name": "dependency-lock",
+      "status": "passed"
+    },
+    {
+      "command": "python -m build --wheel --sdist --no-isolation",
+      "details": {
+        "artifact_count": 2
+      },
+      "name": "build-artifacts",
+      "status": "passed"
+    },
+    {
+      "command": "verify manifest metadata",
+      "details": {
+        "json_object": true,
+        "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+        "sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+        "size_bytes": 2702
+      },
+      "name": "manifest",
+      "status": "passed"
+    },
+    {
+      "command": "verify asset-index metadata",
+      "details": {
+        "json_object": true,
+        "path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
+        "sha256": "ee7389391fbff9f16f8fd5aa447f9e749ff54a74e5cbe5ba03b95472342d78e3",
+        "size_bytes": 5207
+      },
+      "name": "asset-index",
+      "status": "passed"
+    },
+    {
+      "command": "verify evidence-index metadata",
+      "details": {
+        "json_object": true,
+        "path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
+        "sha256": "8d42ca289222125e97882cb2bb2b11e43e02235bf4aa5a7c3ad33ed0cb796cf9",
+        "size_bytes": 6417
+      },
+      "name": "evidence-index",
+      "status": "passed"
+    },
+    {
+      "command": "verify bundle metadata",
+      "details": {
+        "json_object": true,
+        "path": "bundles/candidate-core-v2-20260829-shadow/bundle.json",
+        "sha256": "5bd0a6ca9dbe058825d241c439ba204034a043b423b5ca107155b03b225e5b2c",
+        "size_bytes": 6259
+      },
+      "name": "bundle",
+      "status": "passed"
+    },
+    {
+      "command": "cross-check candidate manifest, bundle and evidence bindings",
+      "details": {
+        "bundle_id": "candidate-core-v2-20260829-shadow",
+        "manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+        "manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+        "release_id": "candidate-core-v2-20260829-shadow",
+        "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4"
+      },
+      "name": "candidate-binding",
+      "status": "passed"
+    },
+    {
+      "command": "validate evidence reports against schemas/evidence-report.schema.json",
+      "details": {
+        "path": "schemas/evidence-report.schema.json"
+      },
+      "name": "evidence-report-schema",
+      "status": "passed"
+    },
+    {
+      "command": "resolve Replay/Shadow/Clean fixture SHA",
+      "details": {
+        "fixture_count": 1,
+        "sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34"
+      },
+      "name": "evidence-fixture",
+      "status": "passed"
+    },
+    {
+      "command": "validate machine-readable evidence report golden-replay-report.json",
+      "details": {
+        "candidate_binding": {
+          "bundle_id": "candidate-core-v2-20260829-shadow",
+          "release_id": "candidate-core-v2-20260829-shadow",
+          "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+          "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+          "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4"
+        },
+        "computed_report_digest": "8ff614c729c97592a2cd5387edeabaf14e873e2d644258f97a6a3b104cc90e5e",
+        "deterministic": true,
+        "expected_fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "expected_report_kind": "replay",
+        "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "path": "evidence/ci-run/golden-replay-report.json",
+        "repeat_count": 3,
+        "report_digest": "8ff614c729c97592a2cd5387edeabaf14e873e2d644258f97a6a3b104cc90e5e",
+        "report_digest_valid": true,
+        "report_id": "replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
+        "report_kind": "replay",
+        "report_status": "PASS",
+        "schema_errors": [],
+        "schema_valid": true,
+        "sha256": "f16b275a4d3b1a935c911b204a5c0c70f1f712cf8bc184d09a12aa52ade3d66c",
+        "size_bytes": 4789
+      },
+      "name": "evidence-report",
+      "status": "passed"
+    },
+    {
+      "command": "validate machine-readable evidence report golden-shadow-report.json",
+      "details": {
+        "candidate_binding": {
+          "bundle_id": "candidate-core-v2-20260829-shadow",
+          "release_id": "candidate-core-v2-20260829-shadow",
+          "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+          "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+          "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4"
+        },
+        "computed_report_digest": "60eb19045c95d528b131ac715899ca59a714408eab6c71138e9a4791b8fd2658",
+        "diff_count": 2,
+        "expected_fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "expected_report_kind": "shadow",
+        "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "path": "evidence/ci-run/golden-shadow-report.json",
+        "real_input_call_count": 0,
+        "report_digest": "60eb19045c95d528b131ac715899ca59a714408eab6c71138e9a4791b8fd2658",
+        "report_digest_valid": true,
+        "report_id": "shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
+        "report_kind": "shadow",
+        "report_status": "PASS",
+        "schema_errors": [],
+        "schema_valid": true,
+        "sha256": "c3924d60f93550653639c70dec778b8e50eb699a84f330765cb03e9e5fe4efb6",
+        "size_bytes": 5456,
+        "unclassified_diff_count": 0
+      },
+      "name": "evidence-report",
+      "status": "passed"
+    },
+    {
+      "command": "validate machine-readable evidence report clean-smoke-report.json",
+      "details": {
+        "candidate_binding": {
+          "bundle_id": "candidate-core-v2-20260829-shadow",
+          "release_id": "candidate-core-v2-20260829-shadow",
+          "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+          "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+          "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4"
+        },
+        "checkout_commit": "9b38653f36fd3d11fa2aa73c2aa5be61dffb26ef",
+        "computed_report_digest": "8ebdd989594b2073c5f653154b2fa134a059a13b5664091edf35cfe08735a074",
+        "errors": [
+          "fixture_file_sha256 does not match the repository fixture",
+          "report_digest is missing"
+        ],
+        "expected_fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "expected_report_kind": "clean-smoke",
+        "failed_checks": [],
+        "fixture_file_sha256": null,
+        "path": "evidence/ci-run/clean-smoke-report.json",
+        "report_digest": null,
+        "report_digest_valid": false,
+        "report_id": "clean-smoke-21d4cc66129c",
+        "report_kind": "clean-smoke",
+        "report_status": "passed",
+        "runner_os": "Windows",
+        "schema_errors": [],
+        "schema_valid": true,
+        "sha256": "32c3fdbafef2f7029dfba838403b86ab1dc2444bc5b5815bbca9fddf13be569b",
+        "size_bytes": 35291
+      },
+      "name": "evidence-report",
+      "status": "failed"
+    },
+    {
+      "command": "GitHub Actions job status",
+      "details": {
+        "github_job_status": "success",
+        "outcome": "success"
+      },
+      "name": "workflow-result",
+      "status": "passed"
+    }
+  ],
+  "completed_at": "2026-08-28T19:15:32Z",
+  "dependency_install_result": "passed",
+  "event": "push",
+  "evidence_id": "ci-evidence-push-33202897083-1",
+  "generated_at": "2026-08-28T19:15:32Z",
+  "python_version": "3.12.10",
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "run_attempt": "1",
+  "run_id": "33202897083",
+  "runner_os": "Windows",
+  "schema_version": "1.0.0",
+  "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4",
+  "started_at": "2026-08-28T19:13:40Z",
+  "status": "failed",
+  "workflow_name": "core-v2-ci"
+}
