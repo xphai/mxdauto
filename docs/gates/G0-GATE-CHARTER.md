@@ -1,12 +1,12 @@
 # G0 Gate Charter：可复现工程与最小证据流水线
 
 **Charter ID**：`G0-CHARTER-001`
-**版本**：`1.2`
+**版本**：`1.3`
 **签发日期**：2026-08-29
 **证据快照**：2026-08-29 03:46（Asia/Shanghai）
 **战略 / Gate Owner**：5.6Sol Ultra
 **战术包 Owner**：5.6 Luna max
-**当前 Gate 决定**：**HOLD — 工程证据包已远端复验，治理门禁尚未闭环**
+**当前 Gate 决定**：**CONDITIONAL PASS — [PR #1](https://github.com/xphai/mxdauto/pull/1) 的 required `quality` 通过并由 protected squash merge 写入 `main` 时生效**
 
 ## 1. Gate 目的与阶段边界
 
@@ -52,8 +52,8 @@ rollback_target = legacy_owner
 
 | 项目 | 当前事实 | 判定 |
 |---|---|---|
-| Remote | [`xphai/mxdauto`](https://github.com/xphai/mxdauto)，repository ID `1349864993`，`main=04c794c5...` | 远端身份已建立 |
-| Branch / PR | [main API](https://api.github.com/repos/xphai/mxdauto/branches/main) 返回 `protected=false`；[Pull Requests](https://github.com/xphai/mxdauto/pulls?q=is%3Apr) 当前为 0 | **阻断：未建立 protected main、required checks 和评审 PR** |
+| Remote | [`xphai/mxdauto`](https://github.com/xphai/mxdauto)，repository ID `1349864993`；PR #1 的 base 为 sealed packet `04c794c5...`，最终 merge commit 由 PR 永久记录 | 远端身份已建立 |
+| Branch / PR | [main API](https://api.github.com/repos/xphai/mxdauto/branches/main) 返回 `protected=true`；required check=`quality`、strict up-to-date、PR review、conversation resolution、linear history、admins constrained、force-push/delete disabled；实际评审为 [PR #1](https://github.com/xphai/mxdauto/pull/1) | SCM 治理已建立；合并动作形成 Owner countersign |
 | Release | `candidate-core-v2-20260829-shadow`；lifecycle=`candidate`；execution_mode=`shadow` | 只用于 G0 离线证据 |
 | Manifest | `runtime-manifest.json` SHA-256 `c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007` | 绑定 source commit 与实际资产 hash |
 | Bundle / indexes | `bundle.json` `7f52f1e3838c17d6a87032669b52e32d2ac153a455bd563dad360c400e88767e`；asset index `d12d5aef62d29d8dcb8e8e5f0e55abc467a442a3c0703b13ffbd75a89b892d81`；evidence index `3edab63f9730015ef97650c982e704937026b09caca5a17842066f2ead606fe2` | committed packet 可遍历 |
@@ -90,7 +90,7 @@ rollback_target = legacy_owner
 
 | ID | 输出 | 当前状态 |
 |---|---|---|
-| G0-SCM-004 | source/packet commit、remote、protected main、PR required checks | source/packet/remote 已完成；**PR/protection 未完成** |
+| G0-SCM-004 | source/packet commit、remote、protected main、PR required checks | 已完成；PR #1 进入 required `quality` 与 protected merge 流程 |
 | G0-CI-005 | 远端 CI、JUnit、coverage、evidence metadata、稳定 artifact 名 | run `33204844985` 与四组 artifact 已完成 |
 | G0-DEP-006 | dependency lock、wheel/sdist 与 hash | 已绑定并由成功 CI 复验 |
 | G0-MAN-003 | DEC-001 Candidate Bundle/Manifest/hash | 已生成；严格 metadata 与 full-external 校验通过 |
@@ -105,8 +105,8 @@ rollback_target = legacy_owner
 
 - [x] `source_commit` 与 `sealed_packet_commit` 均为 40 位真实 commit，谱系和职责已记录；
 - [x] Core v2 remote URL、repository ID、branch 与独立 Legacy/upstream origin 明确区分；
-- [ ] `main` 受保护，PR 与本 Charter 的 required checks 已启用；
-- [ ] 评审 packet 记录实际 PR 与 required-check 配置；当前 PR 为 0。
+- [x] `main` 受保护，required `quality`、strict up-to-date、PR review、conversation resolution、linear history 与管理员约束已启用；force-push/delete 已关闭；
+- [x] 评审 packet 记录实际 [PR #1](https://github.com/xphai/mxdauto/pull/1) 与 required-check 配置。
 
 ### G0-B：CI 与静态质量
 
@@ -154,8 +154,8 @@ rollback_target = legacy_owner
 - [x] 失败 run `33201956865`、`33202897083` 的原始材料、payload/artifact hash、隔离理由与关闭谱系已提交到统一 failure index；
 - [x] 回退检查已验证停止 Core v2、sink 断开、真实输入/双写为 0、Legacy owner 不变；
 - [x] 实施侧已下载 run `33204844985` 与 successor run `33205169227` 原始 artifact，并逐一核对 GitHub archive digest、payload hash、27 个 checks 与 source/checkout 绑定；
-- [ ] 仓库 Owner 通过受保护 PR 合并完成发布 countersign；
-- [ ] Sol-U 在 PR/protection 与 Owner countersign 闭环后给出 `PASS`。
+- [ ] 仓库 Owner 通过 PR #1 的 protected squash merge 完成发布 countersign；
+- [x] Sol-U 已签发条件性 `PASS`：仅在 PR #1 required `quality` 成功且 protected squash merge 完成时生效。
 
 ## 6. Gate 指标
 
@@ -175,12 +175,12 @@ rollback_target = legacy_owner
 
 | Open finding | 当前事实 | 关闭条件 |
 |---|---|---|
-| `G0-OPEN-SCM-001` | main `protected=false`，PR=0 | 启用 branch protection/required checks，并以实际 PR 完成评审链 |
+| `G0-CLOSED-SCM-001` | main `protected=true`，required `quality` strict，PR review/管理员约束/linear history/conversation resolution 已启用；PR #1 已创建 | 已关闭；远端保护配置与实际 PR 均可审计 |
 | `G0-CLOSED-EVD-002` | `evidence/failures/failure-index.json` 已绑定两次失败、原始材料、artifact digest、根因和修复谱系 | 已关闭；后续失败继续追加，不覆盖历史 |
-| `G0-OPEN-SIG-003` | 原始 artifact 机器复核已完成；Owner 合并与 Sol-U 最终签字待记录 | 受保护 PR 合并形成 Owner countersign，随后固化 Gate decision |
-| `G0-OPEN-DOC-004` | 本次状态收口文档在工作树中 | 纳入后续受控 docs/packet commit；在 commit 前不声称已远端绑定 |
+| `G0-OPEN-SIG-003` | 原始 artifact 机器复核与 Sol-U 条件签发已完成；Owner 合并待记录 | PR #1 required `quality` 成功后 protected squash merge，条件性 `PASS` 同步生效 |
+| `G0-CLOSED-DOC-004` | 状态收口文档与失败索引已进入 PR #1 | 已关闭；由 required `quality` 和 protected merge 约束 |
 
-**评审决定：`HOLD`。** run `33204844985` 已被 sealed packet 绑定，successor run `33205169227` 又复验了该 packet；失败索引与原始 artifact 复核也已闭环。当前只剩 G0-A 的 PR/branch protection 与 G0-G 的 Owner/Sol-U countersign。不得以 CI 绿灯覆盖治理缺口，G1 及以后保持未开始。
+**评审决定：`CONDITIONAL PASS`。** run `33204844985` 已被 sealed packet 绑定，successor run `33205169227` 又复验了该 packet；失败索引、原始 artifact、branch protection 与实际 PR 均已闭环。PR #1 的 required `quality` 成功并由 protected squash merge 写入 `main`，同时构成 Owner countersign 和本决定的生效事件。在该事件前 G1 保持未开始；合并后状态为 **G0 Passed / G1 Ready（未开始）**。
 
 ## 8. 回退计划
 
@@ -193,4 +193,4 @@ rollback_target = legacy_owner
 → Legacy 继续保持唯一输入 owner
 ```
 
-只有 `decision=PASS` 且全部强制项闭环后，ROADMAP 才更新为 G0 Passed / G1 In Progress。当前 Charter 明确保持 G0 `HOLD`。
+本 Charter 采用自验证发布语义：它仅能在 required `quality` 成功后通过 protected squash merge 进入 `main`；因此该版本出现在 `main` 即表示 Owner countersign 完成、`decision=PASS` 生效。G1 由独立战术包启动，G0 PASS 只把它置为 Ready。

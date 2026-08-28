@@ -3,7 +3,7 @@
 > **状态截止**：2026-08-29  
 > **战略负责人**：5.6Sol Ultra  
 > **战术包负责人**：5.6 Luna max  
-> **当前阶段**：G-1 战略封存完成；G0 工程证据已远端复验但 Gate=`HOLD`；G1+ 未开始
+> **当前阶段**：G-1 战略封存完成；G0=`CONDITIONAL PASS`，在 protected PR #1 required `quality` 成功并 squash merge 时生效；G1 Ready（未开始）
 
 ## 1. 用途与来源
 
@@ -58,14 +58,14 @@
 | REQ-NFR-002 | 连续 4 小时稳定验收 | `COLLECTION_ANALYSIS.md` §7 | G4 | 固定 Certified Bundle，5 个独立 `EAOH≥4h` session，重启/异常/双写 0 | Core v2 field session 为 0；Legacy 4.69 小时日志含 29 次终止、331 stuck、1,011 登录等待 | `MISSING` |
 | REQ-PRI-001 | 账号、角色名、二维码等去标识化 | `MEDIA_REVIEW.md` §1；ADR-007/ROADMAP | G0、G1、G6 | `subject_id`、脱敏审计、fixture manifest、访问/保留策略 | DEC-001 使用匿名 Profile；G0 synthetic fixture 记录 complete de-identification、internal usage/license；真实 G1 素材仍需入库审计 | `DONE-G0-minimal` / G1+ `PARTIAL-DATA` |
 | REQ-REL-001 | 配置、模型、地图、路线、receiver 与证据原子绑定 | ADR-007；由旧资产漂移派生 | G0、G6 | 实际 Runtime Bundle、逐文件 hash、签名、rollback release | Candidate release 已绑定 source `7da29f4...`、Manifest `c3382e8...2007`、10 个资产条目和 evidence graph；strict metadata/full-external 均通过；尚非签名/Certified release | `DONE-G0-candidate` |
-| REQ-REL-002 | 受控 Git/CI 与干净机可复现 | ADR-010；由交付要求派生 | G0、G6 | remote、protected branch、CI run/JUnit/coverage、dependency lock、clean reports | run `33204844985` 的 passed metadata 已纳入 sealed packet `04c794c...`，successor run `33205169227` 又复验最终 packet：109 tests、94.61%、27 checks；main `protected=false`、PR=0、Owner/Sol-U countersign 未完成 | `PARTIAL-G0-governance` |
+| REQ-REL-002 | 受控 Git/CI 与干净机可复现 | ADR-010；由交付要求派生 | G0、G6 | remote、protected branch、CI run/JUnit/coverage、dependency lock、clean reports | run `33204844985` 的 passed metadata 已纳入 sealed packet `04c794c...`，successor run `33205169227` 又复验最终 packet：109 tests、94.61%、27 checks；main `protected=true`、required `quality` strict、PR #1 已建立，protected merge 形成 Owner countersign | `DONE-G0-on-protected-merge` |
 
 ## 4. Gate 视图
 
 | Gate | 本矩阵要求的需求集合 | 当前结论 |
 |---|---|---|
 | G-1 | Pilot、匿名 Profile、输入所有权、原始范围映射 | **战略封存完成**：ADR-004、DEC-001 和本矩阵已形成 |
-| G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **HOLD**：工程/失败链由 bound run `33204844985` 与 successor run `33205169227` 闭环；仅 branch protection/required checks/PR 与 Owner/Sol-U countersign 未完成 |
+| G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **CONDITIONAL PASS**：工程/失败链、branch protection、required `quality` 与 PR #1 已闭环；protected squash merge 同时形成 Owner countersign 与 PASS 生效事件 |
 | G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | 未开始 |
 | G2 | INP-001/002/003、SAFE-001/002、NFR-001 的 simulator/HIL | 未开始 |
 | G3 | FUN-001 + 输入租约的单图有界现场 | 未开始；Core v2 现场 session 为 0 |
@@ -73,14 +73,14 @@
 | G5 | 登录、组队、频道、符文、死亡/断线及受控扩展 | 未开始；多项素材仍缺 |
 | G6 | 双机 clean release、支持矩阵、数据治理、Legacy 退役 | 未开始 |
 
-## 5. 当前 G0 缺口索引
+## 5. 当前 G0 收口索引
 
 | 缺口 ID | 对应需求 | 需要生成的首个证据 | 负责人 |
 |---|---|---|---|
-| GAP-G0-001 | REQ-REL-002 | 为 `main` 配置 branch protection/required checks，并创建实际评审 PR | 发布负责人 |
+| CLOSED-G0-001 | REQ-REL-002 | `main protected=true`、required `quality` strict、PR review/管理员约束/linear history/conversation resolution 已启用，PR #1 已创建 | 发布负责人（完成） |
 | CLOSED-G0-002 | REQ-OBS-002 | `evidence/failures/failure-index.json` 已交叉链接两次失败、原始材料、hash、根因和关闭谱系 | Luna-M / QA（机器复核完成） |
 | CLOSED-G0-003 | REQ-REL-002 | run `33204844985` 与 successor run `33205169227` 的 archive/payload digest、27 checks 和 source/checkout 已复核 | Luna-M / QA（机器复核完成） |
-| GAP-G0-004 | Gate governance | Owner 通过受保护 PR 合并 countersign；Sol-U 随后签发 G0 `PASS` | Owner / Sol-U |
+| CLOSING-G0-004 | Gate governance | Sol-U 已条件签发；PR #1 required `quality` 成功并 protected squash merge 时形成 Owner countersign 与 G0 `PASS` | Owner / Sol-U |
 | CLOSED-G0-REL-001 | REQ-REL-001 | Candidate Bundle、strict metadata/full-external、lock/build hash 已由 source/packet/run 绑定 | 已形成工程证据 |
 | CLOSED-G0-RPL-SHD-CLN | REQ-SAFE/OBS/REL | 最小 synthetic Replay、离线 Shadow zero-input、隔离 Windows clean smoke 已完成 | 已形成工程证据；不外推至 G1/G2/现场 |
 
