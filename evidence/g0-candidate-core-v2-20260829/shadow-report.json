@@ -1,11 +1,11 @@
 {
   "artifacts": [
     {
-      "artifact_id": "shadow-result-clean-shadow-report",
+      "artifact_id": "shadow-result-shadow-result",
       "kind": "evidence-report",
-      "name": "clean-shadow-report.json",
-      "path": "evidence/clean-smoke/clean-shadow-report.json",
-      "sha256": "c3924d60f93550653639c70dec778b8e50eb699a84f330765cb03e9e5fe4efb6",
+      "name": "shadow-result.json",
+      "path": "evidence/g0-candidate-core-v2-20260829/raw/shadow-result.json",
+      "sha256": "a8634947cdf4feb22936862d161ff9ed79c8f98f87f9b8ab3789c64da2fdef5a",
       "size_bytes": 5456
     }
   ],
@@ -17,9 +17,9 @@
         "diff_count": 2,
         "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
         "real_input_call_count": 0,
-        "report_digest": "60eb19045c95d528b131ac715899ca59a714408eab6c71138e9a4791b8fd2658",
+        "report_digest": "d37b42f2819231c3df3c923641f950ede5679a1235677657d79142b62d9feffd",
         "report_id": "shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
-        "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+        "runtime_manifest_sha256": "e067e195bc5d373981eaf031a6830775ed7f1502210db2ff4dd481e54f595980",
         "unclassified_diff_count": 0
       },
       "name": "shadow-runner",
@@ -37,7 +37,7 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "shadow",
   "schema_version": "1.0.0",
-  "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4",
+  "source_commit": "a39e4b53572a24ec7d1ed78f77a3803e6174b89d",
   "status": "passed",
   "subject_id": "subject-01",
   "summary": {

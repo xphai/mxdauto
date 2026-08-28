@@ -1,36 +1,16 @@
 {
-  "artifacts": [
-    {
-      "artifact_id": "build-maple-automation-core-0.1.0-py3-none-any",
-      "kind": "wheel",
-      "name": "maple_automation_core-0.1.0-py3-none-any.whl",
-      "path": "evidence/clean-smoke/artifacts/maple_automation_core-0.1.0-py3-none-any.whl",
-      "sha256": "3c4b37fe04ec0e82bb85e4dab9faecf01044dcdc48f97f8001166ab851817b81",
-      "size_bytes": 33330
-    },
-    {
-      "artifact_id": "build-maple-automation-core-0.1.0.tar",
-      "kind": "sdist",
-      "name": "maple_automation_core-0.1.0.tar.gz",
-      "path": "evidence/clean-smoke/artifacts/maple_automation_core-0.1.0.tar.gz",
-      "sha256": "8d06487f1cdc3791c439383c539435cacfdc2e505bc95d2ee97fe38b5aa7c708",
-      "size_bytes": 43329
-    }
-  ],
+  "artifacts": [],
   "bundle_id": "candidate-core-v2-20260829-shadow",
   "checks": [
     {
       "command": "python -m build --wheel --sdist --no-isolation",
       "details": {
-        "artifact_count": 2,
-        "artifact_kinds": [
-          "sdist",
-          "wheel"
-        ],
-        "bound_to_clean_smoke": true
+        "artifact_count": 0,
+        "artifact_kinds": [],
+        "bound_to_clean_smoke": false
       },
       "name": "package-build",
-      "status": "passed"
+      "status": "not-run"
     }
   ],
   "environment": {
@@ -44,8 +24,8 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "build",
   "schema_version": "1.0.0",
-  "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4",
-  "status": "passed",
+  "source_commit": "a39e4b53572a24ec7d1ed78f77a3803e6174b89d",
+  "status": "not-run",
   "subject_id": "subject-01",
   "summary": {}
 }
