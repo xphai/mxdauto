@@ -1,0 +1,450 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "junit-junit",
+      "kind": "junit",
+      "name": "junit.xml",
+      "path": "evidence/ci-run/junit.xml",
+      "sha256": "4c1ce64e7a10c66b6666bc93aa16453a14a2707f0da7fa90d38252b5de88c616",
+      "size_bytes": 14025
+    },
+    {
+      "artifact_id": "coverage-coverage",
+      "kind": "coverage",
+      "name": "coverage.xml",
+      "path": "evidence/ci-run/coverage.xml",
+      "sha256": "c4cecb2a7157afdb0f58a21c7c74eb19888d127fbab7ed2bcf4a3eeddafc8c55",
+      "size_bytes": 68430
+    },
+    {
+      "artifact_id": "dependency-lock-requirements",
+      "kind": "dependency-lock",
+      "name": "requirements.lock",
+      "path": "configs/requirements.lock",
+      "sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa",
+      "size_bytes": 904
+    },
+    {
+      "artifact_id": "build-maple-automation-core-0.1.0-py3-none-any",
+      "kind": "wheel",
+      "name": "maple_automation_core-0.1.0-py3-none-any.whl",
+      "path": "dist/maple_automation_core-0.1.0-py3-none-any.whl",
+      "sha256": "6c8148f05d1cec96416fb00c0187f0623483b8e8f8dabc4e1a70877563fddab3",
+      "size_bytes": 33330
+    },
+    {
+      "artifact_id": "build-maple-automation-core-0.1.0.tar",
+      "kind": "sdist",
+      "name": "maple_automation_core-0.1.0.tar.gz",
+      "path": "dist/maple_automation_core-0.1.0.tar.gz",
+      "sha256": "fad8441aeac2e953d4cf96c3e383e64371a46d4b26833335af195302e4d9da08",
+      "size_bytes": 44893
+    },
+    {
+      "artifact_id": "manifest-runtime-manifest",
+      "kind": "manifest",
+      "name": "runtime-manifest.json",
+      "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+      "sha256": "c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007",
+      "size_bytes": 2702
+    },
+    {
+      "artifact_id": "asset-index-asset-index",
+      "kind": "asset-index",
+      "name": "asset-index.json",
+      "path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
+      "sha256": "d12d5aef62d29d8dcb8e8e5f0e55abc467a442a3c0703b13ffbd75a89b892d81",
+      "size_bytes": 5207
+    },
+    {
+      "artifact_id": "evidence-index-evidence-index",
+      "kind": "evidence-index",
+      "name": "evidence-index.json",
+      "path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
+      "sha256": "248e40fa46d382d15f86f08f4cd57eafbf3986b152142b531362be36786dd996",
+      "size_bytes": 6417
+    },
+    {
+      "artifact_id": "bundle-bundle",
+      "kind": "bundle",
+      "name": "bundle.json",
+      "path": "bundles/candidate-core-v2-20260829-shadow/bundle.json",
+      "sha256": "8f638c43e226dfff93c273af04ac1404d1ba43317ae21a7ee61fcab1dd3d0e51",
+      "size_bytes": 6259
+    },
+    {
+      "artifact_id": "evidence-report-golden-replay-report",
+      "kind": "evidence-report",
+      "name": "golden-replay-report.json",
+      "path": "evidence/ci-run/golden-replay-report.json",
+      "sha256": "dec033ff219c12feb63cc114df156650d9f323d45ccc3e831e89b1ae2b6c0da2",
+      "size_bytes": 4789
+    },
+    {
+      "artifact_id": "evidence-report-golden-shadow-report",
+      "kind": "evidence-report",
+      "name": "golden-shadow-report.json",
+      "path": "evidence/ci-run/golden-shadow-report.json",
+      "sha256": "12256941d4f7eee34986a006c3e4f636b2dd89baacca7d6d292dfd5c62ea91f9",
+      "size_bytes": 5456
+    },
+    {
+      "artifact_id": "evidence-report-clean-smoke-report",
+      "kind": "evidence-report",
+      "name": "clean-smoke-report.json",
+      "path": "evidence/ci-run/clean-smoke-report.json",
+      "sha256": "115e85f357e8326ca0a8bc7b8bd92dd76e9d1caa356e1441f8821ca3a27cd300",
+      "size_bytes": 35290
+    }
+  ],
+  "bundle_id": "candidate-core-v2-20260829-shadow",
+  "checkout_commit": "4317c478d70422815162b7ca29d1e074fca188f0",
+  "checks": [
+    {
+      "command": "python -m pip install --disable-pip-version-check --no-cache-dir --requirement configs/requirements.lock",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "install-dependencies",
+      "status": "passed"
+    },
+    {
+      "command": "python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "verify-dependency-lock",
+      "status": "passed"
+    },
+    {
+      "command": "python -m ruff check src tests tools",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "ruff-lint",
+      "status": "passed"
+    },
+    {
+      "command": "python -m ruff format --check src tests tools",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "ruff-format",
+      "status": "passed"
+    },
+    {
+      "command": "python tools/validate_runtime_manifest.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "validate-runtime-manifests",
+      "status": "passed"
+    },
+    {
+      "command": "python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "candidate-bundle",
+      "status": "passed"
+    },
+    {
+      "command": "python -m mypy",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "mypy",
+      "status": "passed"
+    },
+    {
+      "command": "python tools/run_clean_smoke.py --output evidence/ci-run/clean-smoke-report.json",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "clean-smoke",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pytest",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "pytest",
+      "status": "passed"
+    },
+    {
+      "command": "python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "golden-replay",
+      "status": "passed"
+    },
+    {
+      "command": "python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "shadow-audit",
+      "status": "passed"
+    },
+    {
+      "command": "python -m build --wheel --sdist --no-isolation; python tools/normalize_sdist.py dist/*.tar.gz",
+      "details": {
+        "github_step_outcome": "success",
+        "outcome": "success"
+      },
+      "name": "build",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pytest --junitxml=evidence/ci/junit.xml",
+      "details": {
+        "errors": 0,
+        "failures": 0,
+        "path": "evidence/ci-run/junit.xml",
+        "sha256": "4c1ce64e7a10c66b6666bc93aa16453a14a2707f0da7fa90d38252b5de88c616",
+        "size_bytes": 14025,
+        "skipped": 0,
+        "tests": 109
+      },
+      "name": "junit",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pytest --cov=maple_automation_core --cov-report=xml:evidence/ci/coverage.xml",
+      "details": {
+        "line_percent": 94.61,
+        "line_rate": 0.9461,
+        "lines_covered": 1684,
+        "lines_valid": 1780,
+        "path": "evidence/ci-run/coverage.xml",
+        "sha256": "c4cecb2a7157afdb0f58a21c7c74eb19888d127fbab7ed2bcf4a3eeddafc8c55",
+        "size_bytes": 68430
+      },
+      "name": "coverage",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pip install --requirement configs/requirements.lock",
+      "details": {
+        "path": "configs/requirements.lock",
+        "sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa",
+        "size_bytes": 904
+      },
+      "name": "dependency-lock",
+      "status": "passed"
+    },
+    {
+      "command": "python -m build --wheel --sdist --no-isolation",
+      "details": {
+        "artifact_count": 2
+      },
+      "name": "build-artifacts",
+      "status": "passed"
+    },
+    {
+      "command": "verify manifest metadata",
+      "details": {
+        "json_object": true,
+        "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+        "sha256": "c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007",
+        "size_bytes": 2702
+      },
+      "name": "manifest",
+      "status": "passed"
+    },
+    {
+      "command": "verify asset-index metadata",
+      "details": {
+        "json_object": true,
+        "path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
+        "sha256": "d12d5aef62d29d8dcb8e8e5f0e55abc467a442a3c0703b13ffbd75a89b892d81",
+        "size_bytes": 5207
+      },
+      "name": "asset-index",
+      "status": "passed"
+    },
+    {
+      "command": "verify evidence-index metadata",
+      "details": {
+        "json_object": true,
+        "path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
+        "sha256": "248e40fa46d382d15f86f08f4cd57eafbf3986b152142b531362be36786dd996",
+        "size_bytes": 6417
+      },
+      "name": "evidence-index",
+      "status": "passed"
+    },
+    {
+      "command": "verify bundle metadata",
+      "details": {
+        "json_object": true,
+        "path": "bundles/candidate-core-v2-20260829-shadow/bundle.json",
+        "sha256": "8f638c43e226dfff93c273af04ac1404d1ba43317ae21a7ee61fcab1dd3d0e51",
+        "size_bytes": 6259
+      },
+      "name": "bundle",
+      "status": "passed"
+    },
+    {
+      "command": "cross-check candidate manifest, bundle and evidence bindings",
+      "details": {
+        "bundle_id": "candidate-core-v2-20260829-shadow",
+        "checkout_commit": "4317c478d70422815162b7ca29d1e074fca188f0",
+        "manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+        "manifest_sha256": "c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007",
+        "release_id": "candidate-core-v2-20260829-shadow",
+        "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452"
+      },
+      "name": "candidate-binding",
+      "status": "passed"
+    },
+    {
+      "command": "validate evidence reports against schemas/evidence-report.schema.json",
+      "details": {
+        "path": "schemas/evidence-report.schema.json"
+      },
+      "name": "evidence-report-schema",
+      "status": "passed"
+    },
+    {
+      "command": "resolve Replay/Shadow/Clean fixture SHA",
+      "details": {
+        "fixture_count": 1,
+        "sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34"
+      },
+      "name": "evidence-fixture",
+      "status": "passed"
+    },
+    {
+      "command": "validate machine-readable evidence report golden-replay-report.json",
+      "details": {
+        "candidate_binding": {
+          "bundle_id": "candidate-core-v2-20260829-shadow",
+          "release_id": "candidate-core-v2-20260829-shadow",
+          "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+          "runtime_manifest_sha256": "c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007",
+          "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452"
+        },
+        "computed_report_digest": "3ab52ec8767c846339e856f550aebfe044cd200a0fd17d1a404bd061b280ed3c",
+        "deterministic": true,
+        "expected_fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "expected_report_kind": "replay",
+        "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "path": "evidence/ci-run/golden-replay-report.json",
+        "repeat_count": 3,
+        "report_digest": "3ab52ec8767c846339e856f550aebfe044cd200a0fd17d1a404bd061b280ed3c",
+        "report_digest_valid": true,
+        "report_id": "replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
+        "report_kind": "replay",
+        "report_status": "PASS",
+        "schema_errors": [],
+        "schema_valid": true,
+        "sha256": "dec033ff219c12feb63cc114df156650d9f323d45ccc3e831e89b1ae2b6c0da2",
+        "size_bytes": 4789
+      },
+      "name": "evidence-report",
+      "status": "passed"
+    },
+    {
+      "command": "validate machine-readable evidence report golden-shadow-report.json",
+      "details": {
+        "candidate_binding": {
+          "bundle_id": "candidate-core-v2-20260829-shadow",
+          "release_id": "candidate-core-v2-20260829-shadow",
+          "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+          "runtime_manifest_sha256": "c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007",
+          "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452"
+        },
+        "computed_report_digest": "1391db6fb7ad2ec37d418c5619c102c4191ac41de7bc3b2a0673a1e365411521",
+        "diff_count": 2,
+        "expected_fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "expected_report_kind": "shadow",
+        "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+        "path": "evidence/ci-run/golden-shadow-report.json",
+        "real_input_call_count": 0,
+        "report_digest": "1391db6fb7ad2ec37d418c5619c102c4191ac41de7bc3b2a0673a1e365411521",
+        "report_digest_valid": true,
+        "report_id": "shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
+        "report_kind": "shadow",
+        "report_status": "PASS",
+        "schema_errors": [],
+        "schema_valid": true,
+        "sha256": "12256941d4f7eee34986a006c3e4f636b2dd89baacca7d6d292dfd5c62ea91f9",
+        "size_bytes": 5456,
+        "unclassified_diff_count": 0
+      },
+      "name": "evidence-report",
+      "status": "passed"
+    },
+    {
+      "command": "validate machine-readable evidence report clean-smoke-report.json",
+      "details": {
+        "candidate_binding": {
+          "bundle_id": "candidate-core-v2-20260829-shadow",
+          "release_id": "candidate-core-v2-20260829-shadow",
+          "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+          "runtime_manifest_sha256": "c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007",
+          "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452"
+        },
+        "checkout_commit": "4317c478d70422815162b7ca29d1e074fca188f0",
+        "computed_report_digest": null,
+        "expected_fixture_file_sha256": null,
+        "expected_report_kind": "clean-smoke",
+        "failed_checks": [],
+        "fixture_file_sha256": null,
+        "path": "evidence/ci-run/clean-smoke-report.json",
+        "report_digest": null,
+        "report_digest_valid": null,
+        "report_id": "clean-smoke-7da29f4cfae0",
+        "report_kind": "clean-smoke",
+        "report_status": "passed",
+        "runner_os": "Windows",
+        "schema_errors": [],
+        "schema_valid": true,
+        "sha256": "115e85f357e8326ca0a8bc7b8bd92dd76e9d1caa356e1441f8821ca3a27cd300",
+        "size_bytes": 35290
+      },
+      "name": "evidence-report",
+      "status": "passed"
+    },
+    {
+      "command": "GitHub Actions job status",
+      "details": {
+        "github_job_status": "success",
+        "outcome": "success"
+      },
+      "name": "workflow-result",
+      "status": "passed"
+    }
+  ],
+  "completed_at": "2026-08-28T19:42:22Z",
+  "dependency_install_result": "passed",
+  "event": "push",
+  "evidence_id": "ci-evidence-push-33204844985-1",
+  "generated_at": "2026-08-28T19:42:22Z",
+  "python_version": "3.12.10",
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "run_attempt": "1",
+  "run_id": "33204844985",
+  "runner_os": "Windows",
+  "schema_version": "1.0.0",
+  "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452",
+  "started_at": "2026-08-28T19:40:00Z",
+  "status": "passed",
+  "workflow_name": "core-v2-ci"
+}

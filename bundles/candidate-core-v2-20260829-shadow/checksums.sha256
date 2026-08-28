@@ -1,5 +1,5 @@
 d12d5aef62d29d8dcb8e8e5f0e55abc467a442a3c0703b13ffbd75a89b892d81  bundles/candidate-core-v2-20260829-shadow/asset-index.json
-8f638c43e226dfff93c273af04ac1404d1ba43317ae21a7ee61fcab1dd3d0e51  bundles/candidate-core-v2-20260829-shadow/bundle.json
+7f52f1e3838c17d6a87032669b52e32d2ac153a455bd563dad360c400e88767e  bundles/candidate-core-v2-20260829-shadow/bundle.json
 c3382e839c978d564ed3c48e9b29d70d86e678d07b2815d7864e5d5646682007  bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json
 891e9ad6d3205c12ab60176e87524ba5b638554652eb45b55a6f4fe01604603f  configs/pilot-subject-01.profile.json
 5d57809b0ec4f81d3a0551bcdbebd6ce296179ebdd38f87191113c0f81a017b6  configs/pilot-subject-01.resolved.json
@@ -12,11 +12,13 @@ dec033ff219c12feb63cc114df156650d9f323d45ccc3e831e89b1ae2b6c0da2  evidence/clean
 12256941d4f7eee34986a006c3e4f636b2dd89baacca7d6d292dfd5c62ea91f9  evidence/clean-smoke/clean-shadow-report.json
 9f87becb105da3b99aaa6fbb2c2ca4ffdeb6824fc11739a0e1d2910807f8254d  evidence/clean-smoke/clean-smoke-report.json
 8a59d390b8797bdfaa5762903500e7e98c1c5b929cf8c7a9784012dad42108a7  evidence/g0-candidate-core-v2-20260829/build-report.json
+740d8cd8a634aa8b4c44c81ee448ec762b3fdd2a88331aa983250f1ccbbea755  evidence/g0-candidate-core-v2-20260829/ci-report.json
 d47530370bd0ab1fe816676e1438685cc1af6544944d44946d2fc208036f249b  evidence/g0-candidate-core-v2-20260829/clean-report.json
 c6ce93a38577a43ca4251bd15f3d51e2019aaffcec90830bd82869f91e8461c5  evidence/g0-candidate-core-v2-20260829/dependency-report.json
-248e40fa46d382d15f86f08f4cd57eafbf3986b152142b531362be36786dd996  evidence/g0-candidate-core-v2-20260829/evidence-index.json
+3edab63f9730015ef97650c982e704937026b09caca5a17842066f2ead606fe2  evidence/g0-candidate-core-v2-20260829/evidence-index.json
 aa0395c045ff56eb8b362cce3b0a4e66da9c422178a15e54222509291ef2de1d  evidence/g0-candidate-core-v2-20260829/hash-report.json
 445df2c5f6e5a5dec19dd39be96841f9b272feaa222549a826b52abadd265e9c  evidence/g0-candidate-core-v2-20260829/manifest-report.json
 8d3dfc37582e1d1637c7ce81a06d7fff16c5d537bd4e2a11c032714f708feb85  evidence/g0-candidate-core-v2-20260829/replay-report.json
 5764af33681e3609513a849fbc5af4bf4cf683edd2b48789f79b02c0e2bf8c84  evidence/g0-candidate-core-v2-20260829/shadow-report.json
 7415711e1309374d575f0e339ad72ccb6864d370335d8ee4d3e90687d51e5664  evidence/g0-candidate-core-v2-20260829/test-report.json
+9828d92bc01166db3f7e3ee9775e3596b2e9258a77e3451b40b20a4b89ac9fd1  evidence/remote-ci/run-33204844985/ci-evidence.json
