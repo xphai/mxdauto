@@ -17,13 +17,13 @@ jobs:
     steps:
       - name: Check out source
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up Python
         id: setup_python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -73,7 +73,7 @@ jobs:
 
       - name: Cacheless Windows clean smoke
         id: clean_smoke
-        run: python tools/run_clean_smoke.py --output evidence/clean-smoke/clean-smoke-report.json
+        run: python tools/run_clean_smoke.py --output evidence/ci-run/clean-smoke-report.json
 
       - name: Pytest
         id: pytest
@@ -119,7 +119,7 @@ jobs:
             --bundle bundles/candidate-core-v2-20260829-shadow/bundle.json `
             --evidence-report evidence/ci-run/golden-replay-report.json `
             --evidence-report evidence/ci-run/golden-shadow-report.json `
-            --evidence-report evidence/clean-smoke/clean-smoke-report.json `
+            --evidence-report evidence/ci-run/clean-smoke-report.json `
             --fixture fixtures/golden/pilot_minimal_v1.json `
             --check-result "install-dependencies::${{ steps.install_dependencies.outcome }}::python -m pip install --disable-pip-version-check --no-cache-dir --requirement configs/requirements.lock" `
             --check-result "verify-dependency-lock::${{ steps.verify_dependency_lock.outcome }}::python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed" `
@@ -128,7 +128,7 @@ jobs:
             --check-result "validate-runtime-manifests::${{ steps.validate_runtime_manifests.outcome }}::python tools/validate_runtime_manifest.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json" `
             --check-result "candidate-bundle::${{ steps.verify_candidate_bundle.outcome }}::python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0" `
             --check-result "mypy::${{ steps.mypy.outcome }}::python -m mypy" `
-            --check-result "clean-smoke::${{ steps.clean_smoke.outcome }}::python tools/run_clean_smoke.py --output evidence/clean-smoke/clean-smoke-report.json" `
+            --check-result "clean-smoke::${{ steps.clean_smoke.outcome }}::python tools/run_clean_smoke.py --output evidence/ci-run/clean-smoke-report.json" `
             --check-result "pytest::${{ steps.pytest.outcome }}::python -m pytest" `
             --check-result "golden-replay::${{ steps.golden_replay.outcome }}::python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json" `
             --check-result "shadow-audit::${{ steps.shadow_audit.outcome }}::python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json" `
@@ -145,7 +145,7 @@ jobs:
 
       - name: Upload JUnit and coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: quality-reports-${{ github.run_id }}
           path: |
@@ -156,7 +156,7 @@ jobs:
 
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-artifacts-${{ github.run_id }}
           path: dist/*
@@ -165,7 +165,7 @@ jobs:
 
       - name: Upload CI evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: g0-ci-evidence-${{ github.run_id }}
           path: evidence/ci-run/
@@ -174,9 +174,15 @@ jobs:
 
       - name: Upload clean-smoke evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: g0-clean-smoke-${{ github.run_id }}
-          path: evidence/clean-smoke/
+          path: |
+            evidence/ci-run/clean-smoke-report.json
+            evidence/ci-run/clean-junit.xml
+            evidence/ci-run/clean-coverage.xml
+            evidence/ci-run/clean-replay-report.json
+            evidence/ci-run/clean-shadow-report.json
+            evidence/ci-run/artifacts/*
           if-no-files-found: ignore
           retention-days: 30

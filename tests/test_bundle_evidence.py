@@ -36,6 +36,16 @@ def test_candidate_bundle_metadata_verifies() -> None:
     assert errors == []
 
 
+def test_ci_clean_smoke_preserves_the_sealed_static_packet() -> None:
+    workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    ci_report = "evidence/ci-run/clean-smoke-report.json"
+    static_report = "evidence/clean-smoke/clean-smoke-report.json"
+
+    assert f"run_clean_smoke.py --output {ci_report}" in workflow
+    assert f"--evidence-report {ci_report}" in workflow
+    assert f"run_clean_smoke.py --output {static_report}" not in workflow
+
+
 def test_candidate_manifest_matches_dec_001_and_has_passed_offline_reports() -> None:
     manifest = _load_json(BUNDLE_DIR / "runtime-manifest.json")
     assert manifest["map_id"] == "100040004"
