@@ -92,7 +92,10 @@ jobs:
 
       - name: Build wheel and sdist
         id: build
-        run: python -m build --wheel --sdist --no-isolation
+        shell: pwsh
+        run: |
+          python -m build --wheel --sdist --no-isolation
+          Get-ChildItem dist/*.tar.gz | ForEach-Object { python tools/normalize_sdist.py --source-date-epoch $env:SOURCE_DATE_EPOCH $_.FullName }
 
       - name: Collect CI evidence metadata
         id: collect_ci_evidence
@@ -129,7 +132,7 @@ jobs:
             --check-result "pytest::${{ steps.pytest.outcome }}::python -m pytest" `
             --check-result "golden-replay::${{ steps.golden_replay.outcome }}::python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json" `
             --check-result "shadow-audit::${{ steps.shadow_audit.outcome }}::python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json" `
-            --check-result "build::${{ steps.build.outcome }}::python -m build --wheel --sdist --no-isolation" `
+            --check-result "build::${{ steps.build.outcome }}::python -m build --wheel --sdist --no-isolation; python tools/normalize_sdist.py dist/*.tar.gz" `
             --workflow-result "${{ job.status }}" `
             --bundle-id candidate-core-v2-20260829-shadow `
             --release-id candidate-core-v2-20260829-shadow `

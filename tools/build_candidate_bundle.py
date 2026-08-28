@@ -760,6 +760,7 @@ def _read_clean_result(
         "candidate-bundle-metadata",
         "pytest-coverage",
         "wheel-sdist-build",
+        "normalize-sdist",
         "wheel-install",
         "installed-wheel-import",
         "golden-replay-three-runs",

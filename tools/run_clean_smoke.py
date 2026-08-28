@@ -415,8 +415,24 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 _run_step(checks=checks, name=name, command=command, cwd=cwd, env=env)
 
             wheels = sorted(artifact_dir.glob("*.whl"))
+            sdists = sorted(artifact_dir.glob("*.tar.gz"))
             if len(wheels) != 1:
                 raise SmokeFailure(f"Expected one wheel, found {len(wheels)}")
+            if len(sdists) != 1:
+                raise SmokeFailure(f"Expected one sdist, found {len(sdists)}")
+            _run_step(
+                checks=checks,
+                name="normalize-sdist",
+                command=[
+                    str(venv_python),
+                    str(repo_root / "tools" / "normalize_sdist.py"),
+                    "--source-date-epoch",
+                    source_date_epoch,
+                    str(sdists[0]),
+                ],
+                cwd=temp_root,
+                env=env,
+            )
             _run_step(
                 checks=checks,
                 name="wheel-install",
