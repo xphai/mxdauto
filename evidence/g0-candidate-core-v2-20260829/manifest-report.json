@@ -5,7 +5,7 @@
       "kind": "manifest",
       "name": "runtime-manifest.json",
       "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-      "sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+      "sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
       "size_bytes": 2702
     }
   ],
@@ -14,7 +14,7 @@
     {
       "command": "python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json <manifest>",
       "details": {
-        "manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349"
+        "manifest_sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98"
       },
       "name": "runtime-manifest-schema",
       "status": "passed"
@@ -31,7 +31,7 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "manifest",
   "schema_version": "1.0.0",
-  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
   "status": "passed",
   "subject_id": "subject-01",
   "summary": {}

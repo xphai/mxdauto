@@ -5,8 +5,8 @@
     "bundle_id": "candidate-core-v2-20260829-shadow",
     "release_id": "candidate-core-v2-20260829-shadow",
     "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-    "runtime_manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
-    "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259"
+    "runtime_manifest_sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
+    "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff"
   },
   "deterministic": true,
   "execution_mode": "shadow",
@@ -14,13 +14,13 @@
     "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
     "bundle_id": "bundle-golden-pilot-v1"
   },
-  "fixture_digest": "d4dce717f51e2abdbc43ac64ebcaa5ec9a52a1bf7a51c4bfddc40f669324eaf3",
-  "fixture_file_sha256": "d4dce717f51e2abdbc43ac64ebcaa5ec9a52a1bf7a51c4bfddc40f669324eaf3",
+  "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+  "fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
   "fixture_id": "golden-pilot-minimal-v1",
-  "output_digest": "625548b1e12fac18f50bd17a4604fe31d34cf4404a8df99f0164a507f02d2913",
+  "output_digest": "2d6ebc7e10747b302c08800ba6e1249e8fa122d869de2cb4f95030cf8fa235a0",
   "release_id": "candidate-core-v2-20260829-shadow",
   "repeat_count": 3,
-  "report_digest": "1e07253f2f094ce094ea0dcf3d5942844eaadc54b21f37a80685b9982084a767",
+  "report_digest": "bb4f713a066f5dcc59b1a2be37d910791058e2e756f75d6cb7b5c36121e5566f",
   "report_id": "replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
   "report_type": "golden_replay",
   "report_version": "1.0.0",
@@ -46,7 +46,7 @@
         "input.release_all"
       ],
       "event_sequence_digest": "9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77",
-      "output_digest": "9cc300de5dcc1054aa5749c588cfd3788653c8aeca7b23da1e3355768e89ff2a",
+      "output_digest": "8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed",
       "planned_action_count": 2,
       "run_index": 0,
       "world_state_digest": "0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa"
@@ -72,7 +72,7 @@
         "input.release_all"
       ],
       "event_sequence_digest": "9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77",
-      "output_digest": "9cc300de5dcc1054aa5749c588cfd3788653c8aeca7b23da1e3355768e89ff2a",
+      "output_digest": "8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed",
       "planned_action_count": 2,
       "run_index": 1,
       "world_state_digest": "0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa"
@@ -98,15 +98,15 @@
         "input.release_all"
       ],
       "event_sequence_digest": "9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77",
-      "output_digest": "9cc300de5dcc1054aa5749c588cfd3788653c8aeca7b23da1e3355768e89ff2a",
+      "output_digest": "8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed",
       "planned_action_count": 2,
       "run_index": 2,
       "world_state_digest": "0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa"
     }
   ],
   "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-  "runtime_manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+  "runtime_manifest_sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
   "session_id": "golden-session-001",
-  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
   "status": "PASS"
 }

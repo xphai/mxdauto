@@ -1,6 +1,6 @@
 {
   "asset_index_path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
-  "asset_index_sha256": "a9ece072bc820bf7be4b5be6846ceedc23a752c879f08cbb0f097264aec19adc",
+  "asset_index_sha256": "d5e766f01dcc3d65a6cf539ce8365eacaee15a5cd93b9ab03cf9a63901e17abd",
   "bundle_id": "candidate-core-v2-20260829-shadow",
   "evidence": {
     "clean_report_id": "clean-report-g0-candidate-shadow-20260829",
@@ -10,7 +10,7 @@
     "test_report_id": "test-report-g0-candidate-shadow-20260829"
   },
   "evidence_index_path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
-  "evidence_index_sha256": "87dfd2706e1f6c867b0be3f9aa222bc7f502c9c73ffdbf794022df370c41dbc0",
+  "evidence_index_sha256": "426c96655814308cab570f17f07dfd2af8d4ab0d7bfd774e24a5a9a3b8258342",
   "execution_mode": "shadow",
   "generated_at": "2026-08-29T00:00:00Z",
   "generator": {
@@ -26,12 +26,12 @@
   "local_files": [
     {
       "path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
-      "sha256": "a9ece072bc820bf7be4b5be6846ceedc23a752c879f08cbb0f097264aec19adc",
+      "sha256": "d5e766f01dcc3d65a6cf539ce8365eacaee15a5cd93b9ab03cf9a63901e17abd",
       "size_bytes": 5207
     },
     {
       "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-      "sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+      "sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
       "size_bytes": 2702
     },
     {
@@ -50,79 +50,59 @@
       "size_bytes": 904
     },
     {
-      "path": "evidence/ci/coverage.xml",
-      "sha256": "18d6b8fa485066b3d9ddb1f131c3873f8d780cefb96eb598ecc264b0cdf4eb49",
-      "size_bytes": 67965
-    },
-    {
-      "path": "evidence/ci/junit.xml",
-      "sha256": "6824c0508356205e10fce0da7c9d79816662fddd8527bbdba4f2e642ae1de5e2",
-      "size_bytes": 10245
-    },
-    {
-      "path": "evidence/g0-candidate-core-v2-20260829/artifacts/maple_automation_core-0.1.0-py3-none-any.whl",
-      "sha256": "9005f9cc5576614175257e7d5974545e965c2b633996934aabef795902610d9b",
-      "size_bytes": 33184
-    },
-    {
-      "path": "evidence/g0-candidate-core-v2-20260829/artifacts/maple_automation_core-0.1.0.tar.gz",
-      "sha256": "90da4b4c0f979b59e612ec7f721368cb52b6b1e975fb07a429eab3f0b7217493",
-      "size_bytes": 45894
-    },
-    {
       "path": "evidence/g0-candidate-core-v2-20260829/build-report.json",
-      "sha256": "566e621294e3ced03102eefc2ed14ec004a4a09fc5c8a111107f0650006b278e",
-      "size_bytes": 1550
+      "sha256": "d6b1f5bfc140aee47cae2140609ee82a48be47e519711dc6810dadcc329b3e6c",
+      "size_bytes": 868
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/clean-report.json",
-      "sha256": "b10ddd344ff17816f689fafd689ff16cb4c3290efcb8e7573c522909ff8d1803",
+      "sha256": "8eefcf519eb591fd72a49f75a08729d00569a5699b85a48b9d2f54924e4c5b48",
       "size_bytes": 946
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/dependency-report.json",
-      "sha256": "3635b4451f6c0c30e6e7b0e800a05b52bc05eaf5c343ba2523315bb84c444b40",
-      "size_bytes": 1170
+      "sha256": "ea0943f820793528c9072dc45b8aeb7b9d7829d7ca162fcde6ba07805291205f",
+      "size_bytes": 1445
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
-      "sha256": "87dfd2706e1f6c867b0be3f9aa222bc7f502c9c73ffdbf794022df370c41dbc0",
-      "size_bytes": 6411
+      "sha256": "426c96655814308cab570f17f07dfd2af8d4ab0d7bfd774e24a5a9a3b8258342",
+      "size_bytes": 4989
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/hash-report.json",
-      "sha256": "7d6c05f7963be8adf3bd79f373d30f84d80946a5a40d74edec86d03a018f04bb",
-      "size_bytes": 926
+      "sha256": "6ec3589c94b558aee86d1010f1de9a05abf05c3b2ba32873cb4e1728f8b974e1",
+      "size_bytes": 1009
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/manifest-report.json",
-      "sha256": "c874579826f9e3de325cd68dc357a66527fe716a3114cb3adaf98b48b71d88e6",
+      "sha256": "ef6f3f9a7f0f849b3f8663fe25000b99ff1bbf27339dd1cbe5aee62a1c9481f4",
       "size_bytes": 1251
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/raw/golden-replay-result.json",
-      "sha256": "55b37ad0bd74a893d0531a35c1afaff6b8201e6ba51681685f4610f7109d2af9",
+      "sha256": "4b673bb196c143df9f1f2b7b7055d222e7435d2d279b4c726598b519513d8ea9",
       "size_bytes": 4789
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/raw/shadow-result.json",
-      "sha256": "6342775ecf8673a360c6b10f915b720157a72299827a7c4521e14ec04d7637c1",
+      "sha256": "3c590ea415a162e4b640372448e88f2459ccb7ca4cdf3bc4eacceab5e574d0a2",
       "size_bytes": 5456
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/replay-report.json",
-      "sha256": "b2ecac9bcc99e67bbb6b052f993fe9fdc62d8e8953e1ebf8a583b46038b87926",
+      "sha256": "779249780e549b6b83f66ec8b01449df64449371cb18b08125e356f35da3e01c",
       "size_bytes": 1685
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/shadow-report.json",
-      "sha256": "5a1204c6dcf742550569840544f9884bdbc86cbb9c458edca73ff02bddd5d399",
+      "sha256": "d689c9777cd515431858a443f023d54acb07ed6285bd5dc49e652065b8e47889",
       "size_bytes": 1741
     },
     {
       "path": "evidence/g0-candidate-core-v2-20260829/test-report.json",
-      "sha256": "93b2b3c62c34e72962a69a088204f73549bfbd3208daba9e48fb1a35a0b56b44",
-      "size_bytes": 1720
+      "sha256": "8b0740704ed08b71097bdd21d64985de5836d00d07f13e8f2da7787f17b5fbbb",
+      "size_bytes": 1104
     }
   ],
   "manifest_asset_bindings": {
@@ -138,7 +118,7 @@
     "split_sha256": "dataset-split"
   },
   "manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-  "manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+  "manifest_sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
   "release_id": "candidate-core-v2-20260829-shadow",
   "rollback": {
     "action": "stop-core-v2-and-keep-legacy-input",
@@ -146,7 +126,7 @@
   },
   "schema_version": "1.0.0",
   "source": {
-    "core_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+    "core_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
     "core_repository": "local:maple-automation-core",
     "upstream_commit": "3e19173f8da5aab8405307bb9c6e3741dd3abd6b",
     "upstream_repository": "git:upstream/MapleStoryAutoLevelUp"

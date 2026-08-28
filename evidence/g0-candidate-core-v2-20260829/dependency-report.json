@@ -12,11 +12,20 @@
   "bundle_id": "candidate-core-v2-20260829-shadow",
   "checks": [
     {
-      "command": "python -m pip install --requirement configs/requirements.lock",
+      "command": "parse every non-comment lock line as exact package==version",
       "details": {
-        "lock_sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa"
+        "lock_sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa",
+        "package_count": 23
       },
-      "name": "dependency-lock-present",
+      "name": "dependency-lock-syntax",
+      "status": "passed"
+    },
+    {
+      "command": "python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed",
+      "details": {
+        "errors": []
+      },
+      "name": "dependency-lock-installed-versions",
       "status": "passed"
     }
   ],
@@ -31,7 +40,7 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "dependency",
   "schema_version": "1.0.0",
-  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
   "status": "passed",
   "subject_id": "subject-01",
   "summary": {}

@@ -5,7 +5,7 @@
       "kind": "evidence-report",
       "name": "shadow-result.json",
       "path": "evidence/g0-candidate-core-v2-20260829/raw/shadow-result.json",
-      "sha256": "6342775ecf8673a360c6b10f915b720157a72299827a7c4521e14ec04d7637c1",
+      "sha256": "3c590ea415a162e4b640372448e88f2459ccb7ca4cdf3bc4eacceab5e574d0a2",
       "size_bytes": 5456
     }
   ],
@@ -15,11 +15,11 @@
       "command": "python tools/run_shadow.py --manifest <runtime-manifest> --report <shadow-result>",
       "details": {
         "diff_count": 2,
-        "fixture_digest": "d4dce717f51e2abdbc43ac64ebcaa5ec9a52a1bf7a51c4bfddc40f669324eaf3",
+        "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
         "real_input_call_count": 0,
-        "report_digest": "a4bd620b97528211dd0a7d960a17df89ec18cee70c3b25b4e936ff7e78b8a6be",
+        "report_digest": "a423b611a06ea295175de82d7513aede05171ae56a0eeabd052f2270e0256834",
         "report_id": "shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
-        "runtime_manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+        "runtime_manifest_sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
         "unclassified_diff_count": 0
       },
       "name": "shadow-runner",
@@ -37,7 +37,7 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "shadow",
   "schema_version": "1.0.0",
-  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
   "status": "passed",
   "subject_id": "subject-01",
   "summary": {

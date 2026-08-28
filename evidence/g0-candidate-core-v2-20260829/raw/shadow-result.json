@@ -5,8 +5,8 @@
     "bundle_id": "candidate-core-v2-20260829-shadow",
     "release_id": "candidate-core-v2-20260829-shadow",
     "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-    "runtime_manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
-    "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259"
+    "runtime_manifest_sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
+    "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff"
   },
   "diff_summary": {
     "taxonomy_counts": {
@@ -37,8 +37,8 @@
     "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
     "bundle_id": "bundle-golden-pilot-v1"
   },
-  "fixture_digest": "d4dce717f51e2abdbc43ac64ebcaa5ec9a52a1bf7a51c4bfddc40f669324eaf3",
-  "fixture_file_sha256": "d4dce717f51e2abdbc43ac64ebcaa5ec9a52a1bf7a51c4bfddc40f669324eaf3",
+  "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+  "fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
   "fixture_id": "golden-pilot-minimal-v1",
   "input_audit": {
     "boundary_attempts": [],
@@ -115,7 +115,7 @@
       "world_state_version": 2
     }
   ],
-  "output_digest": "f0dcfe1fd6f062c9ebb961ce2462f8e6adbee27280977de8163a69a1eefd041b",
+  "output_digest": "223ebe12331e7352ec315cb6833ce04c012b13baa9b5f05a06ec94e9fde668cd",
   "planned_actions": [
     {
       "action": {
@@ -160,14 +160,14 @@
     }
   ],
   "release_id": "candidate-core-v2-20260829-shadow",
-  "replay_output_digest": "9cc300de5dcc1054aa5749c588cfd3788653c8aeca7b23da1e3355768e89ff2a",
-  "report_digest": "a4bd620b97528211dd0a7d960a17df89ec18cee70c3b25b4e936ff7e78b8a6be",
+  "replay_output_digest": "8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed",
+  "report_digest": "a423b611a06ea295175de82d7513aede05171ae56a0eeabd052f2270e0256834",
   "report_id": "shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
   "report_type": "shadow",
   "report_version": "1.0.0",
   "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-  "runtime_manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+  "runtime_manifest_sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
   "session_id": "golden-session-001",
-  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
   "status": "PASS"
 }

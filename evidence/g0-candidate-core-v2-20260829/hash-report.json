@@ -3,11 +3,13 @@
   "bundle_id": "candidate-core-v2-20260829-shadow",
   "checks": [
     {
-      "command": "python tools/verify_bundle.py --bundle-dir <bundle> --root ...",
+      "command": "stream every configured asset byte through SHA-256 during generation",
       "details": {
-        "external_asset_count": 10
+        "asset_count": 10,
+        "external_asset_count": 8,
+        "measurement_stage": "generation"
       },
-      "name": "external-asset-sha256",
+      "name": "asset-byte-sha256-measurement",
       "status": "passed"
     }
   ],
@@ -22,7 +24,7 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "hash",
   "schema_version": "1.0.0",
-  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
   "status": "passed",
   "subject_id": "subject-01",
   "summary": {
