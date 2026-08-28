@@ -5,7 +5,7 @@
       "kind": "evidence-report",
       "name": "golden-replay-result.json",
       "path": "evidence/g0-candidate-core-v2-20260829/raw/golden-replay-result.json",
-      "sha256": "2588fbab68ed3ed7d01f061ca728106cd28d803814a107c712f6592f1890ae69",
+      "sha256": "208729216604560b26609563e44d19ba7d65ce31d7a0be1c6de6afcee55b44b3",
       "size_bytes": 4789
     }
   ],
@@ -17,9 +17,9 @@
         "deterministic": true,
         "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
         "repeat_count": 3,
-        "report_digest": "7591d52a39217e032e3f1d465603455fede2f909eac082f2bb88f47120078a80",
+        "report_digest": "a0208db985b88d7c6c85952e42e62cce0069a21ea83df2a8f6feea53abd94d9e",
         "report_id": "replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
-        "runtime_manifest_sha256": "e067e195bc5d373981eaf031a6830775ed7f1502210db2ff4dd481e54f595980"
+        "runtime_manifest_sha256": "2e9835b52a8e3eef9c769e375ac1bd04ac5cc3a2c35272cc0ba6f6d814a0f315"
       },
       "name": "deterministic-replay",
       "status": "passed"
@@ -36,7 +36,7 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "replay",
   "schema_version": "1.0.0",
-  "source_commit": "a39e4b53572a24ec7d1ed78f77a3803e6174b89d",
+  "source_commit": "6fbb7ff000591dd39648c82fa46775419349cf26",
   "status": "passed",
   "subject_id": "subject-01",
   "summary": {

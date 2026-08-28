@@ -1,6 +1,6 @@
 {
   "asset_index_path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
-  "asset_index_sha256": "c5e5492dce0c5b02262026010f5b0f443f2cf7cec03568be50c04b9c2da92209",
+  "asset_index_sha256": "3d0061d891ba75c3d9aba1c36a2810135779b05cfba417c5bb7af6eeec960037",
   "bundle_status": "candidate",
   "classes": [
     "mob"
@@ -31,7 +31,7 @@
     "right": "right",
     "up": "up"
   },
-  "local_urn": "urn:maple:local:candidate-core-v2-20260829-shadow:a39e4b53572a24ec7d1ed78f77a3803e6174b89d",
+  "local_urn": "urn:maple:local:candidate-core-v2-20260829-shadow:6fbb7ff000591dd39648c82fa46775419349cf26",
   "map_fingerprint": "8b01434dfcd064b96dc4a9e7a6f3d653e5837324ce2721d89185a962c7a818c2",
   "map_id": "100040004",
   "model_id": "best_forest_v3-candidate",
@@ -48,7 +48,7 @@
   "route_manifest_sha256": "33f36d34ab233a86fa2cdc3227f5bd8511a7a507a9e7bc46c161d8b8738ff19f",
   "runtime_manifest_version": "1.0.0",
   "shadow_report_id": "shadow-report-g0-candidate-shadow-20260829",
-  "source_commit": "a39e4b53572a24ec7d1ed78f77a3803e6174b89d",
+  "source_commit": "6fbb7ff000591dd39648c82fa46775419349cf26",
   "split_sha256": "6861ee5b4e8417c5e2a8f0853e270a2cb0befb67144da70d82ea874512c210c5",
   "subject_id": "subject-01",
   "test_report_id": "test-report-g0-candidate-shadow-20260829",
