@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0.0",
+  "captured_at_utc": "2026-08-28T16:33:48.5267303Z",
+  "legacy_root": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main",
+  "legacy_file_count": 4961,
+  "upstream_root": "F:\\mxd\\_upstream_MapleStoryAutoLevelUp",
+  "upstream_commit": "3e19173f8da5aab8405307bb9c6e3741dd3abd6b",
+  "pilot": {
+    "map_id": "100040004",
+    "route_manifest": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main\\minimaps\\iv_20260823_073124\\spawn_route_manifest.yaml",
+    "profile_id": "maple_legacy_cn",
+    "model_id": "best_forest_v3",
+    "status": "candidate"
+  },
+  "files": [
+    {
+      "path": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main\\src\\engine\\MapleStoryAutoLevelUp.py",
+      "bytes": 274129,
+      "last_write_utc": "2026-08-28T12:01:29.1847323Z",
+      "sha256": "661e6cd2f8021eac0d125740828ae5b3655a22cc941d52f057869c39c4354597"
+    },
+    {
+      "path": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main\\src\\ui\\ui.py",
+      "bytes": 238538,
+      "last_write_utc": "2026-08-28T08:00:54.6406361Z",
+      "sha256": "a26088b9ae6c2c9ad7350a76e5f5c781e74f1cf9c83b9640e701d2a6bede709a"
+    },
+    {
+      "path": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main\\config\\config_custom.yaml",
+      "bytes": 2401,
+      "last_write_utc": "2026-08-28T14:46:16.3933703Z",
+      "sha256": "cd80b67ff0dbea9817f4d1b33a69c3729a7e0e94f5a4564fbe47996dddd79e70"
+    },
+    {
+      "path": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main\\profiles\\maple_legacy_cn\\profile.yaml",
+      "bytes": 2405,
+      "last_write_utc": "2026-08-26T13:05:00.1172240Z",
+      "sha256": "41b28c8d6f09efdbed8c1de80beafdeaac4cc975a3a30226de93f698b511f161"
+    },
+    {
+      "path": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main\\minimaps\\iv_20260823_073124\\spawn_route_manifest.yaml",
+      "bytes": 26672,
+      "last_write_utc": "2026-08-28T08:05:19.9907648Z",
+      "sha256": "33f36d34ab233a86fa2cdc3227f5bd8511a7a507a9e7bc46c161d8b8738ff19f"
+    },
+    {
+      "path": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main\\receiver\\input_receiver.ps1",
+      "bytes": 11876,
+      "last_write_utc": "2026-08-21T18:11:38.9750986Z",
+      "sha256": "b148643588a3a5d38f427d246ab3cea033b946edfe2852e01e416fac544865a9"
+    },
+    {
+      "path": "F:\\mxd\\source\\MapleStoryAutoLevelUp-main\\receiver\\install_startup.ps1",
+      "bytes": 1036,
+      "last_write_utc": "2026-08-21T08:20:15.5543519Z",
+      "sha256": "951a209d7873be8e5acfcdfb3ea6210b2fef750d859492c1a08bc8da7fa77334"
+    },
+    {
+      "path": "F:\\mxd\\mob_synth_v2\\weights\\best_forest_v3.onnx",
+      "bytes": 44746005,
+      "last_write_utc": "2026-08-28T09:25:56.4762034Z",
+      "sha256": "b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4"
+    }
+  ]
+}

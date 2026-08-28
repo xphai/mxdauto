@@ -1,0 +1,46 @@
+{
+  "runtime_manifest_version": "1.0.0",
+  "local_urn": "urn:maple:local:pilot-core-v2:8f4c2ea2bb8f8e9d2ab3d7a8f7f2e4c1f8a0d6a3",
+  "release_id": "release-2026.08.29-core-pilot-a1",
+  "source_commit": "8f4c2ea2bb8f8e9d2ab3d7a8f7f2e4c1f8a0d6a3",
+  "upstream_commit": "9c2f1d4e5a8b4f3c2a1d9e7f6b4c3d2a1e8f0c9b",
+  "config_schema": "2.1.0",
+  "effective_config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "profile_id": "pilot-profile-01",
+  "profile_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "model_id": "yolo-v2-pilot",
+  "model_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "classes": [
+    "player",
+    "monster",
+    "npc",
+    "item"
+  ],
+  "input_size": {
+    "width": 960,
+    "height": 540
+  },
+  "thresholds": {
+    "detection_confidence": 0.72,
+    "tracking_confidence": 0.64,
+    "recover_stale_ms": 150,
+    "observation_stale_ms": 250
+  },
+  "dataset_version": "v2.0.0",
+  "split_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "map_id": "map-ep1a",
+  "map_fingerprint": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "platform_graph_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "route_manifest_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "movement_profile_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "receiver_version": "win32-relay-v1",
+  "receiver_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+  "test_report_id": "qa-test-20260829-core-pilot",
+  "replay_report_id": "replay-report-20260829-core-pilot",
+  "field_session_ids": [
+    "sess-0001",
+    "sess-0002"
+  ],
+  "rollback_release_id": "release-2026.08.28-core-pilot-legacy",
+  "created_at": "2026-08-29T01:23:45Z"
+}

@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/runtime-manifest.schema.json",
+  "title": "Maple Automation Core Runtime Manifest",
+  "type": "object",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "gitCommit": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "nonEmptyId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    }
+  },
+  "required": [
+    "local_urn",
+    "runtime_manifest_version",
+    "release_id",
+    "source_commit",
+    "upstream_commit",
+    "config_schema",
+    "effective_config_sha256",
+    "profile_id",
+    "profile_sha256",
+    "model_id",
+    "model_sha256",
+    "classes",
+    "input_size",
+    "thresholds",
+    "dataset_version",
+    "split_sha256",
+    "map_id",
+    "map_fingerprint",
+    "platform_graph_sha256",
+    "route_manifest_sha256",
+    "movement_profile_sha256",
+    "receiver_version",
+    "receiver_hash",
+    "test_report_id",
+    "replay_report_id"
+  ],
+  "properties": {
+    "local_urn": {
+      "type": "string",
+      "pattern": "^urn:maple:local:[A-Za-z0-9][A-Za-z0-9._-]{2,80}:[A-Fa-f0-9]{40}$",
+      "description": "Local URN binding this manifest to an auditable on-host artifact."
+    },
+    "runtime_manifest_version": {
+      "$ref": "#/$defs/version",
+      "description": "Manifest schema version for runtime validation."
+    },
+    "release_id": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/nonEmptyId"
+        },
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,128}$"
+        }
+      ],
+      "description": "Release identifier, e.g. date+ticket or hash suffix."
+    },
+    "source_commit": {
+      "$ref": "#/$defs/gitCommit",
+      "description": "Git commit hash of Core v2 source used for this release."
+    },
+    "upstream_commit": {
+      "$ref": "#/$defs/gitCommit",
+      "description": "Reference commit hash from upstream/legacy integration source."
+    },
+    "config_schema": {
+      "$ref": "#/$defs/version",
+      "description": "Configuration schema version used by runtime profile."
+    },
+    "effective_config_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of the resolved runtime config file."
+    },
+    "profile_id": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/nonEmptyId"
+        },
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,64}$"
+        }
+      ],
+      "description": "Character/account profile identifier."
+    },
+    "profile_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of profile bundle."
+    },
+    "model_id": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/nonEmptyId"
+        },
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,64}$"
+        }
+      ],
+      "description": "Model identifier used for vision/prediction."
+    },
+    "model_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of model binary/artifact."
+    },
+    "classes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/nonEmptyId"
+          },
+          {
+            "pattern": "^[a-z_][a-z0-9_]{1,48}$"
+          }
+        ]
+      },
+      "description": "Model class labels in runtime use."
+    },
+    "input_size": {
+      "type": "object",
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1, "maximum": 8192 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 8192 }
+      },
+      "additionalProperties": false,
+      "description": "Model input dimensions."
+    },
+    "thresholds": {
+      "type": "object",
+      "required": [
+        "detection_confidence",
+        "tracking_confidence",
+        "recover_stale_ms"
+      ],
+      "properties": {
+        "detection_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "tracking_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recover_stale_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "observation_stale_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "action_timeout_ms": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "description": "Runtime thresholds and fallback timings."
+    },
+    "dataset_version": {
+      "$ref": "#/$defs/nonEmptyId",
+      "description": "Dataset version used for training/evaluation."
+    },
+    "split_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of data split definition used for model."
+    },
+    "map_id": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/nonEmptyId"
+        },
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,128}$"
+        }
+      ],
+      "description": "Logical map identifier."
+    },
+    "map_fingerprint": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of map registry and registration outputs."
+    },
+    "platform_graph_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of PlatformGraph payload."
+    },
+    "route_manifest_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of route/mission manifest."
+    },
+    "movement_profile_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of movement profile data."
+    },
+    "receiver_version": {
+      "$ref": "#/$defs/nonEmptyId",
+      "description": "Input receiver/runtime adapter version used by execution layer."
+    },
+    "receiver_hash": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of the input receiver binary/config bundle."
+    },
+    "test_report_id": {
+      "$ref": "#/$defs/nonEmptyId",
+      "description": "ID of the complete test report associated with this release."
+    },
+    "replay_report_id": {
+      "$ref": "#/$defs/nonEmptyId",
+      "description": "ID of deterministic replay evidence report."
+    },
+    "field_session_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyId"
+      },
+      "description": "Session IDs collected during validation (可选)."
+    },
+    "rollback_release_id": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/nonEmptyId"
+        },
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,128}$"
+        }
+      ],
+      "description": "Previous release id used for rollback binding (可选)."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$",
+      "description": "ISO8601 UTC timestamp."
+    }
+  },
+  "additionalProperties": false
+}
