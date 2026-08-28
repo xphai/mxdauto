@@ -1,0 +1,190 @@
+{
+  "bundle_id": "candidate-core-v2-20260829-shadow",
+  "entries": [
+    {
+      "claims": [
+        "report_status:passed",
+        "report_kind:test"
+      ],
+      "evidence_id": "test-report-g0-candidate-shadow-20260829",
+      "kind": "test",
+      "path": "evidence/g0-candidate-core-v2-20260829/test-report.json",
+      "sha256": "93b2b3c62c34e72962a69a088204f73549bfbd3208daba9e48fb1a35a0b56b44",
+      "size_bytes": 1720,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "report_status:passed",
+        "report_kind:replay"
+      ],
+      "evidence_id": "replay-report-g0-candidate-shadow-20260829",
+      "kind": "replay",
+      "path": "evidence/g0-candidate-core-v2-20260829/replay-report.json",
+      "sha256": "b2ecac9bcc99e67bbb6b052f993fe9fdc62d8e8953e1ebf8a583b46038b87926",
+      "size_bytes": 1685,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "report_status:passed",
+        "report_kind:shadow"
+      ],
+      "evidence_id": "shadow-report-g0-candidate-shadow-20260829",
+      "kind": "shadow",
+      "path": "evidence/g0-candidate-core-v2-20260829/shadow-report.json",
+      "sha256": "5a1204c6dcf742550569840544f9884bdbc86cbb9c458edca73ff02bddd5d399",
+      "size_bytes": 1741,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "report_status:not-run",
+        "report_kind:clean-smoke"
+      ],
+      "evidence_id": "clean-report-g0-candidate-shadow-20260829",
+      "kind": "clean-smoke",
+      "path": "evidence/g0-candidate-core-v2-20260829/clean-report.json",
+      "sha256": "b10ddd344ff17816f689fafd689ff16cb4c3290efcb8e7573c522909ff8d1803",
+      "size_bytes": 946,
+      "status": "not-run"
+    },
+    {
+      "claims": [
+        "report_status:passed",
+        "report_kind:dependency"
+      ],
+      "evidence_id": "dependency-report-g0-candidate-shadow-20260829",
+      "kind": "dependency",
+      "path": "evidence/g0-candidate-core-v2-20260829/dependency-report.json",
+      "sha256": "3635b4451f6c0c30e6e7b0e800a05b52bc05eaf5c343ba2523315bb84c444b40",
+      "size_bytes": 1170,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "report_status:passed",
+        "report_kind:build"
+      ],
+      "evidence_id": "build-report-g0-candidate-shadow-20260829",
+      "kind": "build",
+      "path": "evidence/g0-candidate-core-v2-20260829/build-report.json",
+      "sha256": "566e621294e3ced03102eefc2ed14ec004a4a09fc5c8a111107f0650006b278e",
+      "size_bytes": 1550,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "report_status:passed",
+        "report_kind:manifest"
+      ],
+      "evidence_id": "manifest-report-g0-candidate-shadow-20260829",
+      "kind": "manifest",
+      "path": "evidence/g0-candidate-core-v2-20260829/manifest-report.json",
+      "sha256": "c874579826f9e3de325cd68dc357a66527fe716a3114cb3adaf98b48b71d88e6",
+      "size_bytes": 1251,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "report_status:passed",
+        "report_kind:hash"
+      ],
+      "evidence_id": "hash-report-g0-candidate-shadow-20260829",
+      "kind": "hash",
+      "path": "evidence/g0-candidate-core-v2-20260829/hash-report.json",
+      "sha256": "7d6c05f7963be8adf3bd79f373d30f84d80946a5a40d74edec86d03a018f04bb",
+      "size_bytes": 926,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "sha256:72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349"
+      ],
+      "evidence_id": "manifest-artifact-g0-candidate-shadow-20260829",
+      "kind": "manifest",
+      "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+      "sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+      "size_bytes": 2702,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "sha256:a9ece072bc820bf7be4b5be6846ceedc23a752c879f08cbb0f097264aec19adc"
+      ],
+      "evidence_id": "asset-index-g0-candidate-shadow-20260829",
+      "kind": "asset-index",
+      "path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
+      "sha256": "a9ece072bc820bf7be4b5be6846ceedc23a752c879f08cbb0f097264aec19adc",
+      "size_bytes": 5207,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "sha256:00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa"
+      ],
+      "evidence_id": "dependency-lock-g0-candidate-shadow-20260829",
+      "kind": "dependency",
+      "path": "configs/requirements.lock",
+      "sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa",
+      "size_bytes": 904,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "artifact_kind:junit"
+      ],
+      "evidence_id": "junit-junit",
+      "kind": "junit",
+      "path": "evidence/ci/junit.xml",
+      "sha256": "6824c0508356205e10fce0da7c9d79816662fddd8527bbdba4f2e642ae1de5e2",
+      "size_bytes": 10245,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "artifact_kind:coverage"
+      ],
+      "evidence_id": "coverage-coverage",
+      "kind": "coverage",
+      "path": "evidence/ci/coverage.xml",
+      "sha256": "18d6b8fa485066b3d9ddb1f131c3873f8d780cefb96eb598ecc264b0cdf4eb49",
+      "size_bytes": 67965,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "artifact_kind:wheel"
+      ],
+      "evidence_id": "build-maple-automation-core-0.1.0-py3-none-any",
+      "kind": "wheel",
+      "path": "evidence/g0-candidate-core-v2-20260829/artifacts/maple_automation_core-0.1.0-py3-none-any.whl",
+      "sha256": "9005f9cc5576614175257e7d5974545e965c2b633996934aabef795902610d9b",
+      "size_bytes": 33184,
+      "status": "passed"
+    },
+    {
+      "claims": [
+        "artifact_kind:sdist"
+      ],
+      "evidence_id": "build-maple-automation-core-0.1.0.tar",
+      "kind": "sdist",
+      "path": "evidence/g0-candidate-core-v2-20260829/artifacts/maple_automation_core-0.1.0.tar.gz",
+      "sha256": "90da4b4c0f979b59e612ec7f721368cb52b6b1e975fb07a429eab3f0b7217493",
+      "size_bytes": 45894,
+      "status": "passed"
+    }
+  ],
+  "evidence_index_id": "evidence-index-g0-candidate-shadow-20260829",
+  "execution_mode": "shadow",
+  "generated_at": "2026-08-29T00:00:00Z",
+  "input_policy": {
+    "owner": "legacy",
+    "real_input_enabled": false
+  },
+  "lifecycle": "candidate",
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "schema_version": "1.0.0",
+  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "subject_id": "subject-01"
+}

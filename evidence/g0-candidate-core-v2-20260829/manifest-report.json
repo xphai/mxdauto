@@ -1,0 +1,38 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "manifest-runtime-manifest",
+      "kind": "manifest",
+      "name": "runtime-manifest.json",
+      "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+      "sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+      "size_bytes": 2702
+    }
+  ],
+  "bundle_id": "candidate-core-v2-20260829-shadow",
+  "checks": [
+    {
+      "command": "python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json <manifest>",
+      "details": {
+        "manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349"
+      },
+      "name": "runtime-manifest-schema",
+      "status": "passed"
+    }
+  ],
+  "environment": {
+    "python_version": "3.13.13",
+    "runner_os": "Windows",
+    "working_directory_policy": "repository-relative"
+  },
+  "evidence_id": "manifest-report-g0-candidate-shadow-20260829",
+  "execution_mode": "shadow",
+  "generated_at": "2026-08-29T00:00:00Z",
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "report_kind": "manifest",
+  "schema_version": "1.0.0",
+  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "status": "passed",
+  "subject_id": "subject-01",
+  "summary": {}
+}

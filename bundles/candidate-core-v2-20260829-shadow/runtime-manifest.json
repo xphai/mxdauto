@@ -1,0 +1,63 @@
+{
+  "asset_index_path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
+  "asset_index_sha256": "a9ece072bc820bf7be4b5be6846ceedc23a752c879f08cbb0f097264aec19adc",
+  "bundle_status": "candidate",
+  "classes": [
+    "mob"
+  ],
+  "classes_sha256": "07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884",
+  "clean_report_id": "clean-report-g0-candidate-shadow-20260829",
+  "config_schema": "2.1.0",
+  "created_at": "2026-08-29T00:00:00Z",
+  "dataset_version": "forest-calibration-v2",
+  "effective_config_sha256": "5d57809b0ec4f81d3a0551bcdbebd6ce296179ebdd38f87191113c0f81a017b6",
+  "evidence_index_path": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
+  "execution_mode": "shadow",
+  "input_owner": "legacy",
+  "input_size": {
+    "height": 640,
+    "width": 640
+  },
+  "key_bindings": {
+    "attack": "a",
+    "confirm": "space",
+    "down": "down",
+    "hp": "insert",
+    "jump": "alt",
+    "left": "left",
+    "mp": "delete",
+    "party": "p",
+    "pickup": "z",
+    "right": "right",
+    "up": "up"
+  },
+  "local_urn": "urn:maple:local:candidate-core-v2-20260829-shadow:c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "map_fingerprint": "8b01434dfcd064b96dc4a9e7a6f3d653e5837324ce2721d89185a962c7a818c2",
+  "map_id": "100040004",
+  "model_id": "best_forest_v3-candidate",
+  "model_sha256": "b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4",
+  "movement_profile_sha256": "3c7f6b209dae079973cb88b727b6a6b686bdfafc9539f64921bbe605d7568ae8",
+  "platform_graph_sha256": "834892b1d6feca47c3e79f0f2433ed032a61b45c5939a5158590072da264539c",
+  "profile_id": "pilot-subject-01",
+  "profile_sha256": "891e9ad6d3205c12ab60176e87524ba5b638554652eb45b55a6f4fe01604603f",
+  "real_input_enabled": false,
+  "receiver_hash": "b148643588a3a5d38f427d246ab3cea033b946edfe2852e01e416fac544865a9",
+  "receiver_version": "legacy-input-receiver-ps1-v1",
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "replay_report_id": "replay-report-g0-candidate-shadow-20260829",
+  "route_manifest_sha256": "33f36d34ab233a86fa2cdc3227f5bd8511a7a507a9e7bc46c161d8b8738ff19f",
+  "runtime_manifest_version": "1.0.0",
+  "shadow_report_id": "shadow-report-g0-candidate-shadow-20260829",
+  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "split_sha256": "6861ee5b4e8417c5e2a8f0853e270a2cb0befb67144da70d82ea874512c210c5",
+  "subject_id": "subject-01",
+  "test_report_id": "test-report-g0-candidate-shadow-20260829",
+  "thresholds": {
+    "action_timeout_ms": 1000,
+    "detection_confidence": 0.25,
+    "observation_stale_ms": 250,
+    "recover_stale_ms": 150,
+    "tracking_confidence": 0.65
+  },
+  "upstream_commit": "3e19173f8da5aab8405307bb9c6e3741dd3abd6b"
+}

@@ -1,0 +1,173 @@
+{
+  "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
+  "bundle_id": "candidate-core-v2-20260829-shadow",
+  "candidate_binding": {
+    "bundle_id": "candidate-core-v2-20260829-shadow",
+    "release_id": "candidate-core-v2-20260829-shadow",
+    "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+    "runtime_manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+    "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259"
+  },
+  "diff_summary": {
+    "taxonomy_counts": {
+      "MATCH": 2
+    },
+    "unclassified_diff_count": 0
+  },
+  "diffs": [
+    {
+      "frame_id": 1,
+      "legacy_action_id": "legacy-observed-move-001",
+      "legacy_kind": "move",
+      "planned_action_id": "core-plan-move-001",
+      "planned_kind": "move",
+      "taxonomy": "MATCH"
+    },
+    {
+      "frame_id": 2,
+      "legacy_action_id": "legacy-observed-jump-002",
+      "legacy_kind": "jump",
+      "planned_action_id": "core-plan-jump-002",
+      "planned_kind": "jump",
+      "taxonomy": "MATCH"
+    }
+  ],
+  "execution_mode": "shadow",
+  "fixture_bundle": {
+    "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
+    "bundle_id": "bundle-golden-pilot-v1"
+  },
+  "fixture_digest": "d4dce717f51e2abdbc43ac64ebcaa5ec9a52a1bf7a51c4bfddc40f669324eaf3",
+  "fixture_file_sha256": "d4dce717f51e2abdbc43ac64ebcaa5ec9a52a1bf7a51c4bfddc40f669324eaf3",
+  "fixture_id": "golden-pilot-minimal-v1",
+  "input_audit": {
+    "boundary_attempts": [],
+    "connected": false,
+    "core_execution_event_count": 0,
+    "core_v2_real_input_call_count": 0,
+    "double_write_event_count": 0,
+    "dry_run_call_count": 5,
+    "keyboard_call_count": 0,
+    "legacy_execution_event_count": 0,
+    "legacy_observed_action_count": 2,
+    "mouse_call_count": 0,
+    "planned_action_count": 2,
+    "proof": "instrumented boundary ledger; concrete dry-run sink has no live adapter",
+    "real_input_call_count": 0,
+    "receipts": [
+      {
+        "operation": "connect",
+        "sequence": 0,
+        "simulated": true
+      },
+      {
+        "operation": "planned_action",
+        "sequence": 1,
+        "simulated": true
+      },
+      {
+        "operation": "planned_action",
+        "sequence": 2,
+        "simulated": true
+      },
+      {
+        "operation": "release_all",
+        "sequence": 3,
+        "simulated": true
+      },
+      {
+        "operation": "close",
+        "sequence": 4,
+        "simulated": true
+      }
+    ],
+    "receiver_call_count": 0,
+    "sink_type": "DryRunInputSink",
+    "window_call_count": 0
+  },
+  "legacy_observed_actions": [
+    {
+      "action_id": "legacy-observed-move-001",
+      "details": {
+        "correlation": "fixture-001",
+        "source": "legacy-event-adapter"
+      },
+      "execution_status": "observed_not_core_executed",
+      "frame_id": 1,
+      "kind": "move",
+      "observed_at_ns": 1000001000,
+      "provenance": "legacy_observed",
+      "session_id": "golden-session-001",
+      "world_state_version": 1
+    },
+    {
+      "action_id": "legacy-observed-jump-002",
+      "details": {
+        "correlation": "fixture-002",
+        "source": "legacy-event-adapter"
+      },
+      "execution_status": "observed_not_core_executed",
+      "frame_id": 2,
+      "kind": "jump",
+      "observed_at_ns": 2000001000,
+      "provenance": "legacy_observed",
+      "session_id": "golden-session-001",
+      "world_state_version": 2
+    }
+  ],
+  "output_digest": "f0dcfe1fd6f062c9ebb961ce2462f8e6adbee27280977de8163a69a1eefd041b",
+  "planned_actions": [
+    {
+      "action": {
+        "action_id": "core-plan-move-001",
+        "evidence": {
+          "planner": "golden-fixture",
+          "predicate": "position_changed"
+        },
+        "kind": "move",
+        "origin_frame_id": 1,
+        "origin_world_state_version": 1,
+        "payload": {
+          "direction": "right",
+          "duration_ms": 20
+        },
+        "requested_at_ns": 1000001000,
+        "session_id": "golden-session-001",
+        "timeout_ns": 2000000000
+      },
+      "execution_status": "planned_not_executed",
+      "provenance": "core_v2_planned"
+    },
+    {
+      "action": {
+        "action_id": "core-plan-jump-002",
+        "evidence": {
+          "planner": "golden-fixture",
+          "predicate": "vertical_displacement"
+        },
+        "kind": "jump",
+        "origin_frame_id": 2,
+        "origin_world_state_version": 2,
+        "payload": {
+          "height_px": 50
+        },
+        "requested_at_ns": 2000001000,
+        "session_id": "golden-session-001",
+        "timeout_ns": 2000000000
+      },
+      "execution_status": "planned_not_executed",
+      "provenance": "core_v2_planned"
+    }
+  ],
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "replay_output_digest": "9cc300de5dcc1054aa5749c588cfd3788653c8aeca7b23da1e3355768e89ff2a",
+  "report_digest": "a4bd620b97528211dd0a7d960a17df89ec18cee70c3b25b4e936ff7e78b8a6be",
+  "report_id": "shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
+  "report_type": "shadow",
+  "report_version": "1.0.0",
+  "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+  "runtime_manifest_sha256": "72415b9aa7782e172c76586a871d1933c4c0d35bb03210d59361cf627bea9349",
+  "session_id": "golden-session-001",
+  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "status": "PASS"
+}

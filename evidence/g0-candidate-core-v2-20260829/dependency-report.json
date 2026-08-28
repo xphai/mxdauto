@@ -1,0 +1,38 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "lock-requirements",
+      "kind": "dependency-lock",
+      "name": "requirements.lock",
+      "path": "configs/requirements.lock",
+      "sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa",
+      "size_bytes": 904
+    }
+  ],
+  "bundle_id": "candidate-core-v2-20260829-shadow",
+  "checks": [
+    {
+      "command": "python -m pip install --requirement configs/requirements.lock",
+      "details": {
+        "lock_sha256": "00bbe87dc673c8065603bd584c464638113dbf921f96220c154ce545816155fa"
+      },
+      "name": "dependency-lock-present",
+      "status": "passed"
+    }
+  ],
+  "environment": {
+    "python_version": "3.13.13",
+    "runner_os": "Windows",
+    "working_directory_policy": "repository-relative"
+  },
+  "evidence_id": "dependency-report-g0-candidate-shadow-20260829",
+  "execution_mode": "shadow",
+  "generated_at": "2026-08-29T00:00:00Z",
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "report_kind": "dependency",
+  "schema_version": "1.0.0",
+  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "status": "passed",
+  "subject_id": "subject-01",
+  "summary": {}
+}

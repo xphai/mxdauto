@@ -1,0 +1,31 @@
+{
+  "artifacts": [],
+  "bundle_id": "candidate-core-v2-20260829-shadow",
+  "checks": [
+    {
+      "command": "python tools/run_clean_smoke.py --output <clean-result>",
+      "details": {
+        "reason": "clean-smoke result was not supplied."
+      },
+      "name": "cacheless-windows-clean-smoke",
+      "status": "not-run"
+    }
+  ],
+  "environment": {
+    "python_version": "3.13.13",
+    "runner_os": "Windows",
+    "working_directory_policy": "repository-relative"
+  },
+  "evidence_id": "clean-report-g0-candidate-shadow-20260829",
+  "execution_mode": "shadow",
+  "generated_at": "2026-08-29T00:00:00Z",
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "report_kind": "clean-smoke",
+  "schema_version": "1.0.0",
+  "source_commit": "c0ecf4d9838d3fdbecd34ba754386a2fe2979259",
+  "status": "not-run",
+  "subject_id": "subject-01",
+  "summary": {
+    "claim_scope": "Clean install/build/test/Replay/Shadow engineering smoke only."
+  }
+}
