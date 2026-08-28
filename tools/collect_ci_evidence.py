@@ -87,6 +87,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--run-attempt", help="Run attempt override.")
     parser.add_argument("--timestamp", help="UTC timestamp for deterministic evidence output.")
     parser.add_argument(
+        "--started-at",
+        help="UTC start timestamp captured before the workflow quality steps.",
+    )
+    parser.add_argument(
         "--dependency-install-result",
         choices=("passed", "failed"),
         default="passed",
@@ -365,6 +369,7 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         "failed" if args.dependency_install_result == "failed" or "failed" in statuses else "passed"
     )
     now = args.timestamp or isoformat_utc()
+    started_at = args.started_at or now
     event = args.event or os.environ.get("GITHUB_EVENT_NAME", "local")
     if event not in {"pull_request", "push", "workflow_dispatch", "local"}:
         event = "local"
@@ -389,7 +394,7 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         "runner_os": platform.system(),
         "schema_version": SCHEMA_VERSION,
         "source_commit": source_commit,
-        "started_at": now,
+        "started_at": started_at,
         "status": status,
         "workflow_name": args.workflow_name or os.environ.get("GITHUB_WORKFLOW", "local-quality"),
     }

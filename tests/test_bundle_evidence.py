@@ -8,6 +8,7 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 from tools import collect_ci_evidence, verify_bundle
+from tools.bundle_common import safe_relative_path
 from tools.verify_dependency_lock import parse_lock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -136,3 +137,9 @@ def test_dependency_lock_normalizes_package_names(tmp_path: Path) -> None:
     lock = tmp_path / "requirements.lock"
     lock.write_text("typing_extensions==4.16.0\n", encoding="utf-8")
     assert parse_lock(lock) == {"typing-extensions": "4.16.0"}
+
+
+@pytest.mark.parametrize("value", ["C:/asset", "folder/file:stream", "../asset", "/asset"])
+def test_portable_paths_reject_drive_ads_and_traversal(value: str) -> None:
+    with pytest.raises(ValueError):
+        safe_relative_path(value)

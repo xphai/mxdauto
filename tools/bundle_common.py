@@ -73,7 +73,7 @@ def resolve_root(root_env: str, explicit: Path | None) -> Path:
 def safe_relative_path(value: str) -> str:
     normalized = value.replace("\\", "/")
     path = Path(normalized)
-    if normalized.startswith("/") or ":" in normalized.split("/", 1)[0]:
+    if normalized.startswith("/") or ":" in normalized:
         raise ValueError(f"Absolute asset paths are not portable: {value!r}")
     if any(part in ("", ".", "..") for part in path.parts):
         raise ValueError(f"Asset path must be normalized and relative: {value!r}")
