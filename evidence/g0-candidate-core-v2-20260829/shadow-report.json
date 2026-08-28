@@ -1,10 +1,10 @@
 {
   "artifacts": [
     {
-      "artifact_id": "shadow-result-shadow-result",
+      "artifact_id": "shadow-result-clean-shadow-report",
       "kind": "evidence-report",
-      "name": "shadow-result.json",
-      "path": "evidence/g0-candidate-core-v2-20260829/raw/shadow-result.json",
+      "name": "clean-shadow-report.json",
+      "path": "evidence/clean-smoke/clean-shadow-report.json",
       "sha256": "5da1068009c9beb6b747d1097afe8827bf80e565f679d44b71e3f23e1a0297fa",
       "size_bytes": 5456
     }

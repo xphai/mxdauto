@@ -1,14 +1,27 @@
 {
-  "artifacts": [],
+  "artifacts": [
+    {
+      "artifact_id": "clean-result-clean-smoke-report",
+      "kind": "evidence-report",
+      "name": "clean-smoke-report.json",
+      "path": "evidence/clean-smoke/clean-smoke-report.json",
+      "sha256": "61b070252e51d3241a0150195bba4dcb001ebed91d01eeecd19e2fea3be3d210",
+      "size_bytes": 35368
+    }
+  ],
   "bundle_id": "candidate-core-v2-20260829-shadow",
   "checks": [
     {
       "command": "python tools/run_clean_smoke.py --output <clean-result>",
       "details": {
-        "reason": "clean-smoke result was not supplied."
+        "artifact_count": 6,
+        "checkout_commit": "a39182f1b8ba2da9e096982ccca8132b3608e316",
+        "failed_checks": [],
+        "report_id": "clean-smoke-c5679a01394d",
+        "runner_os": "Windows"
       },
       "name": "cacheless-windows-clean-smoke",
-      "status": "not-run"
+      "status": "passed"
     }
   ],
   "environment": {
@@ -23,7 +36,7 @@
   "report_kind": "clean-smoke",
   "schema_version": "1.0.0",
   "source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6",
-  "status": "not-run",
+  "status": "passed",
   "subject_id": "subject-01",
   "summary": {
     "claim_scope": "Clean install/build/test/Replay/Shadow engineering smoke only."

@@ -1,0 +1,112 @@
+{
+  "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
+  "bundle_id": "candidate-core-v2-20260829-shadow",
+  "candidate_binding": {
+    "bundle_id": "candidate-core-v2-20260829-shadow",
+    "release_id": "candidate-core-v2-20260829-shadow",
+    "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+    "runtime_manifest_sha256": "5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17",
+    "source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6"
+  },
+  "deterministic": true,
+  "execution_mode": "shadow",
+  "fixture_bundle": {
+    "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
+    "bundle_id": "bundle-golden-pilot-v1"
+  },
+  "fixture_digest": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+  "fixture_file_sha256": "22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34",
+  "fixture_id": "golden-pilot-minimal-v1",
+  "output_digest": "2d6ebc7e10747b302c08800ba6e1249e8fa122d869de2cb4f95030cf8fa235a0",
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "repeat_count": 3,
+  "report_digest": "a2648a6284a8b544ef6438a697e0aa3e1e9778e0b68ab08b2376ac63fbf03286",
+  "report_id": "replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
+  "report_type": "golden_replay",
+  "report_version": "1.0.0",
+  "runs": [
+    {
+      "action_digest": "6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e",
+      "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
+      "event_count": 13,
+      "event_digest": "401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825",
+      "event_sequence": [
+        "frame.observed",
+        "action.proposed",
+        "action.issued",
+        "action.started",
+        "frame.observed",
+        "action.terminal",
+        "input.release_all",
+        "action.proposed",
+        "action.issued",
+        "action.started",
+        "frame.observed",
+        "action.terminal",
+        "input.release_all"
+      ],
+      "event_sequence_digest": "9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77",
+      "output_digest": "8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed",
+      "planned_action_count": 2,
+      "run_index": 0,
+      "world_state_digest": "0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa"
+    },
+    {
+      "action_digest": "6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e",
+      "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
+      "event_count": 13,
+      "event_digest": "401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825",
+      "event_sequence": [
+        "frame.observed",
+        "action.proposed",
+        "action.issued",
+        "action.started",
+        "frame.observed",
+        "action.terminal",
+        "input.release_all",
+        "action.proposed",
+        "action.issued",
+        "action.started",
+        "frame.observed",
+        "action.terminal",
+        "input.release_all"
+      ],
+      "event_sequence_digest": "9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77",
+      "output_digest": "8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed",
+      "planned_action_count": 2,
+      "run_index": 1,
+      "world_state_digest": "0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa"
+    },
+    {
+      "action_digest": "6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e",
+      "bundle_digest": "9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782",
+      "event_count": 13,
+      "event_digest": "401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825",
+      "event_sequence": [
+        "frame.observed",
+        "action.proposed",
+        "action.issued",
+        "action.started",
+        "frame.observed",
+        "action.terminal",
+        "input.release_all",
+        "action.proposed",
+        "action.issued",
+        "action.started",
+        "frame.observed",
+        "action.terminal",
+        "input.release_all"
+      ],
+      "event_sequence_digest": "9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77",
+      "output_digest": "8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed",
+      "planned_action_count": 2,
+      "run_index": 2,
+      "world_state_digest": "0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa"
+    }
+  ],
+  "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+  "runtime_manifest_sha256": "5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17",
+  "session_id": "golden-session-001",
+  "source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6",
+  "status": "PASS"
+}
