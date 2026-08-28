@@ -29,7 +29,7 @@
     "portablePath": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$"
+      "pattern": "^(?!/)(?!.*:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*(?:^|/)[^/]*[. ](?:/|$)).+$"
     },
     "environment": {
       "type": "object",
@@ -191,7 +191,8 @@
         "build",
         "dependency",
         "manifest",
-        "hash"
+        "hash",
+        "ci"
       ]
     },
     "status": {

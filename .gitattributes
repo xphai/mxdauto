@@ -1,0 +1,9 @@
+* text=auto eol=lf
+
+*.gz binary
+*.onnx binary
+*.png binary
+*.sqlite3 binary
+*.whl binary
+*.xml binary
+*.zip binary

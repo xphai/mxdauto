@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import subprocess
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -23,8 +24,25 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"Non-standard JSON constant is prohibited: {value}")
+
+
+def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"Duplicate JSON object key is prohibited: {key}")
+        result[key] = value
+    return result
+
+
 def read_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=_unique_object,
+        parse_constant=_reject_json_constant,
+    )
     if not isinstance(payload, dict):
         raise ValueError(f"JSON document must be an object: {path}")
     return payload
@@ -32,11 +50,35 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
+    encoded = (
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
     )
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="\n",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as stream:
+            temporary_path = Path(stream.name)
+            stream.write(encoded)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
 
 
 def isoformat_utc(value: datetime | None = None) -> str:
@@ -72,12 +114,20 @@ def resolve_root(root_env: str, explicit: Path | None) -> Path:
 
 def safe_relative_path(value: str) -> str:
     normalized = value.replace("\\", "/")
-    path = Path(normalized)
     if normalized.startswith("/") or ":" in normalized:
         raise ValueError(f"Absolute asset paths are not portable: {value!r}")
-    if any(part in ("", ".", "..") for part in path.parts):
+    parts = normalized.split("/")
+    if any(part in ("", ".", "..") for part in parts):
         raise ValueError(f"Asset path must be normalized and relative: {value!r}")
-    return "/".join(path.parts)
+    reserved = {"CON", "PRN", "AUX", "NUL", "CLOCK$"}
+    reserved.update(f"COM{index}" for index in range(1, 10))
+    reserved.update(f"LPT{index}" for index in range(1, 10))
+    for part in parts:
+        if part.rstrip(" .") != part or any(ord(character) < 32 for character in part):
+            raise ValueError(f"Asset path has non-portable Windows syntax: {value!r}")
+        if part.split(".", 1)[0].upper() in reserved:
+            raise ValueError(f"Asset path uses a reserved Windows name: {value!r}")
+    return "/".join(parts)
 
 
 def file_metadata(path: Path) -> tuple[int, str, str]:

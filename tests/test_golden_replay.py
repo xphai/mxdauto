@@ -123,6 +123,12 @@ def test_golden_fixture_rejects_tampering_and_temporal_drift() -> None:
     with pytest.raises((ValueError, ReplayError), match="action_id"):
         GoldenFixture.from_dict(duplicate_action)  # type: ignore[arg-type]
 
+    crossing_lifecycle = copy.deepcopy(data)
+    crossing_lifecycle["frames"][1]["action"]["spec"]["requested_at_ns"] = 3_100_000_000  # type: ignore[index]
+    crossing_lifecycle["frames"][1]["action"]["completed_at_ns"] = 3_100_000_001  # type: ignore[index]
+    with pytest.raises(ReplayError, match="crosses the next frame"):
+        GoldenFixture.from_dict(crossing_lifecycle)  # type: ignore[arg-type]
+
 
 def test_golden_fixture_rejects_legacy_mismatch_and_duplicate_json(tmp_path: Path) -> None:
     data = _raw_fixture()

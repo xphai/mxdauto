@@ -14,18 +14,27 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .bundle_common import file_metadata, git_commit, read_json, safe_relative_path, write_json
+    from .bundle_common import (
+        file_metadata,
+        git_commit,
+        read_json,
+        safe_relative_path,
+        sha256_file,
+        write_json,
+    )
 except ImportError:  # pragma: no cover - exercised when invoked as a script
     from bundle_common import (  # type: ignore[import-not-found,no-redef]
         file_metadata,
         git_commit,
         read_json,
         safe_relative_path,
+        sha256_file,
         write_json,
     )
 
 
 SCHEMA_VERSION = "1.0.0"
+STEP_TIMEOUT_SECONDS = 900
 
 
 class SmokeFailure(RuntimeError):
@@ -87,16 +96,30 @@ def _run_step(
     env: dict[str, str],
 ) -> subprocess.CompletedProcess[str]:
     started = time.perf_counter()
-    completed = subprocess.run(
-        command,
-        cwd=cwd,
-        env=env,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=cwd,
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            timeout=STEP_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        duration = round(time.perf_counter() - started, 3)
+        checks.append(
+            {
+                "command": _command_text(command),
+                "details": {"timeout_seconds": STEP_TIMEOUT_SECONDS},
+                "duration_seconds": duration,
+                "name": name,
+                "status": "failed",
+            }
+        )
+        raise SmokeFailure(f"{name} exceeded {STEP_TIMEOUT_SECONDS} seconds") from exc
     duration = round(time.perf_counter() - started, 3)
     details: dict[str, Any] = {
         "exit_code": completed.returncode,
@@ -138,6 +161,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     bundle_dir = _inside(repo_root, args.bundle_dir)
     fixture_path = _inside(repo_root, args.fixture)
     manifest = read_json(manifest_path)
+    manifest_sha256 = sha256_file(manifest_path)
     source_commit = manifest.get("source_commit")
     release_id = manifest.get("release_id")
     subject_id = manifest.get("subject_id")
@@ -175,6 +199,26 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             "duration_seconds": 0.0,
             "name": "clean-checkout",
             "status": "passed" if clean_ok else "failed",
+        }
+    )
+    forbidden_cache_paths = [
+        repo_root / "build",
+        repo_root / "dist",
+        repo_root / ".venv",
+        repo_root / "venv",
+        *sorted((repo_root / "src").glob("*.egg-info")),
+    ]
+    existing_cache_paths = [
+        _portable(repo_root, path) for path in forbidden_cache_paths if path.exists()
+    ]
+    cache_baseline_ok = not existing_cache_paths
+    checks.append(
+        {
+            "command": "inspect build/dist/project-venv/egg-info baseline",
+            "details": {"existing_paths": existing_cache_paths},
+            "duration_seconds": 0.0,
+            "name": "clean-build-cache-baseline",
+            "status": "passed" if cache_baseline_ok else "failed",
         }
     )
     lineage = subprocess.run(
@@ -217,17 +261,35 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     )
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    source_epoch = subprocess.run(
+        ["git", "show", "-s", "--format=%ct", source_commit],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    source_date_epoch = source_epoch.stdout.strip()
+    if source_epoch.returncode != 0 or not source_date_epoch.isdigit():
+        raise ValueError("Could not derive SOURCE_DATE_EPOCH from source_commit.")
+
     env = os.environ.copy()
+    for inherited in ("PYTHONHOME", "PYTHONPATH", "VIRTUAL_ENV", "__PYVENV_LAUNCHER__"):
+        env.pop(inherited, None)
     env.update(
         {
             "PIP_DISABLE_PIP_VERSION_CHECK": "1",
             "PIP_NO_CACHE_DIR": "1",
+            "PYTHONNOUSERSITE": "1",
+            "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHONUTF8": "1",
+            "SOURCE_DATE_EPOCH": source_date_epoch,
         }
     )
     try:
         if not clean_ok:
             raise SmokeFailure("checkout contains uncommitted or untracked files")
+        if not cache_baseline_ok:
+            raise SmokeFailure("checkout contains reusable build or project-environment state")
         if not lineage_ok:
             raise SmokeFailure("checkout is not a packaging/docs-only descendant of source_commit")
         with tempfile.TemporaryDirectory(prefix="maple-core-g0-clean-") as temp_name:
@@ -377,7 +439,12 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 command=[
                     str(venv_python),
                     "-c",
-                    ("import maple_automation_core as package; print(package.__file__)"),
+                    (
+                        "from pathlib import Path; import maple_automation_core as package; "
+                        f"root=Path({str(repo_root)!r}).resolve(); "
+                        "loaded=Path(package.__file__).resolve(); "
+                        "assert not loaded.is_relative_to(root), loaded; print(loaded)"
+                    ),
                 ],
                 cwd=temp_root,
                 env=env,
@@ -388,6 +455,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 command=[
                     str(venv_python),
                     str(repo_root / "tools" / "run_golden_replay.py"),
+                    "--require-installed",
                     "--fixture",
                     str(fixture_path),
                     "--runs",
@@ -397,7 +465,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                     "--report",
                     str(replay_path),
                 ],
-                cwd=repo_root,
+                cwd=temp_root,
                 env=env,
             )
             _run_step(
@@ -406,6 +474,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 command=[
                     str(venv_python),
                     str(repo_root / "tools" / "run_shadow.py"),
+                    "--require-installed",
                     "--fixture",
                     str(fixture_path),
                     "--manifest",
@@ -413,7 +482,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                     "--report",
                     str(shadow_path),
                 ],
-                cwd=repo_root,
+                cwd=temp_root,
                 env=env,
             )
             shadow = read_json(shadow_path)
@@ -498,6 +567,9 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             "platform": platform.platform(),
             "pip_cache": "disabled",
             "project_venv_reused": False,
+            "runtime_manifest_path": _portable(repo_root, manifest_path),
+            "runtime_manifest_sha256": manifest_sha256,
+            "source_date_epoch": source_date_epoch,
             "source_assets_policy": (
                 "checkout metadata plus content-addressed external attestations"
             ),

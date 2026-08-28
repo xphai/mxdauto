@@ -16,67 +16,87 @@ jobs:
 
     steps:
       - name: Check out source
+        id: checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set up Python
+        id: setup_python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Record CI start time
+        id: record_ci_start
         shell: pwsh
         run: |
           "CI_STARTED_AT=$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'))" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $candidateSource = (Get-Content bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json | ConvertFrom-Json).source_commit
+          $sourceEpoch = (git show -s --format=%ct $candidateSource).Trim()
+          if ($sourceEpoch -notmatch '^\d+$') { throw "Invalid source commit epoch: $sourceEpoch" }
+          "SOURCE_DATE_EPOCH=$sourceEpoch" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install locked development dependencies
+        id: install_dependencies
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check --no-cache-dir --upgrade pip
           python -m pip install --disable-pip-version-check --no-cache-dir --requirement configs/requirements.lock
-          python -m pip install --disable-pip-version-check --no-cache-dir --no-deps --editable .
 
       - name: Verify dependency lock
+        id: verify_dependency_lock
         run: python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed
 
       - name: Ruff lint
+        id: ruff_lint
         run: python -m ruff check src tests tools
 
       - name: Ruff format
+        id: ruff_format
         run: python -m ruff format --check src tests tools
 
       - name: Validate runtime manifests
+        id: validate_runtime_manifests
         shell: pwsh
         run: |
           python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest schemas/runtime-manifest.example.json
           python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json
 
       - name: Verify committed Candidate bundle metadata
-        run: python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only
+        id: verify_candidate_bundle
+        run: python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0
 
       - name: Mypy
+        id: mypy
         run: python -m mypy
 
       - name: Cacheless Windows clean smoke
+        id: clean_smoke
         run: python tools/run_clean_smoke.py --output evidence/clean-smoke/clean-smoke-report.json
 
       - name: Pytest
+        id: pytest
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force evidence/ci-run | Out-Null
           python -m pytest --junitxml=evidence/ci-run/junit.xml --cov=maple_automation_core --cov-report=term-missing --cov-report=xml:evidence/ci-run/coverage.xml --cov-fail-under=90
 
       - name: Golden Replay
+        id: golden_replay
         run: python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json
 
       - name: Shadow zero-input audit
+        id: shadow_audit
         run: python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json
 
       - name: Build wheel and sdist
+        id: build
         run: python -m build --wheel --sdist --no-isolation
 
       - name: Collect CI evidence metadata
+        id: collect_ci_evidence
+        if: always()
         shell: pwsh
         run: |
           $artifactArgs = @()
@@ -97,11 +117,20 @@ jobs:
             --evidence-report evidence/ci-run/golden-replay-report.json `
             --evidence-report evidence/ci-run/golden-shadow-report.json `
             --evidence-report evidence/clean-smoke/clean-smoke-report.json `
-            --passed-check "ruff-lint::python -m ruff check src tests tools" `
-            --passed-check "ruff-format::python -m ruff format --check src tests tools" `
-            --passed-check "mypy::python -m mypy" `
-            --passed-check "candidate-manifest::python tools/validate_runtime_manifest.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json" `
-            --passed-check "candidate-bundle::python tools/verify_bundle.py --metadata-only" `
+            --fixture fixtures/golden/pilot_minimal_v1.json `
+            --check-result "install-dependencies::${{ steps.install_dependencies.outcome }}::python -m pip install --disable-pip-version-check --no-cache-dir --requirement configs/requirements.lock" `
+            --check-result "verify-dependency-lock::${{ steps.verify_dependency_lock.outcome }}::python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed" `
+            --check-result "ruff-lint::${{ steps.ruff_lint.outcome }}::python -m ruff check src tests tools" `
+            --check-result "ruff-format::${{ steps.ruff_format.outcome }}::python -m ruff format --check src tests tools" `
+            --check-result "validate-runtime-manifests::${{ steps.validate_runtime_manifests.outcome }}::python tools/validate_runtime_manifest.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json" `
+            --check-result "candidate-bundle::${{ steps.verify_candidate_bundle.outcome }}::python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0" `
+            --check-result "mypy::${{ steps.mypy.outcome }}::python -m mypy" `
+            --check-result "clean-smoke::${{ steps.clean_smoke.outcome }}::python tools/run_clean_smoke.py --output evidence/clean-smoke/clean-smoke-report.json" `
+            --check-result "pytest::${{ steps.pytest.outcome }}::python -m pytest" `
+            --check-result "golden-replay::${{ steps.golden_replay.outcome }}::python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json" `
+            --check-result "shadow-audit::${{ steps.shadow_audit.outcome }}::python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json" `
+            --check-result "build::${{ steps.build.outcome }}::python -m build --wheel --sdist --no-isolation" `
+            --workflow-result "${{ job.status }}" `
             --bundle-id candidate-core-v2-20260829-shadow `
             --release-id candidate-core-v2-20260829-shadow `
             --event $env:GITHUB_EVENT_NAME `

@@ -24,7 +24,7 @@
     "portablePath": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$"
+      "pattern": "^(?!/)(?!.*:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*(?:^|/)[^/]*[. ](?:/|$)).+$"
     },
     "timestamp": {
       "type": "string",
@@ -58,11 +58,29 @@
     },
     "manifestAssetBindings": {
       "type": "object",
-      "minProperties": 1,
-      "patternProperties": {
-        "^[a-z][a-z0-9_]*$": {
-          "$ref": "#/$defs/id"
-        }
+      "required": [
+        "effective_config_sha256",
+        "profile_sha256",
+        "model_sha256",
+        "classes_sha256",
+        "split_sha256",
+        "map_fingerprint",
+        "platform_graph_sha256",
+        "route_manifest_sha256",
+        "movement_profile_sha256",
+        "receiver_hash"
+      ],
+      "properties": {
+        "effective_config_sha256": { "const": "effective-config" },
+        "profile_sha256": { "const": "profile" },
+        "model_sha256": { "const": "model" },
+        "classes_sha256": { "const": "classes" },
+        "split_sha256": { "const": "dataset-split" },
+        "map_fingerprint": { "const": "map-registry" },
+        "platform_graph_sha256": { "const": "platform-graph" },
+        "route_manifest_sha256": { "const": "route-manifest" },
+        "movement_profile_sha256": { "const": "movement-profile" },
+        "receiver_hash": { "const": "receiver" }
       },
       "additionalProperties": false
     }
@@ -224,6 +242,9 @@
           "$ref": "#/$defs/id"
         },
         "clean_report_id": {
+          "$ref": "#/$defs/id"
+        },
+        "ci_report_id": {
           "$ref": "#/$defs/id"
         },
         "index_id": {

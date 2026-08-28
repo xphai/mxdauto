@@ -5,20 +5,14 @@ import json
 from pathlib import Path
 from typing import Any
 
-
-def _read_object(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"JSON document must be an object: {path}")
-    return payload
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+try:
+    from .bundle_common import read_json, sha256_file, write_json
+except ImportError:  # pragma: no cover - exercised when invoked as a script
+    from bundle_common import (  # type: ignore[import-not-found,no-redef]
+        read_json,
+        sha256_file,
+        write_json,
+    )
 
 
 def _canonical_digest(payload: dict[str, Any]) -> str:
@@ -30,6 +24,18 @@ def _canonical_digest(payload: dict[str, Any]) -> str:
         sort_keys=True,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def canonical_report_digest(payload: dict[str, Any]) -> str:
+    """Return the canonical digest for a report, excluding its digest field.
+
+    This is intentionally shared by producers and verifiers so a copied or
+    edited report cannot retain a stale self-declared digest.
+    """
+
+    canonical_payload = dict(payload)
+    canonical_payload.pop("report_digest", None)
+    return _canonical_digest(canonical_payload)
 
 
 def bind_report_to_manifest(
@@ -54,7 +60,7 @@ def bind_report_to_manifest(
         relative_manifest = manifest_path.relative_to(repo_root).as_posix()
     except ValueError as exc:
         raise ValueError("Runtime manifest must be inside the repository.") from exc
-    manifest = _read_object(manifest_path)
+    manifest = read_json(manifest_path)
     required = (
         "release_id",
         "source_commit",
@@ -90,15 +96,10 @@ def bind_report_to_manifest(
         "runtime_manifest_path": relative_manifest,
         "runtime_manifest_sha256": bound["runtime_manifest_sha256"],
     }
-    bound["report_digest"] = _canonical_digest(bound)
+    bound["report_digest"] = canonical_report_digest(bound)
     return bound
 
 
 def write_report(path: Path, payload: dict[str, Any]) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    write_json(path, payload)
     return path

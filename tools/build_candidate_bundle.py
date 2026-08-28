@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import argparse
 import platform
+import subprocess
 import sys
 import xml.etree.ElementTree as ElementTree
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from jsonschema import Draft202012Validator, FormatChecker
 
 try:
     from .bundle_common import (
@@ -19,6 +22,8 @@ try:
         sha256_file,
         write_json,
     )
+    from .report_binding import canonical_report_digest
+    from .verify_dependency_lock import parse_lock, verify_installed
 except ImportError:  # pragma: no cover - exercised when invoked as a script
     from bundle_common import (  # type: ignore[import-not-found,no-redef]
         file_metadata,
@@ -28,6 +33,11 @@ except ImportError:  # pragma: no cover - exercised when invoked as a script
         safe_relative_path,
         sha256_file,
         write_json,
+    )
+    from report_binding import canonical_report_digest  # type: ignore[import-not-found]
+    from verify_dependency_lock import (  # type: ignore[import-not-found]
+        parse_lock,
+        verify_installed,
     )
 
 
@@ -45,6 +55,11 @@ TEST_REPORT_ID = "test-report-g0-candidate-shadow-20260829"
 REPLAY_REPORT_ID = "replay-report-g0-candidate-shadow-20260829"
 SHADOW_REPORT_ID = "shadow-report-g0-candidate-shadow-20260829"
 CLEAN_REPORT_ID = "clean-report-g0-candidate-shadow-20260829"
+CI_REPORT_ID = "ci-report-g0-candidate-shadow-20260829"
+FIXTURE_RELATIVE_PATH = "fixtures/golden/pilot_minimal_v1.json"
+EXPECTED_SESSION_ID = "golden-session-001"
+MINIMUM_COVERAGE_RATE = 0.90
+ALLOWED_PACKAGING_PREFIXES = ("bundles/", "evidence/", "docs/")
 
 
 @dataclass(frozen=True, slots=True)
@@ -205,6 +220,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Cacheless Windows clean-smoke evidence report JSON.",
     )
     parser.add_argument(
+        "--ci-result",
+        type=Path,
+        help="Downloaded GitHub Actions ci-evidence JSON to bind into the packet.",
+    )
+    parser.add_argument(
         "--artifact",
         action="append",
         default=[],
@@ -217,12 +237,23 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=Path("configs") / "requirements.lock",
         help="Dependency lock file, relative to --core-root by default.",
     )
+    parser.add_argument(
+        "--dependency-check-installed",
+        action="store_true",
+        help=(
+            "Compare the active environment with every exact lock entry and bind "
+            "that measured result into the dependency evidence report."
+        ),
+    )
     return parser.parse_args(argv)
 
 
 def _repo_path(core_root: Path, value: Path) -> Path:
     candidate = value if value.is_absolute() else core_root / value
-    return candidate.resolve()
+    resolved = candidate.resolve()
+    if not resolved.is_relative_to(core_root.resolve()):
+        raise ValueError(f"Path must be inside the core repository: {value}")
+    return resolved
 
 
 def _repo_relative(core_root: Path, path: Path) -> str:
@@ -286,7 +317,16 @@ def _read_junit(path: Path | None) -> tuple[str, dict[str, Any], list[dict[str, 
                 totals[key] += int(suite.attrib.get(key, "0"))
             except ValueError:
                 totals[key] += 0
-    status = "passed" if totals["failures"] == 0 and totals["errors"] == 0 else "failed"
+    executed = totals["tests"] - totals["skipped"]
+    status = (
+        "passed"
+        if totals["tests"] > 0
+        and executed > 0
+        and totals["failures"] == 0
+        and totals["errors"] == 0
+        else "failed"
+    )
+    totals["executed"] = executed
     artifact = _artifact_record(path, "junit", "junit")
     return status, totals, [artifact]
 
@@ -301,14 +341,28 @@ def _read_coverage(path: Path | None) -> tuple[str, dict[str, Any], list[dict[st
         line_rate = float(root.attrib.get("line-rate", "0"))
     except ValueError:
         line_rate = 0.0
+    try:
+        lines_covered = int(root.attrib.get("lines-covered", "0"))
+        lines_valid = int(root.attrib.get("lines-valid", "0"))
+    except ValueError:
+        lines_covered = 0
+        lines_valid = 0
     details = {
         "line_rate": line_rate,
         "line_percent": round(line_rate * 100, 2),
-        "lines_covered": int(root.attrib.get("lines-covered", "0")),
-        "lines_valid": int(root.attrib.get("lines-valid", "0")),
+        "lines_covered": lines_covered,
+        "lines_valid": lines_valid,
+        "minimum_line_rate": MINIMUM_COVERAGE_RATE,
     }
     artifact = _artifact_record(path, "coverage", "coverage")
-    return "passed", details, [artifact]
+    status = (
+        "passed"
+        if lines_valid > 0
+        and 0 <= lines_covered <= lines_valid
+        and line_rate >= MINIMUM_COVERAGE_RATE
+        else "failed"
+    )
+    return status, details, [artifact]
 
 
 def _artifact_record(path: Path, kind: str, prefix: str) -> dict[str, Any]:
@@ -355,7 +409,7 @@ def _status_from_checks(statuses: Iterable[str]) -> str:
     values = list(statuses)
     if any(value == "failed" for value in values):
         return "failed"
-    if any(value == "passed" for value in values):
+    if values and all(value == "passed" for value in values):
         return "passed"
     return "not-run"
 
@@ -392,11 +446,89 @@ def _report(
     }
 
 
+def _schema_validation_messages(
+    *, core_root: Path, schema_name: str, document: dict[str, Any]
+) -> list[str]:
+    schema = read_json(core_root / "schemas" / schema_name)
+    Draft202012Validator.check_schema(schema)
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    errors = sorted(validator.iter_errors(document), key=lambda item: tuple(map(str, item.path)))
+    return [
+        f"{'/'.join(map(str, error.absolute_path)) or '<root>'}: {error.message}"
+        for error in errors
+    ]
+
+
+def _validate_generated_document(
+    *, core_root: Path, schema_name: str, document: dict[str, Any], label: str
+) -> None:
+    errors = _schema_validation_messages(
+        core_root=core_root, schema_name=schema_name, document=document
+    )
+    if errors:
+        raise ValueError(f"Generated {label} failed schema validation: {'; '.join(errors)}")
+
+
 def _validated_source_commit(value: str | None, core_root: Path) -> str:
     commit = value or git_commit(core_root)
     if len(commit) != 40 or any(character not in "0123456789abcdefABCDEF" for character in commit):
         raise ValueError(f"Expected a 40-character source commit, got {commit!r}")
-    return commit.lower()
+    commit = commit.lower()
+    exists = subprocess.run(
+        ["git", "-C", str(core_root), "cat-file", "-e", f"{commit}^{{commit}}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if exists.returncode != 0:
+        raise ValueError(f"Source commit does not exist in the Core repository: {commit}")
+    ancestor = subprocess.run(
+        ["git", "-C", str(core_root), "merge-base", "--is-ancestor", commit, "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if ancestor.returncode != 0:
+        raise ValueError(f"Source commit is not an ancestor of the packaging checkout: {commit}")
+    changed = subprocess.run(
+        ["git", "-C", str(core_root), "diff", "--name-only", f"{commit}..HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if changed.returncode != 0:
+        raise ValueError(f"Could not compare source commit with packaging checkout: {commit}")
+    changed_paths = [line.strip().replace("\\", "/") for line in changed.stdout.splitlines()]
+    unexpected = [
+        path for path in changed_paths if path and not path.startswith(ALLOWED_PACKAGING_PREFIXES)
+    ]
+    if unexpected:
+        raise ValueError(
+            "Source commit omits runtime code/config changes: " + ", ".join(unexpected)
+        )
+    return commit
+
+
+def _validate_packaging_worktree(core_root: Path) -> None:
+    status = subprocess.run(
+        ["git", "-C", str(core_root), "status", "--porcelain=v1", "--untracked-files=all"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if status.returncode != 0:
+        raise ValueError("Could not inspect Core packaging worktree state.")
+    dirty_paths: list[str] = []
+    for line in status.stdout.splitlines():
+        raw_path = line[3:].strip().replace("\\", "/") if len(line) >= 4 else line.strip()
+        candidates = raw_path.split(" -> ")
+        dirty_paths.extend(path.strip('"') for path in candidates if path)
+    unexpected = [path for path in dirty_paths if not path.startswith(ALLOWED_PACKAGING_PREFIXES)]
+    if unexpected:
+        raise ValueError(
+            "Packaging worktree contains uncommitted runtime/config changes: "
+            + ", ".join(sorted(unexpected))
+        )
 
 
 def _read_bound_result(
@@ -405,6 +537,7 @@ def _read_bound_result(
     path: Path | None,
     report_kind: str,
     source_commit: str,
+    manifest_repo_path: str,
     manifest_sha256: str,
 ) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
     if path is None:
@@ -421,6 +554,20 @@ def _read_bound_result(
         errors.append(f"report_type must be {expected_type}")
     if payload.get("status") != "PASS":
         errors.append("status must be PASS")
+    expected_report_id = f"{report_kind}-golden-pilot-minimal-v1-{RELEASE_ID}"
+    if payload.get("report_id") != expected_report_id:
+        errors.append(f"report_id must be {expected_report_id}")
+    if payload.get("fixture_id") != "golden-pilot-minimal-v1":
+        errors.append("fixture_id must be golden-pilot-minimal-v1")
+    if payload.get("session_id") != EXPECTED_SESSION_ID:
+        errors.append(f"session_id must be {EXPECTED_SESSION_ID}")
+    fixture_path = core_root / Path(*FIXTURE_RELATIVE_PATH.split("/"))
+    fixture_sha256 = sha256_file(fixture_path)
+    if payload.get("fixture_file_sha256") != fixture_sha256:
+        errors.append("fixture_file_sha256 does not match the repository fixture")
+    declared_digest = payload.get("report_digest")
+    if not isinstance(declared_digest, str) or declared_digest != canonical_report_digest(payload):
+        errors.append("report_digest does not match canonical report content")
     binding = payload.get("candidate_binding")
     if not isinstance(binding, dict):
         errors.append("candidate_binding is missing")
@@ -433,6 +580,17 @@ def _read_bound_result(
         errors.append("candidate source_commit mismatch")
     if binding.get("runtime_manifest_sha256") != manifest_sha256:
         errors.append("runtime manifest hash mismatch")
+    if binding.get("runtime_manifest_path") != manifest_repo_path:
+        errors.append("runtime manifest path mismatch")
+    for field, expected in (
+        ("bundle_id", BUNDLE_ID),
+        ("release_id", RELEASE_ID),
+        ("source_commit", source_commit),
+        ("runtime_manifest_path", manifest_repo_path),
+        ("runtime_manifest_sha256", manifest_sha256),
+    ):
+        if payload.get(field) != expected:
+            errors.append(f"top-level {field} mismatch")
 
     details: dict[str, Any] = {
         "report_id": payload.get("report_id"),
@@ -454,6 +612,16 @@ def _read_bound_result(
             digests = {item.get(digest_key) for item in runs if isinstance(item, dict)}
             if len(digests) != 1 or None in digests:
                 errors.append(f"{digest_key} differs across replay runs")
+        if runs and any(
+            item.get("run_index") != index
+            or type(item.get("event_count")) is not int
+            or item.get("event_count", 0) <= 0
+            or type(item.get("planned_action_count")) is not int
+            or item.get("planned_action_count", 0) <= 0
+            for index, item in enumerate(runs)
+            if isinstance(item, dict)
+        ):
+            errors.append("replay runs must have sequential indexes and non-empty events/actions")
         details.update(
             {
                 "deterministic": deterministic,
@@ -469,6 +637,22 @@ def _read_bound_result(
         real_calls = audit.get("core_v2_real_input_call_count")
         if real_calls != 0 or audit.get("real_input_call_count") != 0:
             errors.append("Core v2 real input call count must be zero")
+        for counter in (
+            "keyboard_call_count",
+            "mouse_call_count",
+            "receiver_call_count",
+            "window_call_count",
+            "double_write_event_count",
+            "core_execution_event_count",
+        ):
+            if audit.get(counter) != 0:
+                errors.append(f"{counter} must be zero")
+        if audit.get("boundary_attempts") != []:
+            errors.append("boundary_attempts must be empty")
+        if audit.get("connected") is not False:
+            errors.append("dry-run sink must be disconnected after Shadow")
+        if audit.get("sink_type") != "DryRunInputSink":
+            errors.append("Shadow must use the concrete DryRunInputSink")
         diffs = payload.get("diffs")
         if not isinstance(diffs, list):
             errors.append("diffs must be a list")
@@ -481,6 +665,11 @@ def _read_bound_result(
         ]
         if unclassified:
             errors.append("Shadow contains unclassified diffs")
+        if not diffs:
+            errors.append("Shadow must compare at least one planned/observed action")
+        diff_summary = payload.get("diff_summary")
+        if not isinstance(diff_summary, dict) or diff_summary.get("unclassified_diff_count") != 0:
+            errors.append("Shadow diff summary must report zero unclassified diffs")
         details.update(
             {
                 "diff_count": len(diffs),
@@ -506,6 +695,8 @@ def _read_clean_result(
     core_root: Path,
     path: Path | None,
     source_commit: str,
+    manifest_repo_path: str,
+    manifest_sha256: str,
 ) -> tuple[str, dict[str, Any], list[dict[str, Any]], list[Path]]:
     if path is None:
         return "not-run", {"reason": "clean-smoke result was not supplied."}, [], []
@@ -516,6 +707,12 @@ def _read_clean_result(
     except (OSError, ValueError) as exc:
         return "failed", {"reason": str(exc)}, [], []
     errors: list[str] = []
+    schema_errors = _schema_validation_messages(
+        core_root=core_root,
+        schema_name="evidence-report.schema.json",
+        document=payload,
+    )
+    errors.extend(f"schema {message}" for message in schema_errors)
     if payload.get("report_kind") != "clean-smoke":
         errors.append("report_kind must be clean-smoke")
     if payload.get("status") != "passed":
@@ -544,6 +741,39 @@ def _read_clean_result(
         summary = {}
     if summary.get("pip_cache") != "disabled" or summary.get("wheel_install") is not True:
         errors.append("cacheless wheel installation evidence is missing")
+    if summary.get("runtime_manifest_path") != manifest_repo_path:
+        errors.append("clean-smoke runtime manifest path mismatch")
+    if summary.get("runtime_manifest_sha256") != manifest_sha256:
+        errors.append("clean-smoke runtime manifest hash mismatch")
+
+    required_checks = {
+        "clean-checkout",
+        "clean-build-cache-baseline",
+        "candidate-source-lineage",
+        "create-isolated-venv",
+        "cacheless-lock-install",
+        "dependency-lock-audit",
+        "ruff-lint",
+        "ruff-format",
+        "mypy",
+        "candidate-manifest-schema",
+        "candidate-bundle-metadata",
+        "pytest-coverage",
+        "wheel-sdist-build",
+        "wheel-install",
+        "installed-wheel-import",
+        "golden-replay-three-runs",
+        "shadow-zero-real-input",
+        "rollback-stop-core-keep-legacy-owner",
+    }
+    observed_check_names = {
+        item.get("name")
+        for item in checks
+        if isinstance(item, dict) and isinstance(item.get("name"), str)
+    }
+    missing_checks = sorted(required_checks - observed_check_names)
+    if missing_checks:
+        errors.append("clean-smoke missing required checks: " + ", ".join(missing_checks))
 
     nested_paths: list[Path] = []
     nested_artifacts = payload.get("artifacts")
@@ -565,7 +795,14 @@ def _read_clean_result(
             continue
         if sha256_file(artifact_path) != item.get("sha256"):
             errors.append(f"clean-smoke artifact hash mismatch: {item['path']}")
+        if artifact_path.stat().st_size != item.get("size_bytes"):
+            errors.append(f"clean-smoke artifact size mismatch: {item['path']}")
         nested_paths.append(artifact_path)
+
+    artifact_kinds = {item.get("kind") for item in nested_artifacts if isinstance(item, dict)}
+    for required_kind in ("junit", "coverage", "evidence-report", "wheel", "sdist"):
+        if required_kind not in artifact_kinds:
+            errors.append(f"clean-smoke missing {required_kind} artifact")
 
     details: dict[str, Any] = {
         "artifact_count": len(nested_paths),
@@ -586,10 +823,121 @@ def _read_clean_result(
     return status, details, [artifact], nested_paths
 
 
+def _read_ci_result(
+    *,
+    core_root: Path,
+    path: Path,
+    candidate_source_commit: str,
+) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
+    if not path.is_file():
+        return "failed", {"reason": f"CI result does not exist: {path}"}, []
+    try:
+        payload = read_json(path)
+    except (OSError, ValueError) as exc:
+        return "failed", {"reason": str(exc)}, []
+    errors = [
+        f"schema {message}"
+        for message in _schema_validation_messages(
+            core_root=core_root,
+            schema_name="ci-evidence.schema.json",
+            document=payload,
+        )
+    ]
+    for field, expected in (
+        ("status", "passed"),
+        ("bundle_id", BUNDLE_ID),
+        ("release_id", RELEASE_ID),
+        ("runner_os", "Windows"),
+        ("dependency_install_result", "passed"),
+    ):
+        if payload.get(field) != expected:
+            errors.append(f"CI {field} must be {expected}")
+    run_id = payload.get("run_id")
+    if not isinstance(run_id, str) or not run_id.isdigit() or int(run_id) <= 0:
+        errors.append("CI run_id must identify a remote GitHub Actions run")
+    if payload.get("event") not in {"push", "pull_request", "workflow_dispatch"}:
+        errors.append("CI event must be a remote GitHub Actions event")
+    checks = payload.get("checks")
+    if (
+        not isinstance(checks, list)
+        or not checks
+        or any(not isinstance(item, dict) or item.get("status") != "passed" for item in checks)
+    ):
+        errors.append("every recorded CI check must be passed")
+
+    checkout_commit = payload.get("source_commit")
+    if not isinstance(checkout_commit, str) or len(checkout_commit) != 40:
+        errors.append("CI source_commit must be a 40-character checkout commit")
+    else:
+        exists = subprocess.run(
+            ["git", "-C", str(core_root), "cat-file", "-e", f"{checkout_commit}^{{commit}}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        lineage = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(core_root),
+                "merge-base",
+                "--is-ancestor",
+                candidate_source_commit,
+                checkout_commit,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        changed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(core_root),
+                "diff",
+                "--name-only",
+                f"{candidate_source_commit}..{checkout_commit}",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        changed_paths = [line.strip().replace("\\", "/") for line in changed.stdout.splitlines()]
+        unexpected = [
+            item
+            for item in changed_paths
+            if item and not item.startswith(ALLOWED_PACKAGING_PREFIXES)
+        ]
+        if exists.returncode != 0 or lineage.returncode != 0 or changed.returncode != 0:
+            errors.append("CI checkout commit is not a known descendant of candidate source")
+        if unexpected:
+            errors.append("CI checkout includes non-packaging changes: " + ", ".join(unexpected))
+
+    details: dict[str, Any] = {
+        "artifact_count": len(payload.get("artifacts", []))
+        if isinstance(payload.get("artifacts"), list)
+        else 0,
+        "checkout_commit": checkout_commit,
+        "run_attempt": payload.get("run_attempt"),
+        "run_id": run_id,
+        "run_url": (
+            f"https://github.com/xphai/mxdauto/actions/runs/{run_id}"
+            if isinstance(run_id, str) and run_id.isdigit()
+            else None
+        ),
+        "workflow_name": payload.get("workflow_name"),
+    }
+    if errors:
+        details["errors"] = errors
+    artifact = _portable_artifact_record(core_root, path, "evidence-report", "ci-result")
+    return "failed" if errors else "passed", details, [artifact]
+
+
 def build_bundle(args: argparse.Namespace) -> Path:
     core_root = args.core_root.resolve()
     if not core_root.is_dir():
         raise ValueError(f"Core root does not exist: {core_root}")
+    _validate_packaging_worktree(core_root)
     legacy_root = resolve_root("MAPLE_LEGACY_ROOT", args.legacy_root)
     model_root = resolve_root("MAPLE_MODEL_ROOT", args.model_root)
     upstream_root = resolve_root("MAPLE_UPSTREAM_ROOT", args.upstream_root)
@@ -620,6 +968,12 @@ def build_bundle(args: argparse.Namespace) -> Path:
     }
     asset_index_path = output_dir / "asset-index.json"
     write_json(asset_index_path, asset_index)
+    _validate_generated_document(
+        core_root=core_root,
+        schema_name="runtime-asset-index.schema.json",
+        document=asset_index,
+        label="asset index",
+    )
     asset_index_sha256 = sha256_file(asset_index_path)
 
     evidence_index_repo_path = _repo_relative(core_root, evidence_dir / "evidence-index.json")
@@ -689,6 +1043,12 @@ def build_bundle(args: argparse.Namespace) -> Path:
     }
     manifest_path = output_dir / "runtime-manifest.json"
     write_json(manifest_path, manifest)
+    _validate_generated_document(
+        core_root=core_root,
+        schema_name="runtime-manifest.schema.json",
+        document=manifest,
+        label="runtime manifest",
+    )
     manifest_sha256 = sha256_file(manifest_path)
 
     replay_result_path = (
@@ -700,6 +1060,7 @@ def build_bundle(args: argparse.Namespace) -> Path:
     clean_result_path = (
         _repo_path(core_root, args.clean_result) if args.clean_result is not None else None
     )
+    ci_result_path = _repo_path(core_root, args.ci_result) if args.ci_result is not None else None
 
     junit_status, junit_details, junit_artifacts = _read_junit(junit_path)
     coverage_status, coverage_details, coverage_artifacts = _read_coverage(coverage_path)
@@ -751,6 +1112,7 @@ def build_bundle(args: argparse.Namespace) -> Path:
         path=replay_result_path,
         report_kind="replay",
         source_commit=core_commit,
+        manifest_repo_path=manifest_repo_path,
         manifest_sha256=manifest_sha256,
     )
     replay_report = _report(
@@ -784,6 +1146,7 @@ def build_bundle(args: argparse.Namespace) -> Path:
         path=shadow_result_path,
         report_kind="shadow",
         source_commit=core_commit,
+        manifest_repo_path=manifest_repo_path,
         manifest_sha256=manifest_sha256,
     )
     shadow_report = _report(
@@ -820,6 +1183,8 @@ def build_bundle(args: argparse.Namespace) -> Path:
         core_root=core_root,
         path=clean_result_path,
         source_commit=core_commit,
+        manifest_repo_path=manifest_repo_path,
+        manifest_sha256=manifest_sha256,
     )
     clean_report = _report(
         report_kind="clean-smoke",
@@ -844,26 +1209,81 @@ def build_bundle(args: argparse.Namespace) -> Path:
     write_json(clean_report_path, clean_report)
     report_paths.append(clean_report_path)
 
+    ci_report: dict[str, Any] | None = None
+    if ci_result_path is not None:
+        ci_status, ci_details, ci_artifacts = _read_ci_result(
+            core_root=core_root,
+            path=ci_result_path,
+            candidate_source_commit=core_commit,
+        )
+        ci_report = _report(
+            report_kind="ci",
+            evidence_id=CI_REPORT_ID,
+            status=ci_status,
+            bundle_id=BUNDLE_ID,
+            release_id=RELEASE_ID,
+            source_commit=core_commit,
+            generated_at=generated_at,
+            checks=[
+                {
+                    "command": "validate downloaded GitHub Actions ci-evidence metadata",
+                    "details": ci_details,
+                    "name": "remote-ci-evidence-binding",
+                    "status": ci_status,
+                }
+            ],
+            artifacts=ci_artifacts,
+            summary={
+                "claim_scope": (
+                    "Remote Windows CI metadata and content-addressed artifact inventory."
+                )
+            },
+        )
+        ci_report_path = evidence_dir / "ci-report.json"
+        write_json(ci_report_path, ci_report)
+        report_paths.append(ci_report_path)
+
     lock_path = _repo_path(core_root, args.lock)
     if not lock_path.is_file():
         raise ValueError(f"Dependency lock file does not exist: {lock_path}")
+    locked_packages = parse_lock(lock_path)
+    installed_errors = verify_installed(locked_packages) if args.dependency_check_installed else []
+    installed_status = (
+        "passed"
+        if args.dependency_check_installed and not installed_errors
+        else "failed"
+        if args.dependency_check_installed
+        else "not-run"
+    )
     lock_artifact = _portable_artifact_record(core_root, lock_path, "dependency-lock", "lock")
     dependency_report_id = "dependency-report-g0-candidate-shadow-20260829"
     dependency_report = _report(
         report_kind="dependency",
         evidence_id=dependency_report_id,
-        status="passed",
+        status=installed_status,
         bundle_id=BUNDLE_ID,
         release_id=RELEASE_ID,
         source_commit=core_commit,
         generated_at=generated_at,
         checks=[
             {
-                "command": "python -m pip install --requirement configs/requirements.lock",
-                "details": {"lock_sha256": lock_artifact["sha256"]},
-                "name": "dependency-lock-present",
+                "command": "parse every non-comment lock line as exact package==version",
+                "details": {
+                    "lock_sha256": lock_artifact["sha256"],
+                    "package_count": len(locked_packages),
+                },
+                "name": "dependency-lock-syntax",
                 "status": "passed",
-            }
+            },
+            {
+                "command": (
+                    "python tools/verify_dependency_lock.py --lock "
+                    "configs/requirements.lock --check-installed"
+                ),
+                "details": {"errors": installed_errors},
+                "name": "dependency-lock-installed-versions",
+                "status": installed_status,
+            },
         ],
         artifacts=[lock_artifact],
     )
@@ -877,7 +1297,19 @@ def build_bundle(args: argparse.Namespace) -> Path:
         if path.is_file()
     ]
     build_report_id = "build-report-g0-candidate-shadow-20260829"
-    build_status = "passed" if build_artifacts else "not-run"
+    build_kinds = {artifact["kind"] for artifact in build_artifacts}
+    clean_artifact_paths = {path.resolve() for path in clean_nested_paths}
+    build_paths = {path.resolve() for path in artifact_paths if path.is_file()}
+    build_bound_to_clean = bool(build_paths) and build_paths.issubset(clean_artifact_paths)
+    build_status = (
+        "passed"
+        if clean_status == "passed"
+        and {"wheel", "sdist"}.issubset(build_kinds)
+        and build_bound_to_clean
+        else "failed"
+        if build_artifacts
+        else "not-run"
+    )
     build_report = _report(
         report_kind="build",
         evidence_id=build_report_id,
@@ -889,7 +1321,11 @@ def build_bundle(args: argparse.Namespace) -> Path:
         checks=[
             {
                 "command": "python -m build --wheel --sdist --no-isolation",
-                "details": {"artifact_count": len(build_artifacts)},
+                "details": {
+                    "artifact_count": len(build_artifacts),
+                    "artifact_kinds": sorted(build_kinds),
+                    "bound_to_clean_smoke": build_bound_to_clean,
+                },
                 "name": "package-build",
                 "status": build_status,
             }
@@ -937,9 +1373,15 @@ def build_bundle(args: argparse.Namespace) -> Path:
         generated_at=generated_at,
         checks=[
             {
-                "command": "python tools/verify_bundle.py --bundle-dir <bundle> --root ...",
-                "details": {"external_asset_count": len(asset_entries)},
-                "name": "external-asset-sha256",
+                "command": "stream every configured asset byte through SHA-256 during generation",
+                "details": {
+                    "asset_count": len(asset_entries),
+                    "external_asset_count": sum(
+                        entry["source"]["root_env"] != "MAPLE_CORE_ROOT" for entry in asset_entries
+                    ),
+                    "measurement_stage": "generation",
+                },
+                "name": "asset-byte-sha256-measurement",
                 "status": "passed",
             }
         ],
@@ -959,11 +1401,24 @@ def build_bundle(args: argparse.Namespace) -> Path:
         replay_report,
         shadow_report,
         clean_report,
-        dependency_report,
-        build_report,
-        manifest_report,
-        hash_report,
     ]
+    if ci_report is not None:
+        reports.append(ci_report)
+    reports.extend(
+        [
+            dependency_report,
+            build_report,
+            manifest_report,
+            hash_report,
+        ]
+    )
+    for report in reports:
+        _validate_generated_document(
+            core_root=core_root,
+            schema_name="evidence-report.schema.json",
+            document=report,
+            label=f"{report['report_kind']} evidence report",
+        )
     for report_path, report in zip(report_paths, reports, strict=True):
         size_bytes, digest, _ = file_metadata(report_path)
         evidence_entries.append(
@@ -1027,6 +1482,12 @@ def build_bundle(args: argparse.Namespace) -> Path:
     }
     evidence_index_path = evidence_dir / "evidence-index.json"
     write_json(evidence_index_path, evidence_index)
+    _validate_generated_document(
+        core_root=core_root,
+        schema_name="evidence-index.schema.json",
+        document=evidence_index,
+        label="evidence index",
+    )
     evidence_index_sha256 = sha256_file(evidence_index_path)
 
     local_files = [
@@ -1054,9 +1515,11 @@ def build_bundle(args: argparse.Namespace) -> Path:
             if clean_result_path is not None and clean_result_path.is_file()
             else []
         ),
+        *([ci_result_path] if ci_result_path is not None and ci_result_path.is_file() else []),
         *clean_nested_paths,
         *[path for path in artifact_paths if path.is_file()],
     ]
+    local_files = list(dict.fromkeys(path.resolve() for path in local_files))
     local_file_records = []
     for path in sorted(local_files, key=lambda item: _repo_relative(core_root, item)):
         size_bytes, digest, _ = file_metadata(path)
@@ -1067,17 +1530,20 @@ def build_bundle(args: argparse.Namespace) -> Path:
                 "size_bytes": size_bytes,
             }
         )
+    bundle_evidence = {
+        "index_id": EVIDENCE_INDEX_ID,
+        "replay_report_id": REPLAY_REPORT_ID,
+        "shadow_report_id": SHADOW_REPORT_ID,
+        "clean_report_id": CLEAN_REPORT_ID,
+        "test_report_id": TEST_REPORT_ID,
+    }
+    if ci_report is not None:
+        bundle_evidence["ci_report_id"] = CI_REPORT_ID
     bundle = {
         "asset_index_path": asset_index_repo_path,
         "asset_index_sha256": asset_index_sha256,
         "bundle_id": BUNDLE_ID,
-        "evidence": {
-            "index_id": EVIDENCE_INDEX_ID,
-            "replay_report_id": REPLAY_REPORT_ID,
-            "shadow_report_id": SHADOW_REPORT_ID,
-            "clean_report_id": CLEAN_REPORT_ID,
-            "test_report_id": TEST_REPORT_ID,
-        },
+        "evidence": bundle_evidence,
         "evidence_index_path": evidence_index_repo_path,
         "evidence_index_sha256": evidence_index_sha256,
         "execution_mode": "shadow",
@@ -1108,6 +1574,12 @@ def build_bundle(args: argparse.Namespace) -> Path:
         "subject_id": SUBJECT_ID,
     }
     bundle_path = output_dir / "bundle.json"
+    _validate_generated_document(
+        core_root=core_root,
+        schema_name="runtime-bundle.schema.json",
+        document=bundle,
+        label="runtime bundle",
+    )
     write_json(bundle_path, bundle)
     checksum_path = output_dir / "checksums.sha256"
     _write_checksums(core_root, [*local_files, bundle_path], checksum_path)

@@ -126,6 +126,123 @@ def test_ci_evidence_collection_matches_schema(tmp_path: Path) -> None:
     assert payload["status"] == "passed"
 
 
+def test_ci_evidence_records_github_step_outcomes_and_job_failure(tmp_path: Path) -> None:
+    output = tmp_path / "ci-evidence.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(tmp_path),
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--check-result",
+            "ruff-lint::failure::python -m ruff check src tests tools",
+            "--check-result",
+            "ruff-format::success::python -m ruff format --check src tests tools",
+            "--workflow-result",
+            "failure",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    checks = {check["name"]: check for check in payload["checks"]}  # type: ignore[index]
+    assert payload["status"] == "failed"
+    assert checks["ruff-lint"]["status"] == "failed"
+    assert checks["ruff-lint"]["details"]["outcome"] == "failure"  # type: ignore[index]
+    assert checks["ruff-format"]["status"] == "passed"
+    assert checks["ruff-format"]["details"]["github_step_outcome"] == "success"  # type: ignore[index]
+
+
+def test_ci_evidence_missing_report_is_recorded_without_crashing(tmp_path: Path) -> None:
+    output = tmp_path / "ci-evidence.json"
+    missing_report = tmp_path / "evidence" / "replay-report.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(tmp_path),
+            "--evidence-report",
+            str(missing_report),
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--workflow-result",
+            "failure",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    evidence_checks = [
+        check
+        for check in payload["checks"]
+        if check["name"] == "evidence-report"  # type: ignore[index]
+    ]
+    assert payload["status"] == "failed"
+    assert evidence_checks
+    assert evidence_checks[0]["status"] == "failed"
+    assert evidence_checks[0]["details"]["reason"] == "file does not exist"  # type: ignore[index]
+
+
+def test_ci_evidence_reports_stale_internal_digest(tmp_path: Path) -> None:
+    fixture = tmp_path / "fixture.json"
+    fixture.write_text('{"fixture": true}\n', encoding="utf-8")
+    report = tmp_path / "replay-report.json"
+    report.write_text(
+        json.dumps(
+            {
+                "report_type": "golden_replay",
+                "status": "PASS",
+                "fixture_file_sha256": "0" * 64,
+                "report_digest": "0" * 64,
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "ci-evidence.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(tmp_path),
+            "--evidence-report",
+            str(report),
+            "--fixture",
+            str(fixture),
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    evidence_checks = [
+        check
+        for check in payload["checks"]
+        if check["name"] == "evidence-report"  # type: ignore[index]
+    ]
+    assert evidence_checks[0]["status"] == "failed"
+    assert any(
+        "report_digest does not match canonical report content" in error
+        for error in evidence_checks[0]["details"]["errors"]  # type: ignore[index]
+    )
+
+
 def test_dependency_lock_rejects_unpinned_requirements(tmp_path: Path) -> None:
     lock = tmp_path / "requirements.lock"
     lock.write_text("pytest>=8\n", encoding="utf-8")

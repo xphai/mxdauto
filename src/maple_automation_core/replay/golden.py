@@ -294,6 +294,25 @@ class GoldenFixture:
             if action.completed_at_ns < frame_received[action.result_frame_id]:
                 raise ReplayError("action completed_at_ns predates result frame.")
 
+        actions_by_result_frame: dict[int, list[GoldenAction]] = {}
+        for item in self.frames:
+            if item.action is not None:
+                actions_by_result_frame.setdefault(item.action.result_frame_id, []).append(
+                    item.action
+                )
+        for index, item in enumerate(self.frames[:-1]):
+            latest_event_ns = item.packet.received_at_ns
+            if item.action is not None:
+                latest_event_ns = max(
+                    latest_event_ns,
+                    item.action.spec.requested_at_ns + 1,
+                )
+            for completed in actions_by_result_frame.get(item.packet.frame_id, []):
+                latest_event_ns = max(latest_event_ns, completed.completed_at_ns)
+            next_event_ns = self.frames[index + 1].packet.received_at_ns
+            if latest_event_ns > next_event_ns:
+                raise ReplayError("golden action lifecycle crosses the next frame event time.")
+
     @property
     def bundle_id(self) -> str:
         value = self.bundle.get("bundle_id")

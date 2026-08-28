@@ -9,8 +9,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
-if str(SRC) not in sys.path:
+try:
+    import maple_automation_core as _runtime_package
+except ModuleNotFoundError:  # local source checkout invocation
     sys.path.insert(0, str(SRC))
+    import maple_automation_core as _runtime_package
 
 from report_binding import bind_report_to_manifest, sha256_file, write_report  # noqa: E402
 
@@ -45,11 +48,21 @@ def _parse_args(argv: list[str] | None = None) -> Namespace:
         type=Path,
         help="Candidate runtime manifest used to bind this replay result.",
     )
+    parser.add_argument(
+        "--require-installed",
+        action="store_true",
+        help="Require the runtime package to resolve outside this source checkout.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
+    package_path = Path(_runtime_package.__file__).resolve()
+    if args.require_installed and package_path.is_relative_to(ROOT):
+        raise RuntimeError(
+            f"Runtime package resolved from checkout instead of wheel: {package_path}"
+        )
     report = GoldenReplayRunner(args.fixture).run_repeated(args.runs)
     payload = report.to_dict()
     payload["fixture_file_sha256"] = sha256_file(args.fixture.resolve())

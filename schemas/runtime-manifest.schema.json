@@ -23,6 +23,14 @@
   },
   "required": [
     "local_urn",
+    "bundle_status",
+    "execution_mode",
+    "subject_id",
+    "input_owner",
+    "real_input_enabled",
+    "asset_index_path",
+    "asset_index_sha256",
+    "evidence_index_path",
     "runtime_manifest_version",
     "release_id",
     "source_commit",
@@ -103,7 +111,7 @@
     "asset_index_path": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$",
+      "pattern": "^(?!/)(?!.*:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*(?:^|/)[^/]*[. ](?:/|$)).+$",
       "description": "Repository-relative asset index path."
     },
     "asset_index_sha256": {
@@ -113,7 +121,7 @@
     "evidence_index_path": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$",
+      "pattern": "^(?!/)(?!.*:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*(?:^|/)[^/]*[. ](?:/|$)).+$",
       "description": "Repository-relative evidence index path."
     },
     "evidence_index_sha256": {
@@ -349,5 +357,23 @@
       "description": "ISO8601 UTC timestamp."
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "execution_mode": {
+            "enum": ["offline", "shadow", "dry-run"]
+          }
+        },
+        "required": ["execution_mode"]
+      },
+      "then": {
+        "properties": {
+          "real_input_enabled": { "const": false },
+          "input_owner": { "enum": ["legacy", "none"] }
+        }
+      }
+    }
+  ],
   "additionalProperties": false
 }
