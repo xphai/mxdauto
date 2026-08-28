@@ -1,0 +1,404 @@
+{
+  "bundle": {
+    "bundle_id": "bundle-golden-pilot-v1",
+    "input_profile": {
+      "map_id": "fixture-map-01",
+      "profile_id": "anonymous-profile-01",
+      "seed": 17
+    },
+    "release_id": "release-golden-pilot-v1",
+    "source_commit": "0000000000000000000000000000000000000000"
+  },
+  "fixture_id": "golden-pilot-minimal-v1",
+  "frames": [
+    {
+      "action": {
+        "completed_at_ns": 2000001000,
+        "details": {
+          "delta_x": 20,
+          "predicate": "position_changed"
+        },
+        "evidence": {
+          "result_source": "fixture-truth"
+        },
+        "result_frame_id": 2,
+        "result_world_state_version": 2,
+        "spec": {
+          "action_id": "core-plan-move-001",
+          "evidence": {
+            "planner": "golden-fixture",
+            "predicate": "position_changed"
+          },
+          "kind": "move",
+          "origin_frame_id": 1,
+          "origin_world_state_version": 1,
+          "payload": {
+            "direction": "right",
+            "duration_ms": 20
+          },
+          "requested_at_ns": 1000001000,
+          "session_id": "golden-session-001",
+          "timeout_ns": 2000000000
+        },
+        "termination": "success"
+      },
+      "packet": {
+        "capture_health": {
+          "captured_at_ns": 1000000000,
+          "clock_domain": "monotonic-fixture",
+          "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "frame_id": 1,
+          "max_age_ns": 100000000,
+          "received_at_ns": 1000001000,
+          "session_id": "golden-session-001",
+          "source_id": "fixture-camera-001",
+          "transform_version": "geometry-v1"
+        },
+        "captured_at_ns": 1000000000,
+        "clock_domain": "monotonic-fixture",
+        "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "frame_id": 1,
+        "image_metadata": {
+          "fixture_role": "golden",
+          "frame_index": 1,
+          "redacted": true
+        },
+        "image_ref": "fixture://pilot-minimal/frame-001",
+        "received_at_ns": 1000001000,
+        "session_id": "golden-session-001",
+        "source_geometry": {
+          "content_rect": {
+            "height": 768,
+            "width": 1366,
+            "x": 277,
+            "y": 167
+          },
+          "source_size": {
+            "height": 1080,
+            "width": 1920
+          },
+          "working_size": {
+            "height": 700,
+            "width": 1296
+          }
+        },
+        "source_id": "fixture-camera-001",
+        "transform_version": "geometry-v1"
+      },
+      "world_state": {
+        "frame_id": 1,
+        "generation": 1,
+        "observations": [
+          {
+            "confidence": 1.0,
+            "freshness_ns": 99999000,
+            "generation": 1,
+            "key": "fixture_status",
+            "payload": {
+              "frame": 1,
+              "source": "synthetic"
+            },
+            "session_id": "golden-session-001",
+            "source_frame_id": 1,
+            "source_world_state_version": 1
+          }
+        ],
+        "observed_at_ns": 1000001000,
+        "player": {
+          "confidence": 0.99,
+          "freshness_ns": 99999000,
+          "generation": 1,
+          "player_id": "anonymous-player-01",
+          "position": {
+            "x": 100,
+            "y": 200
+          },
+          "session_id": "golden-session-001",
+          "source_frame_id": 1,
+          "source_world_state_version": 1,
+          "velocity": {
+            "dx": 0.0,
+            "dy": 0.0
+          },
+          "visibility": "visible"
+        },
+        "session_id": "golden-session-001",
+        "world_state_version": 1
+      }
+    },
+    {
+      "action": {
+        "completed_at_ns": 3000001000,
+        "details": {
+          "delta_y": -50,
+          "predicate": "vertical_displacement"
+        },
+        "evidence": {
+          "result_source": "fixture-truth"
+        },
+        "result_frame_id": 3,
+        "result_world_state_version": 3,
+        "spec": {
+          "action_id": "core-plan-jump-002",
+          "evidence": {
+            "planner": "golden-fixture",
+            "predicate": "vertical_displacement"
+          },
+          "kind": "jump",
+          "origin_frame_id": 2,
+          "origin_world_state_version": 2,
+          "payload": {
+            "height_px": 50
+          },
+          "requested_at_ns": 2000001000,
+          "session_id": "golden-session-001",
+          "timeout_ns": 2000000000
+        },
+        "termination": "success"
+      },
+      "packet": {
+        "capture_health": {
+          "captured_at_ns": 2000000000,
+          "clock_domain": "monotonic-fixture",
+          "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "frame_id": 2,
+          "max_age_ns": 100000000,
+          "received_at_ns": 2000001000,
+          "session_id": "golden-session-001",
+          "source_id": "fixture-camera-001",
+          "transform_version": "geometry-v1"
+        },
+        "captured_at_ns": 2000000000,
+        "clock_domain": "monotonic-fixture",
+        "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "frame_id": 2,
+        "image_metadata": {
+          "fixture_role": "golden",
+          "frame_index": 2,
+          "redacted": true
+        },
+        "image_ref": "fixture://pilot-minimal/frame-002",
+        "received_at_ns": 2000001000,
+        "session_id": "golden-session-001",
+        "source_geometry": {
+          "content_rect": {
+            "height": 768,
+            "width": 1366,
+            "x": 277,
+            "y": 167
+          },
+          "source_size": {
+            "height": 1080,
+            "width": 1920
+          },
+          "working_size": {
+            "height": 700,
+            "width": 1296
+          }
+        },
+        "source_id": "fixture-camera-001",
+        "transform_version": "geometry-v1"
+      },
+      "world_state": {
+        "frame_id": 2,
+        "generation": 2,
+        "observations": [
+          {
+            "confidence": 1.0,
+            "freshness_ns": 99999000,
+            "generation": 2,
+            "key": "fixture_status",
+            "payload": {
+              "frame": 2,
+              "source": "synthetic"
+            },
+            "session_id": "golden-session-001",
+            "source_frame_id": 2,
+            "source_world_state_version": 2
+          }
+        ],
+        "observed_at_ns": 2000001000,
+        "player": {
+          "confidence": 0.99,
+          "freshness_ns": 99999000,
+          "generation": 2,
+          "player_id": "anonymous-player-01",
+          "position": {
+            "x": 120,
+            "y": 200
+          },
+          "session_id": "golden-session-001",
+          "source_frame_id": 2,
+          "source_world_state_version": 2,
+          "velocity": {
+            "dx": 20.0,
+            "dy": 0.0
+          },
+          "visibility": "visible"
+        },
+        "session_id": "golden-session-001",
+        "world_state_version": 2
+      }
+    },
+    {
+      "action": null,
+      "packet": {
+        "capture_health": {
+          "captured_at_ns": 3000000000,
+          "clock_domain": "monotonic-fixture",
+          "content_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "frame_id": 3,
+          "max_age_ns": 100000000,
+          "received_at_ns": 3000001000,
+          "session_id": "golden-session-001",
+          "source_id": "fixture-camera-001",
+          "transform_version": "geometry-v1"
+        },
+        "captured_at_ns": 3000000000,
+        "clock_domain": "monotonic-fixture",
+        "content_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "frame_id": 3,
+        "image_metadata": {
+          "fixture_role": "golden",
+          "frame_index": 3,
+          "redacted": true
+        },
+        "image_ref": "fixture://pilot-minimal/frame-003",
+        "received_at_ns": 3000001000,
+        "session_id": "golden-session-001",
+        "source_geometry": {
+          "content_rect": {
+            "height": 768,
+            "width": 1366,
+            "x": 277,
+            "y": 167
+          },
+          "source_size": {
+            "height": 1080,
+            "width": 1920
+          },
+          "working_size": {
+            "height": 700,
+            "width": 1296
+          }
+        },
+        "source_id": "fixture-camera-001",
+        "transform_version": "geometry-v1"
+      },
+      "world_state": {
+        "frame_id": 3,
+        "generation": 3,
+        "observations": [
+          {
+            "confidence": 1.0,
+            "freshness_ns": 99999000,
+            "generation": 3,
+            "key": "fixture_status",
+            "payload": {
+              "frame": 3,
+              "source": "synthetic"
+            },
+            "session_id": "golden-session-001",
+            "source_frame_id": 3,
+            "source_world_state_version": 3
+          }
+        ],
+        "observed_at_ns": 3000001000,
+        "player": {
+          "confidence": 0.99,
+          "freshness_ns": 99999000,
+          "generation": 3,
+          "player_id": "anonymous-player-01",
+          "position": {
+            "x": 120,
+            "y": 150
+          },
+          "session_id": "golden-session-001",
+          "source_frame_id": 3,
+          "source_world_state_version": 3,
+          "velocity": {
+            "dx": 0.0,
+            "dy": -10.0
+          },
+          "visibility": "visible"
+        },
+        "session_id": "golden-session-001",
+        "world_state_version": 3
+      }
+    }
+  ],
+  "legacy_observed_actions": [
+    {
+      "action_id": "legacy-observed-move-001",
+      "details": {
+        "correlation": "fixture-001",
+        "source": "legacy-event-adapter"
+      },
+      "frame_id": 1,
+      "kind": "move",
+      "observed_at_ns": 1000001000,
+      "session_id": "golden-session-001",
+      "world_state_version": 1
+    },
+    {
+      "action_id": "legacy-observed-jump-002",
+      "details": {
+        "correlation": "fixture-002",
+        "source": "legacy-event-adapter"
+      },
+      "frame_id": 2,
+      "kind": "jump",
+      "observed_at_ns": 2000001000,
+      "session_id": "golden-session-001",
+      "world_state_version": 2
+    }
+  ],
+  "metadata": {
+    "de_identification": {
+      "method": "synthetic-identifiers-and-fixture:// references",
+      "removed_fields": [
+        "account",
+        "character_name",
+        "machine_path"
+      ],
+      "status": "complete"
+    },
+    "geometry": {
+      "content_rect": {
+        "height": 768,
+        "width": 1366,
+        "x": 277,
+        "y": 167
+      },
+      "coordinate_space": "source-pixels-to-working-pixels",
+      "source_size": {
+        "height": 1080,
+        "width": 1920
+      },
+      "working_size": {
+        "height": 700,
+        "width": 1296
+      }
+    },
+    "split": {
+      "name": "pilot-minimal-v1",
+      "role": "golden-replay-smoke",
+      "session_isolation": "one-session"
+    },
+    "time_range_ns": {
+      "end": 3000001000,
+      "start": 1000000000
+    },
+    "truth": {
+      "actions": "post-state transitions are deterministic labels",
+      "status": "manually-reviewed-fixture-truth"
+    },
+    "usage": {
+      "license": "project-internal-synthetic-fixture",
+      "purpose": "deterministic G0 Golden Replay and dry-run Shadow smoke"
+    }
+  },
+  "session_id": "golden-session-001",
+  "source": "synthetic-deidentified",
+  "version": "1.0.0"
+}

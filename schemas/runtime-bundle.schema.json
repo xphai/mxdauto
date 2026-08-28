@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/runtime-bundle.schema.json",
+  "title": "Maple Automation Core Runtime Bundle",
+  "description": "Portable descriptor for an atomic Core v2 bundle. External assets are referenced by environment root and relative path; bytes remain outside this repository.",
+  "type": "object",
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "gitCommit": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,128}$"
+    },
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "rootEnv": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+    },
+    "localFile": {
+      "type": "object",
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/portablePath"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "manifestAssetBindings": {
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "bundle_id",
+    "release_id",
+    "lifecycle",
+    "execution_mode",
+    "subject_id",
+    "input_policy",
+    "manifest_path",
+    "manifest_sha256",
+    "asset_index_path",
+    "asset_index_sha256",
+    "evidence_index_path",
+    "evidence_index_sha256",
+    "manifest_asset_bindings",
+    "local_files",
+    "source",
+    "evidence",
+    "rollback",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "#/$defs/version"
+    },
+    "bundle_id": {
+      "$ref": "#/$defs/id"
+    },
+    "release_id": {
+      "$ref": "#/$defs/id"
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": [
+        "candidate",
+        "offline-valid",
+        "replay-valid",
+        "shadow",
+        "canary",
+        "certified",
+        "quarantined"
+      ]
+    },
+    "execution_mode": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "shadow",
+        "dry-run",
+        "canary",
+        "live"
+      ]
+    },
+    "subject_id": {
+      "type": "string",
+      "pattern": "^subject-[a-z0-9][a-z0-9._-]{1,64}$",
+      "description": "Pseudonymous subject identifier. Account names, character names and credentials are prohibited."
+    },
+    "input_policy": {
+      "type": "object",
+      "required": [
+        "real_input_enabled",
+        "owner",
+        "reason"
+      ],
+      "properties": {
+        "real_input_enabled": {
+          "const": false
+        },
+        "owner": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "none"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "manifest_path": {
+      "$ref": "#/$defs/portablePath"
+    },
+    "manifest_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "asset_index_path": {
+      "$ref": "#/$defs/portablePath"
+    },
+    "asset_index_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "evidence_index_path": {
+      "$ref": "#/$defs/portablePath"
+    },
+    "evidence_index_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "manifest_asset_bindings": {
+      "$ref": "#/$defs/manifestAssetBindings"
+    },
+    "local_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/localFile"
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "core_commit",
+        "core_repository",
+        "upstream_commit",
+        "upstream_repository"
+      ],
+      "properties": {
+        "core_commit": {
+          "$ref": "#/$defs/gitCommit"
+        },
+        "core_repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "upstream_commit": {
+          "$ref": "#/$defs/gitCommit"
+        },
+        "upstream_repository": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "test_report_id",
+        "replay_report_id",
+        "shadow_report_id",
+        "clean_report_id",
+        "index_id"
+      ],
+      "properties": {
+        "test_report_id": {
+          "$ref": "#/$defs/id"
+        },
+        "replay_report_id": {
+          "$ref": "#/$defs/id"
+        },
+        "shadow_report_id": {
+          "$ref": "#/$defs/id"
+        },
+        "clean_report_id": {
+          "$ref": "#/$defs/id"
+        },
+        "index_id": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "rollback": {
+      "type": "object",
+      "required": [
+        "target",
+        "action"
+      ],
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/id"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "stop-core-v2-and-keep-legacy-input",
+            "restore-previous-bundle"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "generated_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "generator": {
+      "type": "object",
+      "required": [
+        "tool",
+        "version"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

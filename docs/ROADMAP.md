@@ -1,7 +1,7 @@
 # Maple Automation Core v2 战略路线图（G-1 → G6）
 
 > **状态截止**：2026-08-29（Asia/Shanghai）
-> **当前判定**：主线决策已形成，执行已进入 G0 本地建设；G-1 的可审计封存与 G0 的退出证据均未齐备。因此当前正式门禁为 **G-1 待封存 / G0 进行中**，G1 及以后均未开始。
+> **当前判定**：G-1 的战略内容已由 Sol-U 封存：唯一主线、Pilot、输入所有权和需求追踪均已有决策文档。当前正式门禁为 **G-1 Strategic PASS / G0 HOLD（进行中）**，G1 及以后均未开始。G-1 新增文档的 commit 绑定纳入 G0-SCM；它不构成 G0 PASS。
 > **战略与 Gate 负责人**：**5.6Sol Ultra**（GPT-5.6 Sol / Ultra；下文简称 **Sol-U**）
 > **战术包负责人**：**5.6 Luna max**（GPT-5.6 Luna / max；下文简称 **Luna-M**）
 > **现场输入边界**：G0～G2 期间，Core v2 的真实输入调用数保持为 0，Legacy 保持唯一真实输入下发权。G3 仅在独立 Gate 批准的 Canary 会话内切换单一输入所有者；任何时刻只保留一个写入者。
@@ -40,6 +40,7 @@ G-1 主线与范围封存
 | 状态 | 含义 |
 |---|---|
 | 已落地（L0/L1） | 文件或本地产物存在，尚未自动等价为远端、回放、干净机或现场证据 |
+| Strategic PASS | G-1 的方向、范围和决策已由 Sol-U 封存；只允许进入 G0 战术执行，不授予 G0 或现场权限 |
 | 证据待绑定 | 功能或本地检查已有结果，但缺少 commit、run、Bundle、环境和报告 ID 的完整绑定 |
 | 进行中 | 已有部分工作包，退出门禁仍有空项 |
 | 未开始 | 尚无符合本路线图证据契约的实现或报告 |
@@ -50,20 +51,24 @@ G-1 主线与范围封存
 
 | 事项 | 当前事实 | 证据级别 | 路线图判定 |
 |---|---|---:|---|
-| 主线决策 | `ADR-001` 已接受，指定 `F:\mxd\product\maple-automation-core` 为唯一受控主线 | L0 | 决策已形成；封存证据待补 |
+| 主线与 G-1 封存 | `ADR-001`、`ADR-004`、`DEC-001`、需求追踪矩阵和本路线图已接受 | L0 | G-1 战略封存完成；新增文档待下一受控 commit 绑定 |
+| Pilot 决策 | `map_id=100040004`、匿名 `pilot-subject-01`、`best_forest_v3-candidate`、`[mob]`、`640×640`、`attack=a` | L0/L1 source | 只授权 G0/G1 Candidate/Shadow；模型与输入均未认证 |
+| 输入所有权 | ADR-004 规定 G0～G2 Legacy 独占、G3 有界独占租约、全阶段双写为 0 | L0 | 战略边界已封存；动态调用/租约证据待 G0/G2/G3 生成 |
+| 需求追踪 | `docs/REQUIREMENTS-TRACEABILITY.md` 已映射原始功能、Gate、证据与数据缺口 | L0 | G-1 矩阵完成；运行证据状态保持未开始/候选 |
+| G0 Gate Charter | `docs/gates/G0-GATE-CHARTER.md` 已签发 | L0 | 当前决定为 `HOLD`；branch protection、完整 CI artifacts、Bundle、Replay、Shadow、clean 为阻断项 |
 | 时间与状态契约 | `FramePacket`、`SourceGeometry`、`CaptureHealth`、坐标对象、`PlayerState`、`WorldObservation`、`WorldState` 已实现 | L1 | G0 契约工作包本地完成 |
 | 动作契约 | `ActionSpec`、`ActionHandle`、`ActionResult` 及终止类型已实现；`ADR-006` 已接受 | L1 | 领域对象已落地；`ActionController`、`ControlArbiter`、`ResultVerifier` 尚未实现 |
 | Event Tape | 哈希链、严格 JSON、顺序/会话校验与相关测试已实现 | L1 | 记录格式已落地；完整 Replay runner 尚未实现 |
 | Runtime Manifest | schema、示例 fixture、校验工具与测试已存在；`ADR-007` 已接受 | L1 | 示例只验证 schema；实际 Candidate Bundle 尚不存在 |
-| 静态 CI 定义 | `.github/workflows/ci.yml` 已存在，配置 Ruff、Mypy、Manifest、Pytest/coverage | L0 | 本地 workflow 定义已落地；远端运行证据为 0 |
+| 静态 CI / 首个远端 run | `.github/workflows/ci.yml` 已存在；run `33194720588` 在 commit `c81011d...` 上成功并上传 `coverage-xml` | L2（范围有限） | 首个远端运行存在；尚无 JUnit、evidence metadata、Bundle/Replay/Shadow/clean artifacts |
 | 本地质量结果 | 本工作会话最近一次本地验证记录为 58 passed、行覆盖率 94.68%；`coverage.xml` 的 `line-rate=0.9468` | L1 | 可作为开发反馈；缺少 commit/run/JUnit 绑定，尚非 G0 退出证据 |
 | Legacy 基线快照 | `evidence/baseline/legacy-snapshot.json` 绑定 8 个关键文件、Pilot 候选和上游 commit | L1 | 静态输入清单已落地；它不是 Runtime Bundle，也不是现场认证 |
-| Golden Replay | 仓库中没有冻结 golden fixture、Replay runner 或 `replay_report_id` | — | 未开始 |
-| Shadow | 仓库中没有 Shadow runner、dry-run sink 审计或 `shadow_report_id` | — | 未开始 |
+| Golden Replay | 当前工作树出现 golden fixture/runner 战术草案，但没有已审 commit、3 次 digest 结果或 `replay_report_id` | — | 进行中；Gate 证据仍缺失 |
+| Shadow | 当前工作树出现战术实现草案，但没有已审 runner commit、dry-run 调用审计或 `shadow_report_id` | — | 进行中；Gate 证据仍缺失 |
 | 干净机 | 没有独立 Windows 环境的安装/启动/回放 smoke 报告 | — | 未开始 |
 | Core v2 现场 | 没有 Core v2 现场 session；Core v2 尚未接入真实输入 | — | 未开始 |
-| Git 历史 | 本地 `.git` 与 `main` 已建立，本路线图和首批契约随当前首个基线提交封存 | L1 | 本地 SCM 起点已完成；远端证据仍待绑定 |
-| GitHub 远端 | Core v2 当前 `git remote -v` 为空 | — | 远端、PR、分支保护、GitHub Actions run 均未建立 |
+| Git 历史 | 本地 `.git` 与 `main` 已建立；首个基线 commit 为 `c81011d2f047bc0cf3aec258f5662416f039838c` | L1 | 本地 SCM 起点已完成；本轮 G-1 文档待下一 commit；远端证据仍待绑定 |
+| GitHub 远端 | `origin=https://github.com/xphai/mxdauto.git`；`origin/main=c81011d...`；GitHub API 显示 `protected=false` | L2（远端身份） | 远端与首个 push 已建立；分支保护、PR 链和完整 G0 artifacts 待补 |
 | 本地 wheel | `dist/maple_automation_core-0.1.0-py3-none-any.whl` 存在 | L1 | 本机构建产物；尚未绑定 commit/Bundle，也没有干净机安装结论 |
 
 ### 2.3 Legacy 与旧证据的可用范围
@@ -73,7 +78,7 @@ G-1 主线与范围封存
 3. Legacy 当前配置存在关键漂移：
    - `profiles/maple_legacy_cn/profile.yaml` 使用 `ctrl` 攻击、24 类模型、`960×960` 输入；
    - `config/config_custom.yaml` 使用 `a` 攻击、单类 `mob` 模型，并指向 `best_forest_v3.onnx`；
-   - 两者尚未解析为一个冻结的 `effective_config`。
+   - DEC-001 已为 Core v2 Candidate 裁决为单类 `best_forest_v3-candidate`、`640×640`、`attack=a` 和匿名 Profile；实际 `ResolvedConfig`/Bundle 仍待 G0 生成。
 4. Legacy 路线 manifest 中的 `certification.status: certified` 只说明旧路线资产通过其自身静态校验，不等价于 Core v2 Bundle、整机闭环或现场认证。
 5. Legacy 日志证明采集卡、远程输入和 YOLO 曾经接通，也同时证明闭环仍不稳定：
    - `MSBot_2026-08-28_22-44-34.log` 中有约 1.4～1.9 ms RTT、采集卡打开和 YOLO ready，同时在短会话内出现两次 10 秒 stuck；
@@ -121,7 +126,7 @@ G-1 主线与范围封存
 | G4～G5 | 认证范围内作为紧急回退路径 | 认证范围内为主写入者 | 未认证能力继续使用关闭状态或 Legacy 回退 |
 | G6 | 归档只读；保留期结束后退出常态运行 | 认证支持矩阵的唯一主写入者 | 回退优先使用上一 Certified Bundle |
 
-`ADR-001` 中“所有输入控制入口仅保留 Core v2 架构”按**目标架构**解释；当前运行边界以 `ADR-006`、`ADR-010` 和本表为准。Sol-U 在 G-1 封存前补充一份 ADR 澄清，明确 G3 的独占交接点。
+`ADR-001` 中“所有输入控制入口仅保留 Core v2 架构”按**目标架构**解释；当前运行边界以 `ADR-004`、`ADR-006`、`ADR-010` 和本表为准。ADR-004 已把 G3 固定为首次有界独占交接点，并把双写事件门槛固定为 0。
 
 ---
 
@@ -174,8 +179,8 @@ rollback_release_id
 
 | Gate | 阶段主题 | 当前状态 | 阶段结束时获得的权限 |
 |---|---|---|---|
-| G-1 | 主线、范围、Pilot、所有权封存 | **部分完成；待封存** | 允许在唯一主线执行 G0 战术包 |
-| G0 | Git/CI/契约/Bundle/最小证据流水线 | **进行中** | 允许进入完整 Replay/Shadow；真实输入仍为 0 |
+| G-1 | 主线、范围、Pilot、所有权封存 | **Strategic PASS；文档已封存** | 允许在唯一主线执行 G0 战术包 |
+| G0 | Git/CI/契约/Bundle/最小证据流水线 | **HOLD；进行中** | PASS 后才允许进入完整 Replay/Shadow；真实输入仍为 0 |
 | G1 | 确定性 Replay、感知/WorldState、完整 Shadow | **未开始** | 允许构建执行内核；真实输入仍为 0 |
 | G2 | ActionController、Supervisor、receiver dry-run、故障安全 | **未开始** | 具备提交 Canary Gate 的资格；真实输入默认仍为 0 |
 | G3 | 单图、单档案、单 Bundle 的有界 Canary | **未开始** | 仅认证窗口内的 Core v2 独占输入权 |
@@ -195,25 +200,27 @@ rollback_release_id
 
 | ID | 工作与输出 | 依赖 | 模型分工 | 当前状态 |
 |---|---|---|---|---|
-| G-1-DEC-001 | 封存 ADR-001：主线、非目标、阶段链、签字人、决策日期 | 无 | Sol-U A/R；Luna-M C | ADR 已接受；签字/commit 待补 |
-| G-1-PIL-002 | 冻结 Pilot：`map_id`、匿名 `profile_id`、攻击/跳跃键、模型、类别、输入尺寸、阈值、路线、MovementProfile、receiver | DEC-001 | Sol-U A；Luna-M R | 只有 candidate；配置冲突待解 |
-| G-1-FRZ-003 | 建立 Legacy 变更白名单：只含迁移 adapter 与阻塞缺陷；新增功能进入 Core v2 | DEC-001 | Sol-U A；Luna-M R | 政策已写；执行审计待补 |
-| G-1-OWN-004 | 补充输入所有权 ADR：G0～G2、G3 Canary、G4+ 的单写入者切换 | DEC-001 | Sol-U A/R；Luna-M C | 待开始 |
-| G-1-TRC-005 | 建立需求—战术包—测试—fixture—session—release 追踪矩阵 | DEC-001 | Sol-U A；Luna-M R | 待开始 |
+| G-1-DEC-001 | 封存 ADR-001：主线、非目标、阶段链、签字人、决策日期 | 无 | Sol-U A/R；Luna-M C | **完成：ADR-001 + ROADMAP** |
+| G-1-PIL-002 | 冻结 Pilot：`map_id`、匿名 `profile_id`、攻击/跳跃键、模型、类别、输入尺寸、阈值、路线、MovementProfile、receiver | DEC-001 | Sol-U A；Luna-M R | **完成：DEC-001；实际 Bundle 待 G0** |
+| G-1-FRZ-003 | 建立 Legacy 变更白名单：只含迁移 adapter 与阻塞缺陷；新增功能进入 Core v2 | DEC-001 | Sol-U A；Luna-M R | **完成：战略政策；持续差异审计纳入 G0+** |
+| G-1-OWN-004 | 补充输入所有权 ADR：G0～G2、G3 Canary、G4+ 的单写入者切换 | DEC-001 | Sol-U A/R；Luna-M C | **完成：ADR-004；双写门槛 0** |
+| G-1-TRC-005 | 建立需求—战术包—测试—fixture—session—release 追踪矩阵 | DEC-001 | Sol-U A；Luna-M R | **完成：REQUIREMENTS-TRACEABILITY.md** |
 
 ### 退出门禁
 
-- [ ] 主线、Pilot、非目标、Legacy 例外与输入交接均由 ADR/范围记录覆盖；
-- [ ] Pilot 中每个资产只有一个逻辑 ID 和 SHA-256；Legacy 的 `profile.yaml` 与 `config_custom.yaml` 冲突已形成明确决策；
-- [ ] 角色/账号标识已替换为匿名 `subject_id`；
-- [ ] Legacy 新功能冻结有可审计差异基线和例外审批流程；
-- [ ] 跟踪矩阵覆盖 `REQUIREMENTS_CONFIRMED.md` 的全部原始功能，并把 G5 数据缺口标记为阻塞；
-- [ ] Sol-U 给出 `PASS`，产品与技术负责人签字；
-- [ ] Gate packet 进入首个受控 commit。若首个 commit 归入 G0-SCM-004，本 Gate 保持 `HOLD` 直至该提交存在。
+- [x] 主线、Pilot、非目标、Legacy 例外与输入交接均由 ADR/范围记录覆盖；
+- [x] Pilot 候选资产具有唯一逻辑 ID 和已知 SHA-256；待生成的 MovementProfile/PlatformGraph/split 明确列为 G0 缺口；
+- [x] Legacy 的 `profile.yaml` 与 `config_custom.yaml` 冲突由 DEC-001 明确裁决；
+- [x] Profile/subject 使用匿名 ID，原始身份字段不进入 Pilot 决策；
+- [x] Legacy 新功能冻结与例外审批策略已定义；持续差异审计由后续战术包执行；
+- [x] 追踪矩阵覆盖原始功能、工程约束和 G5 数据缺口；
+- [x] ADR-004 把 G0～G2 Legacy 独占、G3 有界租约与双写 0 固定为不变量；
+- [x] Sol-U 于 2026-08-29 给出 G-1 Strategic `PASS`；本轮指令已明确产品范围；
+- [ ] 本轮新增战略文档绑定到下一受控 commit。该项由 G0-SCM 管理，不授予 G0 PASS。
 
 ### 必需证据
 
-`ADR-001`、输入所有权澄清 ADR、Pilot 决策记录、Legacy 冻结清单、资产冲突决策、追踪矩阵、签字记录、首个 commit hash。
+`ADR-001`、`ADR-004`、`docs/decisions/DEC-001-pilot-baseline.md`、`docs/REQUIREMENTS-TRACEABILITY.md`、`docs/gates/G0-GATE-CHARTER.md`、本路线图和本地基线 commit `c81011d2f047bc0cf3aec258f5662416f039838c`。新增战略文档的 commit/remote 绑定进入 G0 packet。
 
 ### 回退
 
@@ -234,13 +241,13 @@ rollback_release_id
 | G0-CON-001 | Frame/坐标/Player/WorldState/Action 不可变契约及 contract tests | G-1-DEC | Sol-U A；Luna-M R | **本地已落地，证据待绑定** |
 | G0-EVT-002 | Event Tape 严格序列化、hash chain、篡改/顺序/会话检测 | G0-CON | Sol-U A；Luna-M R | **本地已落地，证据待绑定** |
 | G0-MAN-003 | Manifest schema、validator、示例 fixture；生成第一个使用真实 hash 的 Candidate manifest | G-1-PIL、G0-CON | Sol-U A；Luna-M R | schema/tool 已落地；实际 Candidate 待补 |
-| G0-SCM-004 | 创建首个 commit/tag；配置 Core v2 远端、PR、main 保护和必需检查 | G-1 Gate | Sol-U A；Luna-M R，发布负责人 R | **首个本地基线提交纳入本轮；0 remote** |
-| G0-CI-005 | CI 生成 JUnit、coverage、manifest 结果和 evidence metadata；上传稳定命名 artifact | G0-SCM | Sol-U A；Luna-M R | workflow 定义已有；远端 run/报告待补 |
-| G0-DEP-006 | 锁定依赖与构建工具；wheel/sdist 绑定 commit、锁文件和 SHA-256 | G0-SCM | Sol-U A；Luna-M R | 版本范围已有；锁与可追溯制品待补 |
-| G0-RPL-007 | 冻结最小去标识 golden fixture；实现 Replay runner，重复 3 次输出同一事件 digest | G0-EVT、G0-MAN | Sol-U 定义样本/阈值；Luna-M 实现 | 待开始 |
-| G0-SHD-008 | 实现最小 Shadow runner/dry-run sink；记录计划与 Legacy 实际动作；动态证明 Core v2 真实输入调用数为 0 | G0-RPL | Sol-U A；Luna-M R | 待开始 |
+| G0-SCM-004 | 将本轮战略文档纳入受控 commit/tag；配置 Core v2 远端、PR、main 保护和必需检查 | G-1 Gate | Sol-U A；Luna-M R，发布负责人 R | **origin/main 与基线 commit 已有；本轮文档、PR 和 main protection 待补** |
+| G0-CI-005 | CI 生成 JUnit、coverage、manifest 结果和 evidence metadata；上传稳定命名 artifact | G0-SCM | Sol-U A；Luna-M R | **run `33194720588` 成功且有 coverage；JUnit/evidence metadata/完整 artifacts 待补** |
+| G0-DEP-006 | 锁定依赖与构建工具；wheel/sdist 绑定 commit、锁文件和 SHA-256 | G0-SCM | Sol-U A；Luna-M R | 工作树已有 `configs/requirements.lock` 草案；已审 commit、CI 安装与制品 hash 待补 |
+| G0-RPL-007 | 冻结最小去标识 golden fixture；实现 Replay runner，重复 3 次输出同一事件 digest | G0-EVT、G0-MAN | Sol-U 定义样本/阈值；Luna-M 实现 | 工作树已有 fixture/runner 草案；3 次结果、报告与 commit 绑定待补 |
+| G0-SHD-008 | 实现最小 Shadow runner/dry-run sink；记录计划与 Legacy 实际动作；动态证明 Core v2 真实输入调用数为 0 | G0-RPL | Sol-U A；Luna-M R | 工作树已有 runner 草案；diff、输入调用审计、报告与 commit 绑定待补 |
 | G0-CLN-009 | 在无项目缓存、无 `F:\mxd` 隐式资产的 Windows 机器/VM 中完成 checkout、install、test、manifest、replay、shadow smoke | G0-CI、DEP、RPL、SHD | Sol-U 定义 Gate；Luna-M + 发布负责人 R | 待开始 |
-| G0-EVD-010 | 建立 evidence index、报告 schema、artifact retention 与 hash 校验 | G0-CI | Sol-U A；Luna-M R | 待开始 |
+| G0-EVD-010 | 建立 evidence index、报告 schema、artifact retention 与 hash 校验 | G0-CI | Sol-U A；Luna-M R | 工作树已有报告/evidence schema 草案；实际 index、报告、retention 与 CI 绑定待补 |
 
 ### 退出门禁
 
@@ -561,18 +568,15 @@ Fixture/Contract → Golden Replay → Shadow → bounded Canary → Certified
 
 以下是当前最短关键路径。Luna-M 每次只领取一个有界战术包；Sol-U 在指定节点审计。
 
-1. **Sol-U / G-1-DEC-001**：形成 G-1 Gate packet，列出签字人和仍缺证据。
-2. **Luna-M / G-1-PIL-002**：对 Pilot 配置漂移做只读解析，提交唯一有效配置决策包；不直接把 Legacy 配置复制为真值。
-3. **Sol-U / G-1-OWN-004**：批准输入所有权澄清 ADR，固定 G3 为首次真实接管点。
-4. **Luna-M / G0-SCM-004**：以本轮首个可审计 commit 为起点，配置 Core v2 远端与 PR/保护；远端坐标待绑定期间，先维护本地 commit 与远端设置清单，Gate 保持 `HOLD`。
-5. **Luna-M / G0-EVD-010 + G0-CI-005**：加入 JUnit/evidence metadata/artifact index，并取得首个真实远端 CI run。
-6. **Luna-M / G0-DEP-006**：锁定 Python/build 依赖，构建绑定 commit 的 wheel/sdist。
-7. **Luna-M / G0-MAN-003**：基于真实 commit 与真实 Pilot hash 生成 Candidate Bundle；示例 fixture 继续只用于 schema test。
-8. **Sol-U**：冻结最小 Golden fixture 的来源、隐私、truth 和 split；明确调试叠加视频只做诊断。
-9. **Luna-M / G0-RPL-007**：实现 Replay runner，生成 3 次确定性报告。
-10. **Luna-M / G0-SHD-008**：实现 dry-run Shadow，生成“真实输入调用数 0”的动态证据。
-11. **Luna-M / G0-CLN-009**：在独立 Windows 环境执行 clean smoke 并归档报告。
-12. **Sol-U**：审计完整 G0 packet，只有全部空项闭环后给出 G0 `PASS`。
+1. **Luna-M / G0-SCM-004**：把 ADR-004、DEC-001、追踪矩阵、G0 Charter 与路线图更新纳入受控 commit；为已建立的 `origin/main` 配置 PR/required checks/branch protection。完成前 Gate 保持 `HOLD`。
+2. **Luna-M / G0-EVD-010 + G0-CI-005**：在首个成功 run `33194720588` 的基础上加入 JUnit、evidence metadata 与完整 artifact index，并取得绑定新 commit 的后继 run。
+3. **Luna-M / G0-DEP-006**：锁定 Python/build 依赖，构建绑定 commit 的 wheel/sdist。
+4. **Luna-M / G0-MAN-003**：按 DEC-001 与真实 commit/hash 生成 Candidate Bundle；示例 fixture 继续只用于 schema test。
+5. **Sol-U**：冻结最小 Golden fixture 的来源、隐私、truth 和 split；调试叠加视频只进入 diagnostic 集。
+6. **Luna-M / G0-RPL-007**：实现 Replay runner，生成 3 次确定性报告。
+7. **Luna-M / G0-SHD-008**：实现 dry-run Shadow，生成“真实输入调用数 0、双写 0”的动态证据。
+8. **Luna-M / G0-CLN-009**：在独立 Windows 环境执行 clean smoke 并归档报告。
+9. **Sol-U**：按 `docs/gates/G0-GATE-CHARTER.md` 审计完整 G0 packet；所有强制项闭环后才给出 G0 `PASS`。
 
 ---
 
@@ -595,7 +599,8 @@ Fixture/Contract → Golden Replay → Shadow → bounded Canary → Certified
 - [x] 每阶段包含目标、工作包、依赖、退出门禁、证据和回退；
 - [x] 明确 Sol-U 负责战略/Gate，Luna-M 负责战术包；
 - [x] 明确当前完成、证据待绑定和未开始项；
-- [x] 明确 Golden Replay、Shadow、干净机、现场和 GitHub 远端当前均没有可用于晋级的完整证据；
-- [x] Legacy/upstream GitHub 远端与 Core v2 远端状态分开表述；
+- [x] 明确 Golden Replay、Shadow、干净机和现场当前没有可用于晋级的完整证据；
+- [x] 明确 Core v2 远端与首个 CI run 已存在，同时分支保护、JUnit、完整 artifacts 和 G0 证据仍有缺口；
+- [x] Legacy/upstream GitHub 远端与 Core v2 `origin` 分开表述；
 - [x] 输入所有权从 Shadow 到 Canary/Certified 的切换点唯一；
 - [x] 门禁阈值、证据等级、停止条件和回退阶梯可直接执行。

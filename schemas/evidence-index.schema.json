@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/evidence-index.schema.json",
+  "title": "Maple Automation Core Evidence Index",
+  "description": "Portable index joining a Candidate/Shadow Bundle to reports and build artifacts. Every local artifact is content-addressed.",
+  "type": "object",
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "gitCommit": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,128}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$"
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "evidence_id",
+        "kind",
+        "status",
+        "path",
+        "size_bytes",
+        "sha256",
+        "claims"
+      ],
+      "properties": {
+        "evidence_id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "manifest",
+            "asset-index",
+            "test",
+            "replay",
+            "shadow",
+            "clean-smoke",
+            "junit",
+            "coverage",
+            "build",
+            "wheel",
+            "sdist",
+            "dependency",
+            "hash"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "failed",
+            "pending",
+            "not-run",
+            "skipped"
+          ]
+        },
+        "path": {
+          "$ref": "#/$defs/portablePath"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "report_path": {
+          "$ref": "#/$defs/portablePath"
+        },
+        "requires_remote_run": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "evidence_index_id",
+    "bundle_id",
+    "release_id",
+    "lifecycle",
+    "execution_mode",
+    "subject_id",
+    "source_commit",
+    "generated_at",
+    "input_policy",
+    "entries"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "#/$defs/version"
+    },
+    "evidence_index_id": {
+      "$ref": "#/$defs/id"
+    },
+    "bundle_id": {
+      "$ref": "#/$defs/id"
+    },
+    "release_id": {
+      "$ref": "#/$defs/id"
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": [
+        "candidate",
+        "offline-valid",
+        "replay-valid",
+        "shadow",
+        "canary",
+        "certified",
+        "quarantined"
+      ]
+    },
+    "execution_mode": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "shadow",
+        "dry-run",
+        "canary",
+        "live"
+      ]
+    },
+    "subject_id": {
+      "type": "string",
+      "pattern": "^subject-[a-z0-9][a-z0-9._-]{1,64}$"
+    },
+    "source_commit": {
+      "$ref": "#/$defs/gitCommit"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "input_policy": {
+      "type": "object",
+      "required": [
+        "real_input_enabled",
+        "owner"
+      ],
+      "properties": {
+        "real_input_enabled": {
+          "const": false
+        },
+        "owner": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "none"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "additionalProperties": false
+}

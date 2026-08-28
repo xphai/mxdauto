@@ -4,13 +4,21 @@
 
 ## 0. 当前阶段的硬边界
 
-截至 2026-08-29，仓库处于 **G0 工程基线建设 / Core v2 Shadow**：
+截至 2026-08-29，仓库处于 **G-1 Strategic PASS / G0 HOLD（工程基线建设、Shadow 准备）**：
 
 - Core v2 任务的允许输出限定为不可变状态、动作计划和 dry-run 结果；当前仓库先完成契约、Event Tape、Manifest 校验和静态 CI，Shadow runner 按后续战术包接入；
 - Core v2 不得调用真实 `InputSink`、键盘、receiver 或游戏窗口；
 - Legacy 保持唯一真实输入下发权；
 - Legacy 仅接受阻塞缺陷修复和迁移桥接，不接受新的控制逻辑；
 - 未经 Stage Gate 批准，不得宣称 Canary、Certified 或 Core v2 接管已经开始。
+
+当前战略事实源：
+
+- `docs/ROADMAP.md`：G-1～G6 阶段链；
+- `docs/adr/ADR-004-input-authority-and-bounded-lease.md`：输入所有权与双写 0；
+- `docs/decisions/DEC-001-pilot-baseline.md`：唯一 Pilot 候选；
+- `docs/REQUIREMENTS-TRACEABILITY.md`：需求—Gate—证据状态；
+- `docs/gates/G0-GATE-CHARTER.md`：G0 强制门禁，当前决定为 `HOLD`。
 
 违反上述任一项的任务必须先暂停并升级到战略负责人，禁止通过“临时开关”绕过。
 
@@ -21,6 +29,7 @@
 3. 明确任务类型：`contract`、`runtime`、`replay`、`shadow`、`release`、`docs` 或 `legacy-bridge`。
 4. 在战术包中列出允许触及的绝对路径、明确禁止触及的路径和所依赖的 ADR。没有路径边界的任务不进入实现。
 5. 若任务改变状态、动作、Bundle、输入所有权、回放或阶段门禁，先更新对应 ADR；仅更新实现而不更新治理文件不算完成。
+6. 每个战术包至少引用一个 `REQ-*`、一个阶段 Gate 和 DEC-001（涉及 Pilot 时）；G0 包逐项引用 G0 Gate Charter 的检查编号。
 
 ## 2. 实现约束
 
@@ -36,6 +45,7 @@
 
 - Legacy 是参考、数据来源和迁移适配边界，不是 Core v2 的决策真值来源。
 - Legacy 输入所有权在 Shadow 阶段保持独占。新代码不得从 Legacy 借用输入写入点，也不得在 Shadow 中通过真实 receiver 验证 Core v2 动作。
+- G0～G2 的 Core v2 真实输入调用数为 0；G3 只使用 ADR-004 定义的有界独占租约；所有阶段双写事件数为 0。
 - 需要修复 Legacy 阻塞缺陷时，战术包必须说明缺陷、影响范围、回退方式和迁移后删除条件。
 
 ## 3. 本地开发循环
@@ -69,7 +79,7 @@ PR 描述直接引用战术包，并至少包含：
 ### 评审顺序
 
 1. **范围**：改动是否属于战术包的允许路径，是否引入未批准的功能？
-2. **边界**：是否违反 ADR-001、ADR-002、ADR-003、ADR-006 或 ADR-007？
+2. **边界**：是否违反 ADR-001、ADR-002、ADR-003、ADR-004、ADR-006、ADR-007 或 ADR-010？
 3. **输入**：是否出现 `ActionController` 之外的 `InputSink` 写入；Shadow 是否保持 Legacy 独占？
 4. **证据**：测试是否绑定 commit；Bundle 是否绑定实际 hash；结果是否可回放？
 5. **回滚**：失败时能否关闭 flag、恢复上一 Bundle 或退回 Legacy？
@@ -79,6 +89,7 @@ PR 描述直接引用战术包，并至少包含：
 - CI 任一必需检查失败，PR 不合并。
 - 文档、代码、测试和 Bundle 元数据必须在同一变更链中更新；治理文件后置视为未完成。
 - G0 只放行可复现契约、schema、静态质量和 dry-run/Shadow 准备；它不放行真实输入接管。
+- G0 的评审清单和当前状态以 `docs/gates/G0-GATE-CHARTER.md` 为准；本地测试数、workflow 文件或示例 manifest 均不单独产生 G0 PASS。
 - 进入 G1 前必须有固定黄金录像回放、Shadow 对照和干净机 smoke 证据，并将报告 ID 绑定到 Candidate Bundle。
 - Canary/Certified 需要独立 Stage Gate、现场 session、故障注入和回退演练；CI 绿灯本身不授予这些权限。
 

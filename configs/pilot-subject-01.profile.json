@@ -1,0 +1,14 @@
+{
+  "de_identification": {
+    "account_fields_present": false,
+    "character_name_fields_present": false,
+    "status": "complete"
+  },
+  "execution_mode": "shadow",
+  "input_owner": "legacy",
+  "map_id": "100040004",
+  "profile_id": "pilot-subject-01",
+  "real_input_enabled": false,
+  "schema_version": "1.0.0",
+  "subject_id": "subject-01"
+}

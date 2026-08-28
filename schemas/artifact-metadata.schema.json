@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/artifact-metadata.schema.json",
+  "title": "Maple Automation Core Artifact Metadata",
+  "description": "Content-addressed metadata for JUnit, coverage, wheel, sdist and evidence artifacts.",
+  "type": "object",
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "gitCommit": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,128}$"
+    },
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "name",
+    "kind",
+    "path",
+    "size_bytes",
+    "sha256",
+    "source_commit",
+    "produced_by",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "#/$defs/version"
+    },
+    "artifact_id": {
+      "$ref": "#/$defs/id"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "junit",
+        "coverage",
+        "wheel",
+        "sdist",
+        "manifest",
+        "asset-index",
+        "evidence-index",
+        "evidence-report",
+        "dependency-lock",
+        "bundle",
+        "other"
+      ]
+    },
+    "path": {
+      "$ref": "#/$defs/portablePath"
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_commit": {
+      "$ref": "#/$defs/gitCommit"
+    },
+    "bundle_id": {
+      "$ref": "#/$defs/id"
+    },
+    "release_id": {
+      "$ref": "#/$defs/id"
+    },
+    "produced_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "retention_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "upload_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "$ref": "#/$defs/timestamp"
+    }
+  },
+  "additionalProperties": false
+}

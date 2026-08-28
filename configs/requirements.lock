@@ -1,0 +1,31 @@
+# Generated dependency lock for the G0 quality/build toolchain.
+#
+# Regenerate with the project dev extra and commit this file together with its
+# SHA-256 in the evidence index. Exact versions make the resolver deterministic;
+# pip selects the platform-appropriate wheel for the declared Python/platform.
+# Installation is intentionally split from the editable project install:
+#   python -m pip install --requirement configs/requirements.lock
+#   python -m pip install --no-deps --editable .
+attrs==26.1.0
+build==1.6.0
+colorama==0.4.6
+coverage==7.15.4
+iniconfig==2.3.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+librt==0.15.0
+mypy==1.20.2
+mypy_extensions==1.1.0
+packaging==26.3
+pathspec==1.1.1
+pluggy==1.6.0
+Pygments==2.21.0
+pyproject_hooks==1.2.0
+pytest==8.4.2
+pytest-cov==6.3.0
+referencing==0.37.0
+rpds-py==2026.6.3
+ruff==0.12.12
+setuptools==82.0.1
+typing_extensions==4.16.0
+wheel==0.47.0

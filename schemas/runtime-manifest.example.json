@@ -16,9 +16,23 @@
     "npc",
     "item"
   ],
+  "classes_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
   "input_size": {
     "width": 960,
     "height": 540
+  },
+  "key_bindings": {
+    "left": "left",
+    "right": "right",
+    "up": "up",
+    "down": "down",
+    "attack": "a",
+    "jump": "alt",
+    "hp": "insert",
+    "mp": "delete",
+    "pickup": "z",
+    "confirm": "space",
+    "party": "p"
   },
   "thresholds": {
     "detection_confidence": 0.72,
@@ -37,6 +51,8 @@
   "receiver_hash": "3333333333333333333333333333333333333333333333333333333333333333",
   "test_report_id": "qa-test-20260829-core-pilot",
   "replay_report_id": "replay-report-20260829-core-pilot",
+  "shadow_report_id": "shadow-report-20260829-core-pilot",
+  "clean_report_id": "clean-report-20260829-core-pilot",
   "field_session_ids": [
     "sess-0001",
     "sess-0002"

@@ -4,10 +4,48 @@ from .event_tape import (
     EventRecord,
     EventTape,
 )
+from .golden import (
+    GOLDEN_FIXTURE_VERSION,
+    REPLAY_REPORT_VERSION,
+    GoldenAction,
+    GoldenFixture,
+    GoldenFrame,
+    GoldenReplayRunner,
+    ReplayDeterminismError,
+    ReplayError,
+    ReplayReport,
+    ReplayRun,
+)
+from .shadow import (
+    SHADOW_REPORT_VERSION,
+    DryRunInputSink,
+    DryRunReceipt,
+    LegacyObservedAction,
+    ShadowError,
+    ShadowReport,
+    ShadowRunner,
+)
 
 __all__ = [
     "GENESIS_HASH",
+    "GOLDEN_FIXTURE_VERSION",
+    "REPLAY_REPORT_VERSION",
     "REPLAY_SCHEMA_VERSION",
+    "SHADOW_REPORT_VERSION",
+    "DryRunInputSink",
+    "DryRunReceipt",
     "EventRecord",
     "EventTape",
+    "GoldenAction",
+    "GoldenFixture",
+    "GoldenFrame",
+    "GoldenReplayRunner",
+    "LegacyObservedAction",
+    "ReplayDeterminismError",
+    "ReplayError",
+    "ReplayReport",
+    "ReplayRun",
+    "ShadowError",
+    "ShadowReport",
+    "ShadowRunner",
 ]

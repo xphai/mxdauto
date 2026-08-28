@@ -1,0 +1,76 @@
+{
+  "capture": {
+    "content_rect": {
+      "height": 768,
+      "width": 1366,
+      "x": 277,
+      "y": 167
+    },
+    "requested_fps": 30,
+    "source_id": "capture-card-primary",
+    "source_size": {
+      "height": 1080,
+      "width": 1920
+    },
+    "working_size": {
+      "height": 700,
+      "width": 1296
+    }
+  },
+  "config_schema": "2.1.0",
+  "execution": {
+    "input_owner": "legacy",
+    "mode": "shadow",
+    "real_input_enabled": false
+  },
+  "feature_flags": {
+    "cross_map": false,
+    "death_recovery": false,
+    "disconnect_recovery": false,
+    "dynamic_target_route": false,
+    "login": false,
+    "party": false,
+    "rune": false,
+    "switch_channel": false
+  },
+  "key_bindings": {
+    "attack": "a",
+    "confirm": "space",
+    "down": "down",
+    "hp": "insert",
+    "jump": "alt",
+    "left": "left",
+    "mp": "delete",
+    "party": "p",
+    "pickup": "z",
+    "right": "right",
+    "up": "up"
+  },
+  "map_id": "100040004",
+  "model": {
+    "classes": [
+      "mob"
+    ],
+    "combat_acquire_confidence": 0.5,
+    "combat_refresh_confidence": 0.35,
+    "detection_confidence": 0.25,
+    "high_confidence": 0.65,
+    "input_size": {
+      "height": 640,
+      "width": 640
+    },
+    "iou_threshold": 0.45,
+    "match_iou": 0.15,
+    "model_id": "best_forest_v3-candidate",
+    "roi": [
+      0.04,
+      0.0,
+      0.98,
+      0.84
+    ],
+    "temporal_confirmation_frames": 2
+  },
+  "profile_id": "pilot-subject-01",
+  "schema_version": "1.0.0",
+  "subject_id": "subject-01"
+}

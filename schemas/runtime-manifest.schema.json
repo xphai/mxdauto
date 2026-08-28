@@ -34,7 +34,9 @@
     "model_id",
     "model_sha256",
     "classes",
+    "classes_sha256",
     "input_size",
+    "key_bindings",
     "thresholds",
     "dataset_version",
     "split_sha256",
@@ -46,13 +48,77 @@
     "receiver_version",
     "receiver_hash",
     "test_report_id",
-    "replay_report_id"
+    "replay_report_id",
+    "shadow_report_id",
+    "clean_report_id"
   ],
   "properties": {
     "local_urn": {
       "type": "string",
       "pattern": "^urn:maple:local:[A-Za-z0-9][A-Za-z0-9._-]{2,80}:[A-Fa-f0-9]{40}$",
       "description": "Local URN binding this manifest to an auditable on-host artifact."
+    },
+    "bundle_status": {
+      "type": "string",
+      "enum": [
+        "candidate",
+        "offline-valid",
+        "replay-valid",
+        "shadow",
+        "canary",
+        "certified",
+        "quarantined"
+      ],
+      "description": "Lifecycle state; a candidate or shadow manifest is not field certification."
+    },
+    "execution_mode": {
+      "type": "string",
+      "enum": [
+        "offline",
+        "shadow",
+        "dry-run",
+        "canary",
+        "live"
+      ],
+      "description": "Execution mode bound to this manifest."
+    },
+    "subject_id": {
+      "type": "string",
+      "pattern": "^subject-[a-z0-9][a-z0-9._-]{1,64}$",
+      "description": "Pseudonymous subject identifier; account and character names are excluded."
+    },
+    "input_owner": {
+      "type": "string",
+      "enum": [
+        "legacy",
+        "core-v2",
+        "none"
+      ],
+      "description": "Current real-input owner."
+    },
+    "real_input_enabled": {
+      "type": "boolean",
+      "description": "Explicit real-input gate. Candidate/Shadow manifests set this to false."
+    },
+    "asset_index_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$",
+      "description": "Repository-relative asset index path."
+    },
+    "asset_index_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of the asset index bytes."
+    },
+    "evidence_index_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$",
+      "description": "Repository-relative evidence index path."
+    },
+    "evidence_index_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of the evidence index bytes."
     },
     "runtime_manifest_version": {
       "$ref": "#/$defs/version",
@@ -131,6 +197,10 @@
       },
       "description": "Model class labels in runtime use."
     },
+    "classes_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 of the ordered runtime class-label definition."
+    },
     "input_size": {
       "type": "object",
       "required": ["width", "height"],
@@ -140,6 +210,25 @@
       },
       "additionalProperties": false,
       "description": "Model input dimensions."
+    },
+    "key_bindings": {
+      "type": "object",
+      "required": ["left", "right", "up", "down", "attack", "jump", "hp", "mp"],
+      "properties": {
+        "left": { "type": "string", "const": "left" },
+        "right": { "type": "string", "const": "right" },
+        "up": { "type": "string", "const": "up" },
+        "down": { "type": "string", "const": "down" },
+        "attack": { "type": "string", "const": "a" },
+        "jump": { "type": "string", "const": "alt" },
+        "hp": { "type": "string", "const": "insert" },
+        "mp": { "type": "string", "const": "delete" },
+        "pickup": { "type": "string", "const": "z" },
+        "confirm": { "type": "string", "const": "space" },
+        "party": { "type": "string", "const": "p" }
+      },
+      "additionalProperties": false,
+      "description": "Frozen DEC-001 semantic key bindings for the Pilot candidate."
     },
     "thresholds": {
       "type": "object",
@@ -225,6 +314,14 @@
     "replay_report_id": {
       "$ref": "#/$defs/nonEmptyId",
       "description": "ID of deterministic replay evidence report."
+    },
+    "shadow_report_id": {
+      "$ref": "#/$defs/nonEmptyId",
+      "description": "ID of the dry-run Shadow evidence report."
+    },
+    "clean_report_id": {
+      "$ref": "#/$defs/nonEmptyId",
+      "description": "ID of the cacheless Windows clean-smoke evidence report."
     },
     "field_session_ids": {
       "type": "array",
