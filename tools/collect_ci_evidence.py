@@ -775,15 +775,16 @@ def _validate_evidence_report(
             errors.append(f"candidate_binding {field} mismatch")
 
     fixture_sha = payload.get("fixture_file_sha256")
-    if not fixture_candidates:
-        errors.append("fixture file is missing")
-    else:
-        _, expected_fixture_sha = fixture_candidates[0]
-        if fixture_sha != expected_fixture_sha:
-            errors.append("fixture_file_sha256 does not match the repository fixture")
-        # ``fixture_digest`` is the canonical digest of the decoded fixture
-        # object, whereas ``fixture_file_sha256`` is the byte-level attestation
-        # we can recompute here.  They are intentionally distinct digests.
+    if report_kind in {"replay", "shadow"}:
+        if not fixture_candidates:
+            errors.append("fixture file is missing")
+        else:
+            _, expected_fixture_sha = fixture_candidates[0]
+            if fixture_sha != expected_fixture_sha:
+                errors.append("fixture_file_sha256 does not match the repository fixture")
+            # ``fixture_digest`` is the canonical digest of the decoded fixture
+            # object, whereas ``fixture_file_sha256`` is the byte-level attestation
+            # we can recompute here.  They are intentionally distinct digests.
     fixture_bundle = payload.get("fixture_bundle")
     if fixture_bundle is not None and (
         not isinstance(fixture_bundle, dict)
@@ -793,15 +794,16 @@ def _validate_evidence_report(
         errors.append("fixture_bundle binding is malformed")
 
     declared_digest = payload.get("report_digest")
-    computed_digest: str | None
-    try:
-        computed_digest = _canonical_report_digest(payload)
-    except (TypeError, ValueError):
-        computed_digest = None
-    if not isinstance(declared_digest, str) or computed_digest is None:
-        errors.append("report_digest is missing")
-    elif declared_digest != computed_digest:
-        errors.append("report_digest does not match canonical report content")
+    computed_digest: str | None = None
+    if report_kind in {"replay", "shadow"}:
+        try:
+            computed_digest = _canonical_report_digest(payload)
+        except (TypeError, ValueError):
+            computed_digest = None
+        if not isinstance(declared_digest, str) or computed_digest is None:
+            errors.append("report_digest is missing")
+        elif declared_digest != computed_digest:
+            errors.append("report_digest does not match canonical report content")
 
     if report_kind == "replay":
         invariant_details = _validate_replay_invariants(payload, errors)
@@ -823,7 +825,11 @@ def _validate_evidence_report(
         },
         "computed_report_digest": computed_digest,
         "fixture_file_sha256": fixture_sha,
-        "expected_fixture_file_sha256": (fixture_candidates[0][1] if fixture_candidates else None),
+        "expected_fixture_file_sha256": (
+            fixture_candidates[0][1]
+            if report_kind in {"replay", "shadow"} and fixture_candidates
+            else None
+        ),
         "report_id": payload.get("report_id", payload.get("evidence_id")),
         "report_kind": report_kind,
         "report_status": status,
@@ -832,6 +838,8 @@ def _validate_evidence_report(
             isinstance(declared_digest, str)
             and computed_digest is not None
             and declared_digest == computed_digest
+            if report_kind in {"replay", "shadow"}
+            else None
         ),
         "schema_errors": schema_errors,
         "schema_valid": schema_valid,
@@ -896,7 +904,6 @@ def _same_commit(left: object, right: object) -> bool:
 
 def _parse_check_results(args: argparse.Namespace) -> tuple[list[dict[str, Any]], str | None]:
     checks: list[dict[str, Any]] = []
-    dependency_result: str | None = None
     for encoded in getattr(args, "check_result", []) or []:
         parts = encoded.split("::", 2)
         if len(parts) != 3:
@@ -916,8 +923,6 @@ def _parse_check_results(args: argparse.Namespace) -> tuple[list[dict[str, Any]]
                 "status": status,
             }
         )
-        if _is_dependency_install_check(name):
-            dependency_result = "passed" if status == "passed" else "failed"
     for encoded in getattr(args, "passed_check", []) or []:
         if "::" not in encoded:
             return [], "--passed-check must use NAME::COMMAND syntax"
@@ -936,9 +941,7 @@ def _parse_check_results(args: argparse.Namespace) -> tuple[list[dict[str, Any]]
                 "status": "passed",
             }
         )
-        if _is_dependency_install_check(name):
-            dependency_result = "passed"
-    return checks, dependency_result
+    return checks, None
 
 
 def collect_evidence(args: argparse.Namespace) -> Path:
@@ -1261,6 +1264,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     print(f"CI evidence written: {output_path}")
+    payload = read_json(output_path)
+    if payload.get("status") != "passed":
+        print(f"CI evidence status: {payload.get('status', 'missing')}", file=sys.stderr)
+        return 1
     return 0
 
 

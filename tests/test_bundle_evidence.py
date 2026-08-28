@@ -8,7 +8,7 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 from tools import collect_ci_evidence, verify_bundle
-from tools.bundle_common import safe_relative_path
+from tools.bundle_common import safe_relative_path, sha256_file
 from tools.verify_dependency_lock import parse_lock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -167,6 +167,84 @@ def test_ci_evidence_records_github_step_outcomes_and_job_failure(tmp_path: Path
     assert checks["ruff-lint"]["details"]["outcome"] == "failure"  # type: ignore[index]
     assert checks["ruff-format"]["status"] == "passed"
     assert checks["ruff-format"]["details"]["github_step_outcome"] == "success"  # type: ignore[index]
+
+
+def test_ci_evidence_dependency_success_is_not_a_parse_error(tmp_path: Path) -> None:
+    output = tmp_path / "ci-evidence.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(tmp_path),
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--check-result",
+            "install-dependencies::success::python -m pip install -r requirements.lock",
+            "--workflow-result",
+            "success",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    checks = {check["name"]: check for check in payload["checks"]}  # type: ignore[index]
+    assert payload["status"] == "passed"
+    assert "ci-step-outcomes" not in checks
+    assert checks["install-dependencies"]["status"] == "passed"
+    assert payload["dependency_install_result"] == "passed"
+
+
+def test_ci_evidence_accepts_clean_smoke_without_replay_digest_fields() -> None:
+    manifest_path = BUNDLE_DIR / "runtime-manifest.json"
+    manifest = _load_json(manifest_path)
+    fixture_path = PROJECT_ROOT / "fixtures" / "golden" / "pilot_minimal_v1.json"
+    schema = _load_json(PROJECT_ROOT / "schemas" / "evidence-report.schema.json")
+
+    check, _ = collect_ci_evidence._validate_evidence_report(
+        repo_root=PROJECT_ROOT,
+        path=PROJECT_ROOT / "evidence" / "clean-smoke" / "clean-smoke-report.json",
+        index=2,
+        schema=schema,
+        expected_bundle_id=BUNDLE_ID,
+        expected_release_id=BUNDLE_ID,
+        expected_source_commit=str(manifest["source_commit"]),
+        manifest_repo_path="bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
+        manifest_sha256=sha256_file(manifest_path),
+        fixture_candidates=[(fixture_path, sha256_file(fixture_path))],
+    )
+
+    assert check["status"] == "passed"
+    assert check["details"]["report_digest_valid"] is None  # type: ignore[index]
+
+
+def test_ci_evidence_main_returns_failure_for_failed_packet(tmp_path: Path) -> None:
+    output = tmp_path / "ci-evidence.json"
+    result = collect_ci_evidence.main(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(tmp_path),
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--check-result",
+            "pytest::failure::python -m pytest",
+            "--workflow-result",
+            "failure",
+        ]
+    )
+
+    assert result == 1
+    assert _load_json(output)["status"] == "failed"
 
 
 def test_ci_evidence_missing_report_is_recorded_without_crashing(tmp_path: Path) -> None:
