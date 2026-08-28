@@ -90,9 +90,10 @@
 当前 G0 最小本地门禁：
 
 ```powershell
-python -m ruff check .
-python -m ruff format --check .
-python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json schemas/runtime-manifest.example.json
+python -m ruff check src tests tools
+python -m ruff format --check src tests tools
+python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest schemas/runtime-manifest.example.json
+python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0
 python -m mypy
 python -m pytest --cov=maple_automation_core --cov-report=term-missing --cov-report=xml --cov-fail-under=90
 ```
@@ -104,7 +105,8 @@ python -m pytest --cov=maple_automation_core --cov-report=term-missing --cov-rep
 - 指标和阈值：`<名称、单位、阈值、采样窗口>`
 - 日志/录像/Event Tape 路径：`<绝对路径或 artifact>`
 - CI run：`<链接>`
-- source commit：`<40 位 SHA>`
+- source commit / sealed packet commit：`<两个 40 位 SHA；说明职责>`
+- CI workflow status / metadata status：`<两者均通过>`
 - Bundle：`<release_id + manifest hash>`
 - test report：`<test_report_id>`
 - replay report：`<replay_report_id>`

@@ -1,0 +1,69 @@
+{
+  "entries": [
+    {
+      "artifact_archives": {
+        "g0-ci-evidence-33201956865": "8f961217f4cae1a7f71a1e6a0671e1fa5e67340f9e4c41221c23473614eeb9f0",
+        "g0-clean-smoke-33201956865": "d9563bcf480482ce5c081309c0d8205e3655b8491d9309e42df8eb7abe606552",
+        "quality-reports-33201956865": "9ced957f952ec4362a820bb6d47383148282476c5d0eda9658b8b0dc6c38a305"
+      },
+      "classification": "sealed-evidence-mutated-during-ci",
+      "failure_id": "g0-ci-run-33201956865",
+      "head_commit": "acd3978a082d7ac91ea92f3e4fd73bfd3ee287af",
+      "raw_files": [
+        {
+          "path": "evidence/failures/run-33201956865/junit.xml",
+          "sha256": "c833a55e8b329703dfda3b2867c62d42925b6fb04c436bc6aa813863e1527d64"
+        },
+        {
+          "path": "evidence/failures/run-33201956865/coverage.xml",
+          "sha256": "2df3ceabc41b1a832ef8fb9996bb80f881f700ddcdb9286d7f3fa6722ce7bd47"
+        }
+      ],
+      "resolution_commits": [
+        "21d4cc66129ce834901d4d0bb230534c2b7517d4"
+      ],
+      "resolved_by_runs": [
+        "33204844985",
+        "33205169227"
+      ],
+      "root_cause": "The CI clean-smoke step overwrote committed content-addressed evidence before pytest re-verified the sealed packet.",
+      "run_id": "33201956865",
+      "run_url": "https://github.com/xphai/mxdauto/actions/runs/33201956865",
+      "status": "resolved",
+      "workflow_conclusion": "failure"
+    },
+    {
+      "artifact_archives": {
+        "build-artifacts-33202897083": "096a157ca7e9bed6089ff2870634cad73f904af9141e0f7710c2ba98b41af95c",
+        "g0-ci-evidence-33202897083": "6c8626b38896c2cd2f2e944372745eb7cbf771a85b381e2957314ea9d8c75e69",
+        "g0-clean-smoke-33202897083": "bca752565802582c0f53e3419cd8f8214925eab2b4f560fe85852a9d83cdd5da",
+        "quality-reports-33202897083": "7a7c878f666193f9300c6f79378c2fe9b448e97eb9e316d5d22117a8c6346838"
+      },
+      "classification": "workflow-green-metadata-failed",
+      "failure_id": "g0-ci-run-33202897083",
+      "head_commit": "9b38653f36fd3d11fa2aa73c2aa5be61dffb26ef",
+      "raw_files": [
+        {
+          "path": "evidence/failures/run-33202897083/ci-evidence.json",
+          "sha256": "b279e8d522d8e8e0c78798a7e4c2c1ca1c8de372830d9a114d7b23c1fbd249f5"
+        }
+      ],
+      "resolution_commits": [
+        "a39e4b53572a24ec7d1ed78f77a3803e6174b89d",
+        "7da29f4cfae0bd984b00c394b78e637088a7e452"
+      ],
+      "resolved_by_runs": [
+        "33204844985",
+        "33205169227"
+      ],
+      "root_cause": "The collector treated a successful dependency outcome as a parse error and applied Replay-only digest fields to clean-smoke; its process exit code did not reflect the failed evidence status.",
+      "run_id": "33202897083",
+      "run_url": "https://github.com/xphai/mxdauto/actions/runs/33202897083",
+      "status": "resolved",
+      "workflow_conclusion": "success"
+    }
+  ],
+  "generated_at": "2026-08-29T00:00:00Z",
+  "index_id": "g0-failure-index-20260829",
+  "schema_version": "1.0.0"
+}

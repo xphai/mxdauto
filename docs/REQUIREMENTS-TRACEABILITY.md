@@ -3,7 +3,7 @@
 > **状态截止**：2026-08-29  
 > **战略负责人**：5.6Sol Ultra  
 > **战术包负责人**：5.6 Luna max  
-> **当前阶段**：G-1 战略封存完成；G0 进行中且 Gate=`HOLD`
+> **当前阶段**：G-1 战略封存完成；G0 工程证据已远端复验但 Gate=`HOLD`；G1+ 未开始
 
 ## 1. 用途与来源
 
@@ -51,21 +51,21 @@
 | REQ-INP-002 | 语义键位覆盖方向、攻击、跳跃、确认、捡取、HP/MP、组队及 M/W/I/E/K/Esc/Scroll Lock；瞬移/Buff/回城保持可配置 | `REQUIREMENTS_CONFIRMED.md` §4 | G2、G5 | ResolvedConfig、键冲突/互斥测试、ActionSpec 映射、功能 flag 与每 workflow 后验谓词 | DEC-001 已裁决 Pilot 的方向、`a`、`alt`、`space`、`z`、Insert/Delete、`p`；其余原始键和可配置动作尚未绑定 Bundle | `CANDIDATE` |
 | REQ-INP-003 | 游戏端 receiver 保持 PowerShell/SendInput 交付，不依赖单独 EXE | `REQUIREMENTS_CONFIRMED.md` §6 | G2、G6 | 脚本 hash、签名/来源、Windows 10 LTSC 无 Python clean-host、install/upgrade/rollback | Legacy PowerShell receiver hash 已入 DEC-001；Core v2 协议与 clean-host 证据为空 | `CANDIDATE` |
 | REQ-SAFE-001 | 断流、断网、超时或退出时暂停并释放全部按键 | `REQUIREMENTS_CONFIRMED.md` §6；`COLLECTION_ANALYSIS.md` §7/§8 | G2、G4 | fault matrix、`release_all ≤1.5s` trace、ActionResult 唯一终态、人工继续 | Action 类型已实现；ActionController/Supervisor/动态释放证据为空 | `DONE-L1 contract` / runtime `MISSING` |
-| REQ-SAFE-002 | 所有阶段单一输入所有者，双写为 0 | ADR-004；由原始双机输入要求派生 | G0→G6 | 静态调用审计、dry-run 调用计数、owner lease/revoke/grant、receiver conflict 注入 | ADR-004 已接受；G0-G2 Legacy 独占；动态报告为空 | `DONE-L0` |
-| REQ-OBS-001 | 调试画面、路线可视化和状态解释 | `REQUIREMENTS_CONFIRMED.md` §2/§3 | G1、G5 | 类型化 telemetry、Frame/WorldState/Action provenance、headless Shadow report、UI smoke | Legacy UI 有可视化；Core v2 Event Tape 格式已实现，Shadow/UI 尚未实现 | `DONE-L1 tape` / UI `MISSING` |
-| REQ-OBS-002 | 截图、录像、日志和故障诊断 | `REQUIREMENTS_CONFIRMED.md` §2 | G0→G6 | Event Tape、artifact hash、session video、fault report、retention/privacy index | Event Tape hash chain 已实现；Core v2 session video/evidence index/retention 尚未形成 | `DONE-L1 tape` |
+| REQ-SAFE-002 | 所有阶段单一输入所有者，双写为 0 | ADR-004；由原始双机输入要求派生 | G0→G6 | 静态调用审计、dry-run 调用计数、owner lease/revoke/grant、receiver conflict 注入 | G0 minimal Shadow 已绑定 `7da29f4...` / `candidate-core-v2-20260829-shadow`：Core v2 真实输入与双写均为 0；G2/G3 lease/conflict/现场仍缺 | `DONE-G0-minimal` / G2+ `MISSING` |
+| REQ-OBS-001 | 调试画面、路线可视化和状态解释 | `REQUIREMENTS_CONFIRMED.md` §2/§3 | G1、G5 | 类型化 telemetry、Frame/WorldState/Action provenance、headless Shadow report、UI smoke | Event Tape 与 G0 headless minimal Shadow report 已形成；G1 感知/WorldState full Shadow 与 UI 仍缺 | `DONE-G0-minimal` / G1 UI `MISSING` |
+| REQ-OBS-002 | 截图、录像、日志和故障诊断 | `REQUIREMENTS_CONFIRMED.md` §2 | G0→G6 | Event Tape、artifact hash、session video、fault report、retention/privacy index | sealed packet 有 evidence index、JUnit/coverage、Replay/Shadow/clean/build/CI hash；两次 failed run 的原始材料、artifact digest、根因与修复谱系已进入统一 failure index；现场视频仍缺 | `DONE-G0-minimal` / G1+ `MISSING` |
 | REQ-NFR-001 | 处理 `≥15 FPS`、端到端 P95 `<100ms` | `COLLECTION_ANALYSIS.md` §7 | G2、G3、G4 | HIL/field latency trace、帧新鲜度、P95/P99、读帧失败率 | Legacy 推理/网络有局部性能记录；Core v2 HIL/field 为空 | `CANDIDATE` |
 | REQ-NFR-002 | 连续 4 小时稳定验收 | `COLLECTION_ANALYSIS.md` §7 | G4 | 固定 Certified Bundle，5 个独立 `EAOH≥4h` session，重启/异常/双写 0 | Core v2 field session 为 0；Legacy 4.69 小时日志含 29 次终止、331 stuck、1,011 登录等待 | `MISSING` |
-| REQ-PRI-001 | 账号、角色名、二维码等去标识化 | `MEDIA_REVIEW.md` §1；ADR-007/ROADMAP | G0、G1、G6 | `subject_id`、脱敏审计、fixture manifest、访问/保留策略 | DEC-001 使用匿名 `pilot-subject-01`；原始素材仍需入库前审计 | `DONE-L0` / execution `MISSING` |
-| REQ-REL-001 | 配置、模型、地图、路线、receiver 与证据原子绑定 | ADR-007；由旧资产漂移派生 | G0、G6 | 实际 Runtime Bundle、逐文件 hash、签名、rollback release | schema/example/validator 已有；example 是 fixture；实际 Candidate Bundle 尚未形成 | `DONE-L1 schema` |
-| REQ-REL-002 | 受控 Git/CI 与干净机可复现 | ADR-010；由交付要求派生 | G0、G6 | remote、protected branch、CI run/JUnit/coverage、dependency lock、clean reports | `origin/main=c81011d...` 与成功 run `33194720588` 已有；main 未保护；工作树有 lock 草案，但尚无已审 hash/CI 绑定、JUnit 或 clean report | `PARTIAL` |
+| REQ-PRI-001 | 账号、角色名、二维码等去标识化 | `MEDIA_REVIEW.md` §1；ADR-007/ROADMAP | G0、G1、G6 | `subject_id`、脱敏审计、fixture manifest、访问/保留策略 | DEC-001 使用匿名 Profile；G0 synthetic fixture 记录 complete de-identification、internal usage/license；真实 G1 素材仍需入库审计 | `DONE-G0-minimal` / G1+ `PARTIAL-DATA` |
+| REQ-REL-001 | 配置、模型、地图、路线、receiver 与证据原子绑定 | ADR-007；由旧资产漂移派生 | G0、G6 | 实际 Runtime Bundle、逐文件 hash、签名、rollback release | Candidate release 已绑定 source `7da29f4...`、Manifest `c3382e8...2007`、10 个资产条目和 evidence graph；strict metadata/full-external 均通过；尚非签名/Certified release | `DONE-G0-candidate` |
+| REQ-REL-002 | 受控 Git/CI 与干净机可复现 | ADR-010；由交付要求派生 | G0、G6 | remote、protected branch、CI run/JUnit/coverage、dependency lock、clean reports | run `33204844985` 的 passed metadata 已纳入 sealed packet `04c794c...`，successor run `33205169227` 又复验最终 packet：109 tests、94.61%、27 checks；main `protected=false`、PR=0、Owner/Sol-U countersign 未完成 | `PARTIAL-G0-governance` |
 
 ## 4. Gate 视图
 
 | Gate | 本矩阵要求的需求集合 | 当前结论 |
 |---|---|---|
 | G-1 | Pilot、匿名 Profile、输入所有权、原始范围映射 | **战略封存完成**：ADR-004、DEC-001 和本矩阵已形成 |
-| G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **HOLD**：remote 与首个 CI run 已有；branch protection、JUnit/evidence metadata、实际 Bundle、Golden Replay、Shadow、clean 仍缺完整报告 |
+| G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **HOLD**：工程/失败链由 bound run `33204844985` 与 successor run `33205169227` 闭环；仅 branch protection/required checks/PR 与 Owner/Sol-U countersign 未完成 |
 | G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | 未开始 |
 | G2 | INP-001/002/003、SAFE-001/002、NFR-001 的 simulator/HIL | 未开始 |
 | G3 | FUN-001 + 输入租约的单图有界现场 | 未开始；Core v2 现场 session 为 0 |
@@ -77,12 +77,12 @@
 
 | 缺口 ID | 对应需求 | 需要生成的首个证据 | 负责人 |
 |---|---|---|---|
-| GAP-G0-001 | REQ-REL-002 | 为已建立的 Core v2 remote 配置 protected main/required checks，并生成绑定本轮 commit 的完整 CI artifacts | Luna-M / 发布负责人 |
-| GAP-G0-002 | REQ-REL-001 | 使用真实 commit/asset/report ID 的 Candidate Bundle | Luna-M |
-| GAP-G0-003 | REQ-OBS-002 | evidence index、JUnit 和稳定 artifact 名 | Luna-M / QA |
-| GAP-G0-004 | REQ-CAP/CV/LOC/FUN | 去标识最小 Golden fixture + 3 次 deterministic Replay report | Sol-U 定义；Luna-M 执行 |
-| GAP-G0-005 | REQ-SAFE-002 | Shadow report，Core v2 真实输入调用数为 0 | Luna-M / QA |
-| GAP-G0-006 | REQ-REL-002 | 独立 Windows clean install/test/replay/shadow smoke | Luna-M / 发布负责人 |
+| GAP-G0-001 | REQ-REL-002 | 为 `main` 配置 branch protection/required checks，并创建实际评审 PR | 发布负责人 |
+| CLOSED-G0-002 | REQ-OBS-002 | `evidence/failures/failure-index.json` 已交叉链接两次失败、原始材料、hash、根因和关闭谱系 | Luna-M / QA（机器复核完成） |
+| CLOSED-G0-003 | REQ-REL-002 | run `33204844985` 与 successor run `33205169227` 的 archive/payload digest、27 checks 和 source/checkout 已复核 | Luna-M / QA（机器复核完成） |
+| GAP-G0-004 | Gate governance | Owner 通过受保护 PR 合并 countersign；Sol-U 随后签发 G0 `PASS` | Owner / Sol-U |
+| CLOSED-G0-REL-001 | REQ-REL-001 | Candidate Bundle、strict metadata/full-external、lock/build hash 已由 source/packet/run 绑定 | 已形成工程证据 |
+| CLOSED-G0-RPL-SHD-CLN | REQ-SAFE/OBS/REL | 最小 synthetic Replay、离线 Shadow zero-input、隔离 Windows clean smoke 已完成 | 已形成工程证据；不外推至 G1/G2/现场 |
 
 G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时必须回填实际 `evidence_id`、commit、Bundle、artifact hash 和评审结论；Markdown 中的计划 ID不替代实际报告。
 

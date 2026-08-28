@@ -4,13 +4,15 @@
 
 ## 0. 当前阶段的硬边界
 
-截至 2026-08-29，仓库处于 **G-1 Strategic PASS / G0 HOLD（工程基线建设、Shadow 准备）**：
+截至 2026-08-29，仓库处于 **G-1 Strategic PASS / G0 HOLD（工程证据已远端复验，治理门禁待闭环）/ G1+ 未开始**：
 
-- Core v2 任务的允许输出限定为不可变状态、动作计划和 dry-run 结果；当前仓库先完成契约、Event Tape、Manifest 校验和静态 CI，Shadow runner 按后续战术包接入；
+- Core v2 任务的允许输出限定为不可变状态、动作计划和 dry-run 结果；G0 最小 synthetic Replay、Shadow 与 clean smoke 已接入，但只属于工程证据；
 - Core v2 不得调用真实 `InputSink`、键盘、receiver 或游戏窗口；
 - Legacy 保持唯一真实输入下发权；
 - Legacy 仅接受阻塞缺陷修复和迁移桥接，不接受新的控制逻辑；
 - 未经 Stage Gate 批准，不得宣称 Canary、Certified 或 Core v2 接管已经开始。
+- 当前可绑定远端事实为 run [`33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985)，最终 sealed packet 的 successor 复验为 run [`33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227)；失败运行统一登记在 `evidence/failures/failure-index.json`。
+- `main` 当前 `protected=false` 且 PR 数为 0；这些治理项完成前 G0 保持 `HOLD`。
 
 当前战略事实源：
 
@@ -53,15 +55,21 @@
 在仓库根目录运行：
 
 ```powershell
-python -m pip install -e ".[dev]"
-python -m ruff check .
-python -m ruff format --check .
-python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json schemas/runtime-manifest.example.json
+python -m pip install --requirement configs/requirements.lock
+python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed
+python -m ruff check src tests tools
+python -m ruff format --check src tests tools
+python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest schemas/runtime-manifest.example.json
+python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json
+python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0
 python -m mypy
-python -m pytest --cov=maple_automation_core --cov-report=term-missing --cov-report=xml --cov-fail-under=90
+python -m pytest --junitxml=evidence/ci-run/junit.xml --cov=maple_automation_core --cov-report=term-missing --cov-report=xml:evidence/ci-run/coverage.xml --cov-fail-under=90
+python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json
+python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json
+python tools/run_clean_smoke.py --output evidence/ci-run/clean-smoke-report.json
 ```
 
-如果任务涉及回放、Shadow 或 Bundle，还要在战术包中列出额外命令、固定输入、输出路径和预期差异。没有真实生成的输出不得填写为通过。
+full-external 校验还需配置 `MAPLE_LEGACY_ROOT`、`MAPLE_MODEL_ROOT` 后运行不带 `--metadata-only` 的 strict 命令。任务涉及回放、Shadow 或 Bundle 时，战术包必须列出固定输入、输出路径、预期差异和 artifact hash。没有真实生成的输出不得填写为通过。
 
 ## 4. Pull Request 必填内容
 
@@ -87,10 +95,12 @@ PR 描述直接引用战术包，并至少包含：
 ## 5. 合并与阶段门禁
 
 - CI 任一必需检查失败，PR 不合并。
+- workflow conclusion 与 `ci-evidence.json.status` 必须同时通过；collector metadata failed 的 run 即使 workflow 页面为绿色也不合并、不绑定 Gate。
+- 直接 push 的成功 run 只证明该 commit 的工程事实；它不替代 branch protection、required checks、实际 PR 或评审签字。
 - 文档、代码、测试和 Bundle 元数据必须在同一变更链中更新；治理文件后置视为未完成。
 - G0 只放行可复现契约、schema、静态质量和 dry-run/Shadow 准备；它不放行真实输入接管。
 - G0 的评审清单和当前状态以 `docs/gates/G0-GATE-CHARTER.md` 为准；本地测试数、workflow 文件或示例 manifest 均不单独产生 G0 PASS。
-- 进入 G1 前必须有固定黄金录像回放、Shadow 对照和干净机 smoke 证据，并将报告 ID 绑定到 Candidate Bundle。
+- G0 minimal synthetic Replay/Shadow/clean smoke 不等价于 G1；进入 G1 后必须扩展固定录像 corpus、人工 truth/split、完整感知/WorldState/Planner 和 Shadow taxonomy。
 - Canary/Certified 需要独立 Stage Gate、现场 session、故障注入和回退演练；CI 绿灯本身不授予这些权限。
 
 ## 6. 完成定义（DoD）

@@ -83,7 +83,7 @@ IP、设备名和内容矩形是当前实验环境事实；它们仅通过环境
 | route manifest | `F:\mxd\source\MapleStoryAutoLevelUp-main\minimaps\iv_20260823_073124\spawn_route_manifest.yaml` | `33f36d34ab233a86fa2cdc3227f5bd8511a7a507a9e7bc46c161d8b8738ff19f` | Legacy 静态资产候选；其 `certified` 字段不代表 Core v2 认证 |
 | receiver | `F:\mxd\source\MapleStoryAutoLevelUp-main\receiver\input_receiver.ps1` | `b148643588a3a5d38f427d246ab3cea033b946edfe2852e01e416fac544865a9` | G0/G1 只读引用；G2 协议/clean-host Gate 前不参与 Core v2 真实输入 |
 
-MovementProfile、PlatformGraph、map fingerprint 与 data split 的最终 Core v2 hash 尚未生成；因此 DEC-001 仍不是完整 Runtime Bundle。
+首个 G0 Candidate 已把这些来源纳入 `asset-index.json`：MovementProfile `3c7f6b209dae079973cb88b727b6a6b686bdfafc9539f64921bbe605d7568ae8`、PlatformGraph `834892b1d6feca47c3e79f0f2433ed032a61b45c5939a5158590072da264539c`、map fingerprint `8b01434dfcd064b96dc4a9e7a6f3d653e5837324ce2721d89185a962c7a818c2`、data split `6861ee5b4e8417c5e2a8f0853e270a2cb0befb67144da70d82ea874512c210c5`。它们是 `candidate-core-v2-20260829-shadow` 的 G0 content-addressed 候选绑定，不等价于 G1 数据/模型晋级或 Certified Bundle。
 
 ## 3. 冲突裁决
 
@@ -101,9 +101,10 @@ MovementProfile、PlatformGraph、map fingerprint 与 data split 的最终 Core 
 
 1. `second_video_semantic_filter_eval.json` 已记录本人/技能闪光被单类模型识别为 mob；该模型保持 Candidate，G1 独立人工真值验收前不进入 Canary。
 2. Forest 评估部分 truth 来自与标签生成相同的启发式流程；它适合诊断，不构成独立泛化结论。
-3. 当前没有冻结 Golden fixture、Replay report、Shadow report 或 clean-machine report。
-4. Core v2 `origin=https://github.com/xphai/mxdauto.git` 已建立，`origin/main` 指向本地基线 commit `c81011d2f047bc0cf3aec258f5662416f039838c`；首个 CI run `33194720588` 成功并上传 coverage。`main` 当前未受保护，且该 run 没有 JUnit、Bundle、Replay、Shadow 或 clean artifact。
-5. Legacy 长日志包含多次重启、stuck、路线回归和登录等待，不计作 Core v2 现场证据。
+3. G0 已冻结最小 synthetic fixture 并生成 Replay/Shadow/clean engineering smoke；这些报告只验证证据管道，不满足 G1 完整录像 corpus、人工 truth、独立 holdout 或现场验收。
+4. Core v2 source commit 为 `7da29f4cfae0bd984b00c394b78e637088a7e452`，sealed packet 为 `04c794c59eb98af6e739415e1ecb72a335795bb9`。远端 run [`33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985) 以 `checkout=4317c478...` 生成 passed metadata，并被 sealed packet 纳入；successor run [`33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227) 又以 `checkout=04c794c59...` 复验最终 packet。前序失败已进入 `evidence/failures/failure-index.json`，collector 修复在 source commit 中并 fail-closed。
+5. GitHub `main` 当前 `protected=false`、PR 数为 0，Owner/Sol-U Gate countersign 未完成；因此 G0 仍为 `HOLD`，G1+ 未开始。
+6. Legacy 长日志包含多次重启、stuck、路线回归和登录等待，不计作 Core v2 现场证据。
 
 ## 5. 变更控制
 

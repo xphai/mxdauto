@@ -5,7 +5,7 @@
 
 ## 背景
 
-“测试通过”如果没有 commit、运行环境、命令和产物绑定，就不足以证明某个 Core v2 Bundle 可复现。仓库当前已有 GitHub Actions 基线，但当前流水线只覆盖静态质量、Manifest 示例校验、类型检查、pytest 和覆盖率；它还没有替代 Golden Replay、Shadow、干净机 smoke 或现场认证。
+“测试通过”如果没有 source commit、sealed packet commit、运行环境、命令、metadata 总状态和产物 hash 绑定，就不足以证明某个 Core v2 Bundle 可复现。当前流水线已覆盖 G0 最小 Replay、Shadow、clean smoke 与 build；这些仍只是工程证据，不替代 G1 完整 corpus、G2 receiver clean-host 或任何现场认证。
 
 ## 决策
 
@@ -15,15 +15,33 @@
 
 | 检查 | 当前命令 | 通过条件 |
 |---|---|---|
-| Ruff lint | `python -m ruff check .` | 退出码为 0 |
-| Ruff format | `python -m ruff format --check .` | 退出码为 0 |
-| Manifest schema | `python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json schemas/runtime-manifest.example.json` | 示例 manifest 通过 Draft 2020-12 schema |
+| Dependency lock | `verify_dependency_lock.py --check-installed` | 精确锁与已安装版本一致 |
+| Ruff lint | `python -m ruff check src tests tools` | 退出码为 0 |
+| Ruff format | `python -m ruff format --check src tests tools` | 退出码为 0 |
+| Manifest / Candidate | schema validator + `verify_bundle.py --metadata-only --strict-g0` | example 与实际 Candidate schema 通过；strict evidence graph 通过 |
 | Mypy | `python -m mypy` | 退出码为 0 |
-| Pytest + coverage | `python -m pytest --cov=maple_automation_core --cov-report=term-missing --cov-report=xml --cov-fail-under=90` | 测试退出码为 0 且覆盖率不低于 90% |
+| Clean smoke | `python tools/run_clean_smoke.py ...` | 隔离 venv build/install/test/Manifest/Replay/Shadow/rollback 全通过 |
+| Pytest + coverage | `python -m pytest --junitxml=... --cov=maple_automation_core ... --cov-fail-under=90` | JUnit 无失败/错误且覆盖率不低于 90% |
+| Golden Replay / Shadow | `run_golden_replay.py --runs 3`；`run_shadow.py` | 3 次 deterministic；真实输入/双写为 0 |
+| Build | `python -m build --wheel --sdist --no-isolation` + normalized sdist | wheel/sdist 生成且 hash 可查 |
+| Evidence collector | `collect_ci_evidence.py ... --workflow-result ...` | payload `status=passed` 且 collector 退出码为 0 |
 
-`coverage.xml` 由 workflow 以 `coverage-xml` artifact 上传；上传步骤的 `if: always()` 不会把前置失败转换为成功。
+workflow 使用稳定的 run-scoped artifact 名：`quality-reports-<run_id>`、`build-artifacts-<run_id>`、`g0-ci-evidence-<run_id>`、`g0-clean-smoke-<run_id>`。上传步骤的 `if: always()` 只保证失败产物保留；它不把失败转换为通过。
 
-### 2. Evidence 记录格式
+### 2. Fail-closed metadata 规则
+
+GitHub workflow conclusion 与 `ci-evidence.json.status` 必须同时为 `success/passed`。collector 必须：
+
+1. 逐项记录 GitHub step outcome，不把 `success`/`passed` 混作解析错误；
+2. 按 report kind 应用不变量：fixture SHA 与 canonical report digest 属于 Replay/Shadow，不强加给 clean-smoke；
+3. 分别记录 Candidate `source_commit` 与实际 Git `checkout_commit`；后者必须存在、是 source 后继，并且差异限于 packaging/evidence/docs；
+4. clean-smoke 的 `summary.checkout_commit` 必须等于 CI payload 的实际 checkout；
+5. 任一缺失、schema/binding/hash/invariant 错误或 workflow failure 使 payload 失败；
+6. payload 总状态不是 `passed` 时自身以非零退出；artifact 仍上传供审计。
+
+run `33202897083` 正是 workflow success / metadata failed 的隔离样本，不参与 G0 绑定。修复后的 run [`33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985) 同时满足两层状态，`source=7da29f4...`、`checkout=4317c47...`，其 payload 已纳入 sealed packet `04c794c...`。successor run [`33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227) 再以 `checkout=04c794c...` 复验最终 packet。失败 run 的原始材料与 digest 统一记录在 `evidence/failures/failure-index.json`。
+
+### 3. Evidence 记录格式
 
 每次用于评审或发布的 CI 运行必须记录以下最小元数据（可在 GitHub Actions run、PR 检查和 artifact 索引中实现）：
 
@@ -32,21 +50,23 @@ evidence_id
 workflow_name
 run_id / run_attempt
 source_commit
+sealed_packet_commit / checkout_commit / head_sha
 event (pull_request | push | workflow_dispatch)
 runner_os
 python_version
 dependency_install_result
 check_results[]
 artifact_names[]
+artifact_sha256[]
 started_at / completed_at
 ```
 
-当运行与 Runtime Bundle 关联时，还必须填写 `release_id`、`runtime_manifest_version` 和 manifest hash；发布证据必须进一步引用 schema 要求的 `test_report_id` 和 `replay_report_id`。未绑定到 commit 和 Bundle 的截图、聊天文字或本地输出不构成发布证据。
+当运行与 Runtime Bundle 关联时，还必须填写 `release_id`、Manifest hash、test/replay/shadow/clean report ID 与 hash。source commit 负责运行语义，sealed packet/head 负责证据 checkout；二者必须分别记录且具有允许的祖先/packaging-only 关系。未绑定到这两个身份和 Bundle 的截图、聊天文字或本地输出不构成 Gate 证据。
 
-### 3. 阶段边界
+### 4. 阶段边界
 
-- G0：上述静态 CI 是合并基线；其结果只证明代码和示例 Manifest 通过，不证明现场控制安全或 Core v2 可接管输入。
-- G1 前：必须增加/接入固定黄金录像的确定性回放、Core v2 Shadow 对照和干净机器 smoke，并把报告 ID 绑定到 Candidate Bundle。
+- G0：上述 CI 证明 Candidate 工程管道、最小 synthetic Replay/Shadow 和 clean smoke；不证明完整感知链、现场控制安全或 Core v2 可接管输入。
+- G1：必须扩展为固定录像 corpus、人工 truth/split、完整感知/WorldState/Planner 与 Legacy Shadow taxonomy；G0 synthetic smoke 不得被改名为 G1 完成。
 - Canary/Certified 前：必须增加故障注入、现场会话、恢复指标和回退演练；具体阈值由对应 Stage Gate/ADR 明确。
 - 在所有阶段，Core v2 Shadow 不得调用真实 `InputSink`；Legacy 保持唯一真实输入下发者。CI 不会通过模拟测试自动授予 Core v2 输入权。
 
@@ -55,12 +75,18 @@ started_at / completed_at
 在仓库根目录执行以下 PowerShell 命令可以复现当前 G0 检查：
 
 ```powershell
-python -m pip install -e ".[dev]"
-python -m ruff check .
-python -m ruff format --check .
-python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json schemas/runtime-manifest.example.json
+python -m pip install --requirement configs/requirements.lock
+python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed
+python -m ruff check src tests tools
+python -m ruff format --check src tests tools
+python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest schemas/runtime-manifest.example.json
+python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json
+python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0
 python -m mypy
-python -m pytest --cov=maple_automation_core --cov-report=term-missing --cov-report=xml --cov-fail-under=90
+python tools/run_clean_smoke.py --output evidence/ci-run/clean-smoke-report.json
+python -m pytest --junitxml=evidence/ci-run/junit.xml --cov=maple_automation_core --cov-report=term-missing --cov-report=xml:evidence/ci-run/coverage.xml --cov-fail-under=90
+python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json
+python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json
 ```
 
 本地输出必须与当前 commit 一起提交到评审记录；不要手工修改覆盖率或 manifest 示例来伪造证据。
@@ -71,7 +97,8 @@ python -m pytest --cov=maple_automation_core --cov-report=term-missing --cov-rep
 2. Pull Request 描述必须链接 CI run，并列出每个检查的结果；失败检查不得以“已知问题”标记为通过。
 3. 新增运行时契约时，同一 PR 必须增加 contract test；新增回放/Shadow 行为时，必须增加对应 evidence 产物或明确标记为 G1 前置任务。
 4. CI 只验证它实际运行的命令。没有生成的 `test_report_id`、`replay_report_id` 或现场 session ID 不得填入认证 Bundle。
-5. 证据 artifact 的命名必须稳定，例如 `coverage-xml`、`test-report-<release_id>`、`replay-report-<release_id>`、`shadow-report-<session_id>`；实际 workflow 尚未上传的 artifact 不得在 README 中宣称已存在。
+5. 证据 artifact 使用 workflow 中的四组 run-scoped 稳定名称；实际未上传或 metadata failed 的 artifact 不得宣称为 Gate 通过证据。
+6. branch protection、required checks、PR 和 Gate countersign 是独立治理门禁；CI passed 不自动产生 G0 PASS。
 
 ## 影响
 
