@@ -5,8 +5,8 @@
     "bundle_id": "candidate-core-v2-20260829-shadow",
     "release_id": "candidate-core-v2-20260829-shadow",
     "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-    "runtime_manifest_sha256": "5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17",
-    "source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6"
+    "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
+    "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4"
   },
   "deterministic": true,
   "execution_mode": "shadow",
@@ -20,7 +20,7 @@
   "output_digest": "2d6ebc7e10747b302c08800ba6e1249e8fa122d869de2cb4f95030cf8fa235a0",
   "release_id": "candidate-core-v2-20260829-shadow",
   "repeat_count": 3,
-  "report_digest": "a2648a6284a8b544ef6438a697e0aa3e1e9778e0b68ab08b2376ac63fbf03286",
+  "report_digest": "8ff614c729c97592a2cd5387edeabaf14e873e2d644258f97a6a3b104cc90e5e",
   "report_id": "replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow",
   "report_type": "golden_replay",
   "report_version": "1.0.0",
@@ -105,8 +105,8 @@
     }
   ],
   "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-  "runtime_manifest_sha256": "5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17",
+  "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
   "session_id": "golden-session-001",
-  "source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6",
+  "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4",
   "status": "PASS"
 }

@@ -5,15 +5,15 @@
       "kind": "junit",
       "name": "clean-junit.xml",
       "path": "evidence/clean-smoke/clean-junit.xml",
-      "sha256": "3713870156f1bf4923c030e8db72000431c17e566662b936a98d1e23e422ffeb",
-      "size_bytes": 12844
+      "sha256": "b923cf260f48ee66faca617676be3b98a0bb0e1d05b60f7a96013cb7ec661b74",
+      "size_bytes": 12970
     },
     {
       "artifact_id": "clean-coverage",
       "kind": "coverage",
       "name": "clean-coverage.xml",
       "path": "evidence/clean-smoke/clean-coverage.xml",
-      "sha256": "677c4528414cf994170c8c774b940b2b5a74399e7f8c1017a2c3a051f0dee206",
+      "sha256": "c71a9e9bebc235200ee311bd8c75ad5b709eac76faf7176b1825585d38f46062",
       "size_bytes": 68446
     },
     {
@@ -21,7 +21,7 @@
       "kind": "evidence-report",
       "name": "clean-replay-report.json",
       "path": "evidence/clean-smoke/clean-replay-report.json",
-      "sha256": "843907391642e46dff4eae70829fd4c63b725301c078ace19737cb1bafbf1f98",
+      "sha256": "f16b275a4d3b1a935c911b204a5c0c70f1f712cf8bc184d09a12aa52ade3d66c",
       "size_bytes": 4789
     },
     {
@@ -29,7 +29,7 @@
       "kind": "evidence-report",
       "name": "clean-shadow-report.json",
       "path": "evidence/clean-smoke/clean-shadow-report.json",
-      "sha256": "5da1068009c9beb6b747d1097afe8827bf80e565f679d44b71e3f23e1a0297fa",
+      "sha256": "c3924d60f93550653639c70dec778b8e50eb699a84f330765cb03e9e5fe4efb6",
       "size_bytes": 5456
     },
     {
@@ -37,7 +37,7 @@
       "kind": "wheel",
       "name": "maple_automation_core-0.1.0-py3-none-any.whl",
       "path": "evidence/clean-smoke/artifacts/maple_automation_core-0.1.0-py3-none-any.whl",
-      "sha256": "0041e772f77e565aa13ce539ad87ec66571bed33b18bc15ccd824244ff188275",
+      "sha256": "3c4b37fe04ec0e82bb85e4dab9faecf01044dcdc48f97f8001166ab851817b81",
       "size_bytes": 33330
     },
     {
@@ -45,8 +45,8 @@
       "kind": "sdist",
       "name": "maple_automation_core-0.1.0.tar.gz",
       "path": "evidence/clean-smoke/artifacts/maple_automation_core-0.1.0.tar.gz",
-      "sha256": "14813af9dffbe74f96a49ff00264d43584e183745de7c0a54e9fd23c553d485a",
-      "size_bytes": 43206
+      "sha256": "8d06487f1cdc3791c439383c539435cacfdc2e505bc95d2ee97fe38b5aa7c708",
+      "size_bytes": 43329
     }
   ],
   "bundle_id": "candidate-core-v2-20260829-shadow",
@@ -95,8 +95,8 @@
           "evidence/g0-candidate-core-v2-20260829/shadow-report.json",
           "evidence/g0-candidate-core-v2-20260829/test-report.json"
         ],
-        "checkout_commit": "a39182f1b8ba2da9e096982ccca8132b3608e316",
-        "manifest_source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6",
+        "checkout_commit": "badf82131b4bb2e7ae551f9b7448c814e51b5354",
+        "manifest_source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4",
         "unexpected_paths": []
       },
       "duration_seconds": 0.0,
@@ -104,117 +104,117 @@
       "status": "passed"
     },
     {
-      "command": "C:\\Miniconda3\\python.exe -m venv C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv",
+      "command": "C:\\Miniconda3\\python.exe -m venv C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
         "stdout_tail": ""
       },
-      "duration_seconds": 3.758,
+      "duration_seconds": 3.949,
       "name": "create-isolated-venv",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe -m pip install --no-cache-dir --requirement F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe -m pip install --no-cache-dir --requirement F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
-        "stdout_tail": "nts.lock (line 22))\n  Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)\nCollecting pyproject_hooks==1.2.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 23))\n  Downloading pyproject_hooks-1.2.0-py3-none-any.whl.metadata (1.3 kB)\nCollecting pytest==8.4.2 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 24))\n  Downloading pytest-8.4.2-py3-none-any.whl.metadata (7.7 kB)\nCollecting pytest-cov==6.3.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 25))\n  Downloading pytest_cov-6.3.0-py3-none-any.whl.metadata (30 kB)\nCollecting referencing==0.37.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 26))\n  Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)\nCollecting rpds-py==2026.6.3 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 27))\n  Downloading rpds_py-2026.6.3-cp313-cp313-win_amd64.whl.metadata (4.2 kB)\nCollecting ruff==0.12.12 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 28))\n  Downloading ruff-0.12.12-py3-none-win_amd64.whl.metadata (26 kB)\nCollecting setuptools==82.0.1 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 29))\n  Downloading setuptools-82.0.1-py3-none-any.whl.metadata (6.5 kB)\nCollecting typing_extensions==4.16.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 30))\n  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)\nCollecting wheel==0.47.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 31))\n  Downloading wheel-0.47.0-py3-none-any.whl.metadata (2.3 kB)\nDownloading attrs-26.1.0-py3-none-any.whl (67 kB)\nDownloading build-1.6.0-py3-none-any.whl (31 kB)\nDownloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)\nDownloading coverage-7.15.4-cp313-cp313-win_amd64.whl (225 kB)\nDownloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)\nDownloading jsonschema-4.26.0-py3-none-any.whl (90 kB)\nDownloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)\nDownloading librt-0.15.0-cp313-cp313-win_amd64.whl (126 kB)\nDownloading mypy-1.20.2-cp313-cp313-win_amd64.whl (10.9 MB)\n   ---------------------------------------- 10.9/10.9 MB 5.1 MB/s  0:00:02\nDownloading mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)\nDownloading packaging-26.3-py3-none-any.whl (129 kB)\nDownloading pathspec-1.1.1-py3-none-any.whl (57 kB)\nDownloading pluggy-1.6.0-py3-none-any.whl (20 kB)\nDownloading pygments-2.21.0-py3-none-any.whl (1.3 MB)\n   ---------------------------------------- 1.3/1.3 MB 5.2 MB/s  0:00:00\nDownloading pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)\nDownloading pytest-8.4.2-py3-none-any.whl (365 kB)\nDownloading pytest_cov-6.3.0-py3-none-any.whl (25 kB)\nDownloading referencing-0.37.0-py3-none-any.whl (26 kB)\nDownloading rpds_py-2026.6.3-cp313-cp313-win_amd64.whl (219 kB)\nDownloading ruff-0.12.12-py3-none-win_amd64.whl (13.2 MB)\n   ---------------------------------------- 13.2/13.2 MB 5.3 MB/s  0:00:02\nDownloading setuptools-82.0.1-py3-none-any.whl (1.0 MB)\n   ---------------------------------------- 1.0/1.0 MB 6.0 MB/s  0:00:00\nDownloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)\nDownloading wheel-0.47.0-py3-none-any.whl (32 kB)\nInstalling collected packages: typing_extensions, setuptools, ruff, rpds-py, pyproject_hooks, Pygments, pluggy, pathspec, packaging, mypy_extensions, librt, iniconfig, coverage, colorama, attrs, wheel, referencing, pytest, mypy, build, pytest-cov, jsonschema-specifications, jsonschema\n\nSuccessfully installed Pygments-2.21.0 attrs-26.1.0 build-1.6.0 colorama-0.4.6 coverage-7.15.4 iniconfig-2.3.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 librt-0.15.0 mypy-1.20.2 mypy_extensions-1.1.0 packaging-26.3 pathspec-1.1.1 pluggy-1.6.0 pyproject_hooks-1.2.0 pytest-8.4.2 pytest-cov-6.3.0 referencing-0.37.0 rpds-py-2026.6.3 ruff-0.12.12 setuptools-82.0.1 typing_extensions-4.16.0 wheel-0.47.0\n"
+        "stdout_tail": "nts.lock (line 22))\n  Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)\nCollecting pyproject_hooks==1.2.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 23))\n  Downloading pyproject_hooks-1.2.0-py3-none-any.whl.metadata (1.3 kB)\nCollecting pytest==8.4.2 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 24))\n  Downloading pytest-8.4.2-py3-none-any.whl.metadata (7.7 kB)\nCollecting pytest-cov==6.3.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 25))\n  Downloading pytest_cov-6.3.0-py3-none-any.whl.metadata (30 kB)\nCollecting referencing==0.37.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 26))\n  Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)\nCollecting rpds-py==2026.6.3 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 27))\n  Downloading rpds_py-2026.6.3-cp313-cp313-win_amd64.whl.metadata (4.2 kB)\nCollecting ruff==0.12.12 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 28))\n  Downloading ruff-0.12.12-py3-none-win_amd64.whl.metadata (26 kB)\nCollecting setuptools==82.0.1 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 29))\n  Downloading setuptools-82.0.1-py3-none-any.whl.metadata (6.5 kB)\nCollecting typing_extensions==4.16.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 30))\n  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)\nCollecting wheel==0.47.0 (from -r F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock (line 31))\n  Downloading wheel-0.47.0-py3-none-any.whl.metadata (2.3 kB)\nDownloading attrs-26.1.0-py3-none-any.whl (67 kB)\nDownloading build-1.6.0-py3-none-any.whl (31 kB)\nDownloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)\nDownloading coverage-7.15.4-cp313-cp313-win_amd64.whl (225 kB)\nDownloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)\nDownloading jsonschema-4.26.0-py3-none-any.whl (90 kB)\nDownloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)\nDownloading librt-0.15.0-cp313-cp313-win_amd64.whl (126 kB)\nDownloading mypy-1.20.2-cp313-cp313-win_amd64.whl (10.9 MB)\n   ---------------------------------------- 10.9/10.9 MB 4.5 MB/s  0:00:02\nDownloading mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)\nDownloading packaging-26.3-py3-none-any.whl (129 kB)\nDownloading pathspec-1.1.1-py3-none-any.whl (57 kB)\nDownloading pluggy-1.6.0-py3-none-any.whl (20 kB)\nDownloading pygments-2.21.0-py3-none-any.whl (1.3 MB)\n   ---------------------------------------- 1.3/1.3 MB 5.8 MB/s  0:00:00\nDownloading pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)\nDownloading pytest-8.4.2-py3-none-any.whl (365 kB)\nDownloading pytest_cov-6.3.0-py3-none-any.whl (25 kB)\nDownloading referencing-0.37.0-py3-none-any.whl (26 kB)\nDownloading rpds_py-2026.6.3-cp313-cp313-win_amd64.whl (219 kB)\nDownloading ruff-0.12.12-py3-none-win_amd64.whl (13.2 MB)\n   ---------------------------------------- 13.2/13.2 MB 4.4 MB/s  0:00:03\nDownloading setuptools-82.0.1-py3-none-any.whl (1.0 MB)\n   ---------------------------------------- 1.0/1.0 MB 5.9 MB/s  0:00:00\nDownloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)\nDownloading wheel-0.47.0-py3-none-any.whl (32 kB)\nInstalling collected packages: typing_extensions, setuptools, ruff, rpds-py, pyproject_hooks, Pygments, pluggy, pathspec, packaging, mypy_extensions, librt, iniconfig, coverage, colorama, attrs, wheel, referencing, pytest, mypy, build, pytest-cov, jsonschema-specifications, jsonschema\n\nSuccessfully installed Pygments-2.21.0 attrs-26.1.0 build-1.6.0 colorama-0.4.6 coverage-7.15.4 iniconfig-2.3.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 librt-0.15.0 mypy-1.20.2 mypy_extensions-1.1.0 packaging-26.3 pathspec-1.1.1 pluggy-1.6.0 pyproject_hooks-1.2.0 pytest-8.4.2 pytest-cov-6.3.0 referencing-0.37.0 rpds-py-2026.6.3 ruff-0.12.12 setuptools-82.0.1 typing_extensions-4.16.0 wheel-0.47.0\n"
       },
-      "duration_seconds": 26.584,
+      "duration_seconds": 30.231,
       "name": "cacheless-lock-install",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\verify_dependency_lock.py --lock F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock --check-installed",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\verify_dependency_lock.py --lock F:\\mxd\\product\\maple-automation-core\\configs\\requirements.lock --check-installed",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
         "stdout_tail": "Dependency lock verified (23 packages; and installed versions).\n"
       },
-      "duration_seconds": 0.164,
+      "duration_seconds": 0.175,
       "name": "dependency-lock-audit",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe -m ruff check src tests tools",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe -m ruff check src tests tools",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
         "stdout_tail": "All checks passed!\n"
       },
-      "duration_seconds": 0.221,
+      "duration_seconds": 0.236,
       "name": "ruff-lint",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe -m ruff format --check src tests tools",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe -m ruff format --check src tests tools",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
         "stdout_tail": "38 files already formatted\n"
       },
-      "duration_seconds": 0.11,
+      "duration_seconds": 0.115,
       "name": "ruff-format",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe -m mypy",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe -m mypy",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
         "stdout_tail": "Success: no issues found in 11 source files\n"
       },
-      "duration_seconds": 0.329,
+      "duration_seconds": 0.343,
       "name": "mypy",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\validate_runtime_manifest.py --schema F:\\mxd\\product\\maple-automation-core\\schemas\\runtime-manifest.schema.json --manifest F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow\\runtime-manifest.json",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\validate_runtime_manifest.py --schema F:\\mxd\\product\\maple-automation-core\\schemas\\runtime-manifest.schema.json --manifest F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow\\runtime-manifest.json",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
         "stdout_tail": "OK: runtime-manifest.json validated against schema.\nValidated 1 manifest(s).\n"
       },
-      "duration_seconds": 0.276,
+      "duration_seconds": 0.273,
       "name": "candidate-manifest-schema",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\verify_bundle.py --bundle-dir F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow --metadata-only",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\verify_bundle.py --bundle-dir F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow --metadata-only",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
         "stdout_tail": "Bundle verified (metadata-only): F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow\n"
       },
-      "duration_seconds": 0.547,
+      "duration_seconds": 0.54,
       "name": "candidate-bundle-metadata",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe -m pytest --junitxml=F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-junit.xml --cov=maple_automation_core --cov-report=term-missing --cov-report=xml:F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-coverage.xml --cov-fail-under=90",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe -m pytest --junitxml=F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-junit.xml --cov=maple_automation_core --cov-report=term-missing --cov-report=xml:F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-coverage.xml --cov-fail-under=90",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
-        "stdout_tail": "============================= test session starts =============================\nplatform win32 -- Python 3.13.13, pytest-8.4.2, pluggy-1.6.0\nrootdir: F:\\mxd\\product\\maple-automation-core\nconfigfile: pyproject.toml\ntestpaths: tests\nplugins: cov-6.3.0\ncollected 100 items\n\ntests\\test_bundle_builder_validation.py ..                               [  2%]\ntests\\test_bundle_common.py .........                                    [ 11%]\ntests\\test_bundle_evidence.py ..............                             [ 25%]\ntests\\test_contract_actions.py .......                                   [ 32%]\ntests\\test_contract_actions_edge_cases.py ...                            [ 35%]\ntests\\test_contract_coordinates.py ...                                   [ 38%]\ntests\\test_contract_edge_cases.py ....                                   [ 42%]\ntests\\test_contract_frame.py ..........                                  [ 52%]\ntests\\test_contract_frame_edge_cases.py ....                             [ 56%]\ntests\\test_contract_player_world.py ........                             [ 64%]\ntests\\test_event_tape.py .........                                       [ 73%]\ntests\\test_event_tape_edge_cases.py .....                                [ 78%]\ntests\\test_golden_replay.py ........                                     [ 86%]\ntests\\test_normalize_sdist.py .                                          [ 87%]\ntests\\test_runtime_manifest_schema.py .....                              [ 92%]\ntests\\test_shadow_runner.py ........                                     [100%]\n\n- generated xml file: F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-junit.xml -\n=============================== tests coverage ================================\n______________ coverage: platform win32, python 3.13.13-final-0 _______________\n\nName                                                  Stmts   Miss  Cover   Missing\n-----------------------------------------------------------------------------------\nsrc\\maple_automation_core\\__init__.py                     1      0   100%\nsrc\\maple_automation_core\\domain\\__init__.py              6      0   100%\nsrc\\maple_automation_core\\domain\\_contract_utils.py     103      0   100%\nsrc\\maple_automation_core\\domain\\actions.py             250     11    96%   161, 163, 168, 170, 174, 239, 244, 278-279, 315, 372\nsrc\\maple_automation_core\\domain\\coordinates.py          62      0   100%\nsrc\\maple_automation_core\\domain\\frame.py               277     14    95%   114, 116, 338, 429, 431, 434, 436, 438, 440, 442, 444, 448, 450, 476\nsrc\\maple_automation_core\\domain\\player_world.py        161     20    88%   48, 52, 58, 67, 105-106, 174-175, 195, 208, 210, 212, 219, 225, 236, 240, 246, 250, 269, 281\nsrc\\maple_automation_core\\replay\\__init__.py              4      0   100%\nsrc\\maple_automation_core\\replay\\event_tape.py          190      6    97%   89, 122, 250, 308, 310, 352\nsrc\\maple_automation_core\\replay\\golden.py              451     40    91%   58, 60, 114, 116, 118, 120, 122, 167, 174, 176, 198, 200, 202, 204, 206, 208, 210, 212, 214, 218, 232, 234, 236, 241, 243, 245, 254, 262-263, 278, 281, 283, 291, 295, 353, 356, 393-394, 499, 509\nsrc\\maple_automation_core\\replay\\shadow.py              275      5    98%   46, 115, 197, 268, 310\n-----------------------------------------------------------------------------------\nTOTAL                                                  1780     96    95%\nCoverage XML written to file F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-coverage.xml\nRequired test coverage of 90% reached. Total coverage: 94.61%\n============================= 100 passed in 6.62s =============================\n"
+        "stdout_tail": "============================= test session starts =============================\nplatform win32 -- Python 3.13.13, pytest-8.4.2, pluggy-1.6.0\nrootdir: F:\\mxd\\product\\maple-automation-core\nconfigfile: pyproject.toml\ntestpaths: tests\nplugins: cov-6.3.0\ncollected 101 items\n\ntests\\test_bundle_builder_validation.py ..                               [  1%]\ntests\\test_bundle_common.py .........                                    [ 10%]\ntests\\test_bundle_evidence.py ...............                            [ 25%]\ntests\\test_contract_actions.py .......                                   [ 32%]\ntests\\test_contract_actions_edge_cases.py ...                            [ 35%]\ntests\\test_contract_coordinates.py ...                                   [ 38%]\ntests\\test_contract_edge_cases.py ....                                   [ 42%]\ntests\\test_contract_frame.py ..........                                  [ 52%]\ntests\\test_contract_frame_edge_cases.py ....                             [ 56%]\ntests\\test_contract_player_world.py ........                             [ 64%]\ntests\\test_event_tape.py .........                                       [ 73%]\ntests\\test_event_tape_edge_cases.py .....                                [ 78%]\ntests\\test_golden_replay.py ........                                     [ 86%]\ntests\\test_normalize_sdist.py .                                          [ 87%]\ntests\\test_runtime_manifest_schema.py .....                              [ 92%]\ntests\\test_shadow_runner.py ........                                     [100%]\n\n- generated xml file: F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-junit.xml -\n=============================== tests coverage ================================\n______________ coverage: platform win32, python 3.13.13-final-0 _______________\n\nName                                                  Stmts   Miss  Cover   Missing\n-----------------------------------------------------------------------------------\nsrc\\maple_automation_core\\__init__.py                     1      0   100%\nsrc\\maple_automation_core\\domain\\__init__.py              6      0   100%\nsrc\\maple_automation_core\\domain\\_contract_utils.py     103      0   100%\nsrc\\maple_automation_core\\domain\\actions.py             250     11    96%   161, 163, 168, 170, 174, 239, 244, 278-279, 315, 372\nsrc\\maple_automation_core\\domain\\coordinates.py          62      0   100%\nsrc\\maple_automation_core\\domain\\frame.py               277     14    95%   114, 116, 338, 429, 431, 434, 436, 438, 440, 442, 444, 448, 450, 476\nsrc\\maple_automation_core\\domain\\player_world.py        161     20    88%   48, 52, 58, 67, 105-106, 174-175, 195, 208, 210, 212, 219, 225, 236, 240, 246, 250, 269, 281\nsrc\\maple_automation_core\\replay\\__init__.py              4      0   100%\nsrc\\maple_automation_core\\replay\\event_tape.py          190      6    97%   89, 122, 250, 308, 310, 352\nsrc\\maple_automation_core\\replay\\golden.py              451     40    91%   58, 60, 114, 116, 118, 120, 122, 167, 174, 176, 198, 200, 202, 204, 206, 208, 210, 212, 214, 218, 232, 234, 236, 241, 243, 245, 254, 262-263, 278, 281, 283, 291, 295, 353, 356, 393-394, 499, 509\nsrc\\maple_automation_core\\replay\\shadow.py              275      5    98%   46, 115, 197, 268, 310\n-----------------------------------------------------------------------------------\nTOTAL                                                  1780     96    95%\nCoverage XML written to file F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-coverage.xml\nRequired test coverage of 90% reached. Total coverage: 94.61%\n============================= 101 passed in 6.84s =============================\n"
       },
-      "duration_seconds": 7.306,
+      "duration_seconds": 7.55,
       "name": "pytest-coverage",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe -m build --wheel --sdist --no-isolation --outdir F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\artifacts",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe -m build --wheel --sdist --no-isolation --outdir F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\artifacts",
       "details": {
         "exit_code": 0,
         "stderr_tail": "* Getting build dependencies for wheel...\n* Building wheel...\nwarning: build_py: byte-compiling is disabled, skipping.\n\nwarning: install_lib: byte-compiling is disabled, skipping.\n\n* Getting build dependencies for sdist...\n* Building sdist...\n",
         "stdout_tail": "g maple_automation_core-0.1.0\\src\\maple_automation_core.egg-info\ncreating maple_automation_core-0.1.0\\src\\maple_automation_core\\domain\ncreating maple_automation_core-0.1.0\\src\\maple_automation_core\\replay\ncreating maple_automation_core-0.1.0\\tests\ncopying files to maple_automation_core-0.1.0...\ncopying README.md -> maple_automation_core-0.1.0\ncopying pyproject.toml -> maple_automation_core-0.1.0\ncopying src\\maple_automation_core\\__init__.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\ncopying src\\maple_automation_core\\py.typed -> maple_automation_core-0.1.0\\src\\maple_automation_core\ncopying src\\maple_automation_core.egg-info\\PKG-INFO -> maple_automation_core-0.1.0\\src\\maple_automation_core.egg-info\ncopying src\\maple_automation_core.egg-info\\SOURCES.txt -> maple_automation_core-0.1.0\\src\\maple_automation_core.egg-info\ncopying src\\maple_automation_core.egg-info\\dependency_links.txt -> maple_automation_core-0.1.0\\src\\maple_automation_core.egg-info\ncopying src\\maple_automation_core.egg-info\\requires.txt -> maple_automation_core-0.1.0\\src\\maple_automation_core.egg-info\ncopying src\\maple_automation_core.egg-info\\top_level.txt -> maple_automation_core-0.1.0\\src\\maple_automation_core.egg-info\ncopying src\\maple_automation_core\\domain\\__init__.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\domain\ncopying src\\maple_automation_core\\domain\\_contract_utils.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\domain\ncopying src\\maple_automation_core\\domain\\actions.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\domain\ncopying src\\maple_automation_core\\domain\\coordinates.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\domain\ncopying src\\maple_automation_core\\domain\\frame.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\domain\ncopying src\\maple_automation_core\\domain\\player_world.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\domain\ncopying src\\maple_automation_core\\replay\\__init__.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\replay\ncopying src\\maple_automation_core\\replay\\event_tape.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\replay\ncopying src\\maple_automation_core\\replay\\golden.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\replay\ncopying src\\maple_automation_core\\replay\\shadow.py -> maple_automation_core-0.1.0\\src\\maple_automation_core\\replay\ncopying tests\\test_bundle_builder_validation.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_bundle_common.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_bundle_evidence.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_contract_actions.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_contract_actions_edge_cases.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_contract_coordinates.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_contract_edge_cases.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_contract_frame.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_contract_frame_edge_cases.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_contract_player_world.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_event_tape.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_event_tape_edge_cases.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_golden_replay.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_normalize_sdist.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_runtime_manifest_schema.py -> maple_automation_core-0.1.0\\tests\ncopying tests\\test_shadow_runner.py -> maple_automation_core-0.1.0\\tests\ncopying src\\maple_automation_core.egg-info\\SOURCES.txt -> maple_automation_core-0.1.0\\src\\maple_automation_core.egg-info\nWriting maple_automation_core-0.1.0\\setup.cfg\nCreating tar archive\nremoving 'maple_automation_core-0.1.0' (and everything under it)\nSuccessfully built maple_automation_core-0.1.0-py3-none-any.whl and maple_automation_core-0.1.0.tar.gz\n"
       },
-      "duration_seconds": 2.206,
+      "duration_seconds": 2.191,
       "name": "wheel-sdist-build",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\normalize_sdist.py --source-date-epoch 1787943451 F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\artifacts\\maple_automation_core-0.1.0.tar.gz",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\normalize_sdist.py --source-date-epoch 1787944114 F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\artifacts\\maple_automation_core-0.1.0.tar.gz",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
@@ -225,46 +225,46 @@
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe -m pip install --no-cache-dir --no-deps --force-reinstall F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\artifacts\\maple_automation_core-0.1.0-py3-none-any.whl",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe -m pip install --no-cache-dir --no-deps --force-reinstall F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\artifacts\\maple_automation_core-0.1.0-py3-none-any.whl",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
         "stdout_tail": "Processing F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\artifacts\\maple_automation_core-0.1.0-py3-none-any.whl\nInstalling collected packages: maple-automation-core\nSuccessfully installed maple-automation-core-0.1.0\n"
       },
-      "duration_seconds": 0.797,
+      "duration_seconds": 0.813,
       "name": "wheel-install",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe -c \"from pathlib import Path; import maple_automation_core as package; root=Path('F:\\\\mxd\\\\product\\\\maple-automation-core').resolve(); loaded=Path(package.__file__).resolve(); assert not loaded.is_relative_to(root), loaded; print(loaded)\"",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe -c \"from pathlib import Path; import maple_automation_core as package; root=Path('F:\\\\mxd\\\\product\\\\maple-automation-core').resolve(); loaded=Path(package.__file__).resolve(); assert not loaded.is_relative_to(root), loaded; print(loaded)\"",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
-        "stdout_tail": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Lib\\site-packages\\maple_automation_core\\__init__.py\n"
+        "stdout_tail": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Lib\\site-packages\\maple_automation_core\\__init__.py\n"
       },
-      "duration_seconds": 0.07,
+      "duration_seconds": 0.072,
       "name": "installed-wheel-import",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\run_golden_replay.py --require-installed --fixture F:\\mxd\\product\\maple-automation-core\\fixtures\\golden\\pilot_minimal_v1.json --runs 3 --manifest F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow\\runtime-manifest.json --report F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-replay-report.json",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\run_golden_replay.py --require-installed --fixture F:\\mxd\\product\\maple-automation-core\\fixtures\\golden\\pilot_minimal_v1.json --runs 3 --manifest F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow\\runtime-manifest.json --report F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-replay-report.json",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
-        "stdout_tail": "2eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34\",\n  \"fixture_file_sha256\": \"22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34\",\n  \"fixture_id\": \"golden-pilot-minimal-v1\",\n  \"output_digest\": \"2d6ebc7e10747b302c08800ba6e1249e8fa122d869de2cb4f95030cf8fa235a0\",\n  \"release_id\": \"candidate-core-v2-20260829-shadow\",\n  \"repeat_count\": 3,\n  \"report_digest\": \"a2648a6284a8b544ef6438a697e0aa3e1e9778e0b68ab08b2376ac63fbf03286\",\n  \"report_id\": \"replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow\",\n  \"report_type\": \"golden_replay\",\n  \"report_version\": \"1.0.0\",\n  \"runs\": [\n    {\n      \"action_digest\": \"6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e\",\n      \"bundle_digest\": \"9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782\",\n      \"event_count\": 13,\n      \"event_digest\": \"401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825\",\n      \"event_sequence\": [\n        \"frame.observed\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\"\n      ],\n      \"event_sequence_digest\": \"9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77\",\n      \"output_digest\": \"8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed\",\n      \"planned_action_count\": 2,\n      \"run_index\": 0,\n      \"world_state_digest\": \"0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa\"\n    },\n    {\n      \"action_digest\": \"6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e\",\n      \"bundle_digest\": \"9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782\",\n      \"event_count\": 13,\n      \"event_digest\": \"401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825\",\n      \"event_sequence\": [\n        \"frame.observed\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\"\n      ],\n      \"event_sequence_digest\": \"9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77\",\n      \"output_digest\": \"8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed\",\n      \"planned_action_count\": 2,\n      \"run_index\": 1,\n      \"world_state_digest\": \"0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa\"\n    },\n    {\n      \"action_digest\": \"6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e\",\n      \"bundle_digest\": \"9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782\",\n      \"event_count\": 13,\n      \"event_digest\": \"401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825\",\n      \"event_sequence\": [\n        \"frame.observed\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\"\n      ],\n      \"event_sequence_digest\": \"9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77\",\n      \"output_digest\": \"8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed\",\n      \"planned_action_count\": 2,\n      \"run_index\": 2,\n      \"world_state_digest\": \"0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa\"\n    }\n  ],\n  \"runtime_manifest_path\": \"bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json\",\n  \"runtime_manifest_sha256\": \"5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17\",\n  \"session_id\": \"golden-session-001\",\n  \"source_commit\": \"c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6\",\n  \"status\": \"PASS\"\n}\n"
+        "stdout_tail": "2eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34\",\n  \"fixture_file_sha256\": \"22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34\",\n  \"fixture_id\": \"golden-pilot-minimal-v1\",\n  \"output_digest\": \"2d6ebc7e10747b302c08800ba6e1249e8fa122d869de2cb4f95030cf8fa235a0\",\n  \"release_id\": \"candidate-core-v2-20260829-shadow\",\n  \"repeat_count\": 3,\n  \"report_digest\": \"8ff614c729c97592a2cd5387edeabaf14e873e2d644258f97a6a3b104cc90e5e\",\n  \"report_id\": \"replay-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow\",\n  \"report_type\": \"golden_replay\",\n  \"report_version\": \"1.0.0\",\n  \"runs\": [\n    {\n      \"action_digest\": \"6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e\",\n      \"bundle_digest\": \"9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782\",\n      \"event_count\": 13,\n      \"event_digest\": \"401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825\",\n      \"event_sequence\": [\n        \"frame.observed\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\"\n      ],\n      \"event_sequence_digest\": \"9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77\",\n      \"output_digest\": \"8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed\",\n      \"planned_action_count\": 2,\n      \"run_index\": 0,\n      \"world_state_digest\": \"0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa\"\n    },\n    {\n      \"action_digest\": \"6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e\",\n      \"bundle_digest\": \"9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782\",\n      \"event_count\": 13,\n      \"event_digest\": \"401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825\",\n      \"event_sequence\": [\n        \"frame.observed\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\"\n      ],\n      \"event_sequence_digest\": \"9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77\",\n      \"output_digest\": \"8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed\",\n      \"planned_action_count\": 2,\n      \"run_index\": 1,\n      \"world_state_digest\": \"0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa\"\n    },\n    {\n      \"action_digest\": \"6be6bfc1ed04f351420515abd4fe7cb98a9d8ebbd9df92de2acac979cc35bb1e\",\n      \"bundle_digest\": \"9966a79fff582520e9c887427ad917ce65738b3ad2956dfa61b178fc0e574782\",\n      \"event_count\": 13,\n      \"event_digest\": \"401610738fa29604d4008f9e87082d445a668de1b65447a76e10250d6ec0c825\",\n      \"event_sequence\": [\n        \"frame.observed\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\",\n        \"action.proposed\",\n        \"action.issued\",\n        \"action.started\",\n        \"frame.observed\",\n        \"action.terminal\",\n        \"input.release_all\"\n      ],\n      \"event_sequence_digest\": \"9b50d65d1cc6015064306131e28fe72e20c2b12d12d494a7240d7261d9524c77\",\n      \"output_digest\": \"8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed\",\n      \"planned_action_count\": 2,\n      \"run_index\": 2,\n      \"world_state_digest\": \"0d871c95faacee669c66453c85f18129ff03b3ff4edefa3e64793ff8172da6fa\"\n    }\n  ],\n  \"runtime_manifest_path\": \"bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json\",\n  \"runtime_manifest_sha256\": \"ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10\",\n  \"session_id\": \"golden-session-001\",\n  \"source_commit\": \"21d4cc66129ce834901d4d0bb230534c2b7517d4\",\n  \"status\": \"PASS\"\n}\n"
       },
-      "duration_seconds": 0.325,
+      "duration_seconds": 0.322,
       "name": "golden-replay-three-runs",
       "status": "passed"
     },
     {
-      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-bhb6vlf0\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\run_shadow.py --require-installed --fixture F:\\mxd\\product\\maple-automation-core\\fixtures\\golden\\pilot_minimal_v1.json --manifest F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow\\runtime-manifest.json --report F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-shadow-report.json",
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\maple-core-g0-clean-9dybk2ro\\venv\\Scripts\\python.exe F:\\mxd\\product\\maple-automation-core\\tools\\run_shadow.py --require-installed --fixture F:\\mxd\\product\\maple-automation-core\\fixtures\\golden\\pilot_minimal_v1.json --manifest F:\\mxd\\product\\maple-automation-core\\bundles\\candidate-core-v2-20260829-shadow\\runtime-manifest.json --report F:\\mxd\\product\\maple-automation-core\\evidence\\clean-smoke\\clean-shadow-report.json",
       "details": {
         "exit_code": 0,
         "stderr_tail": "",
-        "stdout_tail": "8a284a0dad4e6eb34\",\n  \"fixture_id\": \"golden-pilot-minimal-v1\",\n  \"input_audit\": {\n    \"boundary_attempts\": [],\n    \"connected\": false,\n    \"core_execution_event_count\": 0,\n    \"core_v2_real_input_call_count\": 0,\n    \"double_write_event_count\": 0,\n    \"dry_run_call_count\": 5,\n    \"keyboard_call_count\": 0,\n    \"legacy_execution_event_count\": 0,\n    \"legacy_observed_action_count\": 2,\n    \"mouse_call_count\": 0,\n    \"planned_action_count\": 2,\n    \"proof\": \"instrumented boundary ledger; concrete dry-run sink has no live adapter\",\n    \"real_input_call_count\": 0,\n    \"receipts\": [\n      {\n        \"operation\": \"connect\",\n        \"sequence\": 0,\n        \"simulated\": true\n      },\n      {\n        \"operation\": \"planned_action\",\n        \"sequence\": 1,\n        \"simulated\": true\n      },\n      {\n        \"operation\": \"planned_action\",\n        \"sequence\": 2,\n        \"simulated\": true\n      },\n      {\n        \"operation\": \"release_all\",\n        \"sequence\": 3,\n        \"simulated\": true\n      },\n      {\n        \"operation\": \"close\",\n        \"sequence\": 4,\n        \"simulated\": true\n      }\n    ],\n    \"receiver_call_count\": 0,\n    \"sink_type\": \"DryRunInputSink\",\n    \"window_call_count\": 0\n  },\n  \"legacy_observed_actions\": [\n    {\n      \"action_id\": \"legacy-observed-move-001\",\n      \"details\": {\n        \"correlation\": \"fixture-001\",\n        \"source\": \"legacy-event-adapter\"\n      },\n      \"execution_status\": \"observed_not_core_executed\",\n      \"frame_id\": 1,\n      \"kind\": \"move\",\n      \"observed_at_ns\": 1000001000,\n      \"provenance\": \"legacy_observed\",\n      \"session_id\": \"golden-session-001\",\n      \"world_state_version\": 1\n    },\n    {\n      \"action_id\": \"legacy-observed-jump-002\",\n      \"details\": {\n        \"correlation\": \"fixture-002\",\n        \"source\": \"legacy-event-adapter\"\n      },\n      \"execution_status\": \"observed_not_core_executed\",\n      \"frame_id\": 2,\n      \"kind\": \"jump\",\n      \"observed_at_ns\": 2000001000,\n      \"provenance\": \"legacy_observed\",\n      \"session_id\": \"golden-session-001\",\n      \"world_state_version\": 2\n    }\n  ],\n  \"output_digest\": \"223ebe12331e7352ec315cb6833ce04c012b13baa9b5f05a06ec94e9fde668cd\",\n  \"planned_actions\": [\n    {\n      \"action\": {\n        \"action_id\": \"core-plan-move-001\",\n        \"evidence\": {\n          \"planner\": \"golden-fixture\",\n          \"predicate\": \"position_changed\"\n        },\n        \"kind\": \"move\",\n        \"origin_frame_id\": 1,\n        \"origin_world_state_version\": 1,\n        \"payload\": {\n          \"direction\": \"right\",\n          \"duration_ms\": 20\n        },\n        \"requested_at_ns\": 1000001000,\n        \"session_id\": \"golden-session-001\",\n        \"timeout_ns\": 2000000000\n      },\n      \"execution_status\": \"planned_not_executed\",\n      \"provenance\": \"core_v2_planned\"\n    },\n    {\n      \"action\": {\n        \"action_id\": \"core-plan-jump-002\",\n        \"evidence\": {\n          \"planner\": \"golden-fixture\",\n          \"predicate\": \"vertical_displacement\"\n        },\n        \"kind\": \"jump\",\n        \"origin_frame_id\": 2,\n        \"origin_world_state_version\": 2,\n        \"payload\": {\n          \"height_px\": 50\n        },\n        \"requested_at_ns\": 2000001000,\n        \"session_id\": \"golden-session-001\",\n        \"timeout_ns\": 2000000000\n      },\n      \"execution_status\": \"planned_not_executed\",\n      \"provenance\": \"core_v2_planned\"\n    }\n  ],\n  \"release_id\": \"candidate-core-v2-20260829-shadow\",\n  \"replay_output_digest\": \"8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed\",\n  \"report_digest\": \"4f61de46759536eca73cb9ee3bf8591cec17657fa447eb8c4c23ed5905971cd4\",\n  \"report_id\": \"shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow\",\n  \"report_type\": \"shadow\",\n  \"report_version\": \"1.0.0\",\n  \"runtime_manifest_path\": \"bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json\",\n  \"runtime_manifest_sha256\": \"5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17\",\n  \"session_id\": \"golden-session-001\",\n  \"source_commit\": \"c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6\",\n  \"status\": \"PASS\"\n}\n"
+        "stdout_tail": "8a284a0dad4e6eb34\",\n  \"fixture_id\": \"golden-pilot-minimal-v1\",\n  \"input_audit\": {\n    \"boundary_attempts\": [],\n    \"connected\": false,\n    \"core_execution_event_count\": 0,\n    \"core_v2_real_input_call_count\": 0,\n    \"double_write_event_count\": 0,\n    \"dry_run_call_count\": 5,\n    \"keyboard_call_count\": 0,\n    \"legacy_execution_event_count\": 0,\n    \"legacy_observed_action_count\": 2,\n    \"mouse_call_count\": 0,\n    \"planned_action_count\": 2,\n    \"proof\": \"instrumented boundary ledger; concrete dry-run sink has no live adapter\",\n    \"real_input_call_count\": 0,\n    \"receipts\": [\n      {\n        \"operation\": \"connect\",\n        \"sequence\": 0,\n        \"simulated\": true\n      },\n      {\n        \"operation\": \"planned_action\",\n        \"sequence\": 1,\n        \"simulated\": true\n      },\n      {\n        \"operation\": \"planned_action\",\n        \"sequence\": 2,\n        \"simulated\": true\n      },\n      {\n        \"operation\": \"release_all\",\n        \"sequence\": 3,\n        \"simulated\": true\n      },\n      {\n        \"operation\": \"close\",\n        \"sequence\": 4,\n        \"simulated\": true\n      }\n    ],\n    \"receiver_call_count\": 0,\n    \"sink_type\": \"DryRunInputSink\",\n    \"window_call_count\": 0\n  },\n  \"legacy_observed_actions\": [\n    {\n      \"action_id\": \"legacy-observed-move-001\",\n      \"details\": {\n        \"correlation\": \"fixture-001\",\n        \"source\": \"legacy-event-adapter\"\n      },\n      \"execution_status\": \"observed_not_core_executed\",\n      \"frame_id\": 1,\n      \"kind\": \"move\",\n      \"observed_at_ns\": 1000001000,\n      \"provenance\": \"legacy_observed\",\n      \"session_id\": \"golden-session-001\",\n      \"world_state_version\": 1\n    },\n    {\n      \"action_id\": \"legacy-observed-jump-002\",\n      \"details\": {\n        \"correlation\": \"fixture-002\",\n        \"source\": \"legacy-event-adapter\"\n      },\n      \"execution_status\": \"observed_not_core_executed\",\n      \"frame_id\": 2,\n      \"kind\": \"jump\",\n      \"observed_at_ns\": 2000001000,\n      \"provenance\": \"legacy_observed\",\n      \"session_id\": \"golden-session-001\",\n      \"world_state_version\": 2\n    }\n  ],\n  \"output_digest\": \"223ebe12331e7352ec315cb6833ce04c012b13baa9b5f05a06ec94e9fde668cd\",\n  \"planned_actions\": [\n    {\n      \"action\": {\n        \"action_id\": \"core-plan-move-001\",\n        \"evidence\": {\n          \"planner\": \"golden-fixture\",\n          \"predicate\": \"position_changed\"\n        },\n        \"kind\": \"move\",\n        \"origin_frame_id\": 1,\n        \"origin_world_state_version\": 1,\n        \"payload\": {\n          \"direction\": \"right\",\n          \"duration_ms\": 20\n        },\n        \"requested_at_ns\": 1000001000,\n        \"session_id\": \"golden-session-001\",\n        \"timeout_ns\": 2000000000\n      },\n      \"execution_status\": \"planned_not_executed\",\n      \"provenance\": \"core_v2_planned\"\n    },\n    {\n      \"action\": {\n        \"action_id\": \"core-plan-jump-002\",\n        \"evidence\": {\n          \"planner\": \"golden-fixture\",\n          \"predicate\": \"vertical_displacement\"\n        },\n        \"kind\": \"jump\",\n        \"origin_frame_id\": 2,\n        \"origin_world_state_version\": 2,\n        \"payload\": {\n          \"height_px\": 50\n        },\n        \"requested_at_ns\": 2000001000,\n        \"session_id\": \"golden-session-001\",\n        \"timeout_ns\": 2000000000\n      },\n      \"execution_status\": \"planned_not_executed\",\n      \"provenance\": \"core_v2_planned\"\n    }\n  ],\n  \"release_id\": \"candidate-core-v2-20260829-shadow\",\n  \"replay_output_digest\": \"8ad2764f4ad96f99dbb36aefc0cb25b1579ce71e27b0f6b967d6398a997b83ed\",\n  \"report_digest\": \"60eb19045c95d528b131ac715899ca59a714408eab6c71138e9a4791b8fd2658\",\n  \"report_id\": \"shadow-golden-pilot-minimal-v1-candidate-core-v2-20260829-shadow\",\n  \"report_type\": \"shadow\",\n  \"report_version\": \"1.0.0\",\n  \"runtime_manifest_path\": \"bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json\",\n  \"runtime_manifest_sha256\": \"ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10\",\n  \"session_id\": \"golden-session-001\",\n  \"source_commit\": \"21d4cc66129ce834901d4d0bb230534c2b7517d4\",\n  \"status\": \"PASS\"\n}\n"
       },
-      "duration_seconds": 0.214,
+      "duration_seconds": 0.219,
       "name": "shadow-zero-real-input",
       "status": "passed"
     },
@@ -290,26 +290,26 @@
     "workflow_name": "local-clean-smoke",
     "working_directory_policy": "repository-relative"
   },
-  "evidence_id": "clean-smoke-c5679a01394d",
+  "evidence_id": "clean-smoke-21d4cc66129c",
   "execution_mode": "shadow",
-  "generated_at": "2026-08-28T18:59:20Z",
+  "generated_at": "2026-08-28T19:12:30Z",
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "clean-smoke",
   "schema_version": "1.0.0",
-  "source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6",
+  "source_commit": "21d4cc66129ce834901d4d0bb230534c2b7517d4",
   "status": "passed",
   "subject_id": "subject-01",
   "summary": {
-    "checkout_commit": "a39182f1b8ba2da9e096982ccca8132b3608e316",
+    "checkout_commit": "badf82131b4bb2e7ae551f9b7448c814e51b5354",
     "error": null,
     "os_build": "10.0.26200",
     "pip_cache": "disabled",
     "platform": "Windows-11-10.0.26200-SP0",
     "project_venv_reused": false,
     "runtime_manifest_path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-    "runtime_manifest_sha256": "5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17",
+    "runtime_manifest_sha256": "ea3d093ba476a7e0aa8de1d8c4508507d1d8863cddf3de7f80ec5ff6f1ef0e10",
     "source_assets_policy": "checkout metadata plus content-addressed external attestations",
-    "source_date_epoch": "1787943451",
+    "source_date_epoch": "1787944114",
     "wheel_install": true
   }
 }
