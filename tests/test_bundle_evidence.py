@@ -134,6 +134,85 @@ def test_ci_evidence_collection_matches_schema(tmp_path: Path) -> None:
     errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(payload))
     assert errors == []
     assert payload["status"] == "passed"
+    without_checkout = dict(payload)
+    without_checkout.pop("checkout_commit")
+    required_errors = list(
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(without_checkout)
+    )
+    assert any(error.validator == "required" for error in required_errors)
+
+
+def test_ci_evidence_separates_manifest_source_and_checkout_head(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    checkout = "b" * 40
+    observed_roots: list[Path] = []
+
+    def fake_git_commit(repo_root: Path) -> str:
+        observed_roots.append(repo_root)
+        return checkout
+
+    monkeypatch.setattr(collect_ci_evidence, "git_commit", fake_git_commit)
+    output = tmp_path / "ci-evidence.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(tmp_path),
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "push",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    assert payload["source_commit"] == "a" * 40
+    assert payload["checkout_commit"] == checkout
+    assert observed_roots == [tmp_path.resolve()]
+
+
+def test_ci_evidence_remote_without_git_head_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def missing_git_commit(repo_root: Path) -> str:
+        raise ValueError(f"no git repository: {repo_root}")
+
+    monkeypatch.setattr(collect_ci_evidence, "git_commit", missing_git_commit)
+    output = tmp_path / "ci-evidence.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(tmp_path),
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "push",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    assert payload["checkout_commit"] == "0" * 40
+    assert payload["status"] == "failed"
+    binding_checks = [
+        check
+        for check in payload["checks"]
+        if check["name"] == "candidate-binding"  # type: ignore[index]
+    ]
+    assert binding_checks
+    assert any(
+        "checkout commit" in error
+        for error in binding_checks[0]["details"]["errors"]  # type: ignore[index]
+    )
 
 
 def test_ci_evidence_records_github_step_outcomes_and_job_failure(tmp_path: Path) -> None:
@@ -218,10 +297,40 @@ def test_ci_evidence_accepts_clean_smoke_without_replay_digest_fields() -> None:
         manifest_repo_path=str(clean_summary["runtime_manifest_path"]),
         manifest_sha256=str(clean_summary["runtime_manifest_sha256"]),
         fixture_candidates=[(fixture_path, sha256_file(fixture_path))],
+        expected_checkout_commit=str(clean_summary["checkout_commit"]),
     )
 
     assert check["status"] == "passed"
     assert check["details"]["report_digest_valid"] is None  # type: ignore[index]
+
+
+def test_ci_evidence_rejects_clean_smoke_checkout_tampering() -> None:
+    clean_path = PROJECT_ROOT / "evidence" / "clean-smoke" / "clean-smoke-report.json"
+    clean = _load_json(clean_path)
+    clean_summary = clean["summary"]
+    assert isinstance(clean_summary, dict)
+    fixture_path = PROJECT_ROOT / "fixtures" / "golden" / "pilot_minimal_v1.json"
+    schema = _load_json(PROJECT_ROOT / "schemas" / "evidence-report.schema.json")
+
+    check, _ = collect_ci_evidence._validate_evidence_report(
+        repo_root=PROJECT_ROOT,
+        path=clean_path,
+        index=2,
+        schema=schema,
+        expected_bundle_id=BUNDLE_ID,
+        expected_release_id=BUNDLE_ID,
+        expected_source_commit=str(clean["source_commit"]),
+        manifest_repo_path=str(clean_summary["runtime_manifest_path"]),
+        manifest_sha256=str(clean_summary["runtime_manifest_sha256"]),
+        fixture_candidates=[(fixture_path, sha256_file(fixture_path))],
+        expected_checkout_commit="b" * 40,
+    )
+
+    assert check["status"] == "failed"
+    assert any(
+        "checkout_commit does not match CI checkout_commit" in error
+        for error in check["details"]["errors"]  # type: ignore[index]
+    )
 
 
 def test_ci_evidence_main_returns_failure_for_failed_packet(tmp_path: Path) -> None:

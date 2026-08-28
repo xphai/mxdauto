@@ -155,6 +155,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--release-id", help="Release identifier to bind to this evidence.")
     parser.add_argument("--source-commit", help="40-character source commit override.")
     parser.add_argument(
+        "--checkout-commit",
+        help="40-character checkout commit override (defaults to the repository HEAD).",
+    )
+    parser.add_argument(
         "--event",
         choices=("pull_request", "push", "workflow_dispatch", "local"),
         help="CI event (defaults to GITHUB_EVENT_NAME or local).",
@@ -637,7 +641,11 @@ def _validate_shadow_invariants(payload: dict[str, Any], errors: list[str]) -> d
     }
 
 
-def _validate_clean_invariants(payload: dict[str, Any], errors: list[str]) -> dict[str, Any]:
+def _validate_clean_invariants(
+    payload: dict[str, Any],
+    errors: list[str],
+    expected_checkout_commit: str | None = None,
+) -> dict[str, Any]:
     environment = payload.get("environment")
     if not isinstance(environment, dict) or environment.get("runner_os") != "Windows":
         errors.append("runner_os must be Windows")
@@ -660,8 +668,13 @@ def _validate_clean_invariants(payload: dict[str, Any], errors: list[str]) -> di
         errors.append("cacheless wheel installation evidence is missing")
     if summary.get("project_venv_reused") is not False:
         errors.append("clean smoke must not reuse a project virtual environment")
+    summary_checkout_commit = summary.get("checkout_commit")
+    if expected_checkout_commit is not None and not _same_commit(
+        summary_checkout_commit, expected_checkout_commit
+    ):
+        errors.append("clean-smoke checkout_commit does not match CI checkout_commit")
     return {
-        "checkout_commit": summary.get("checkout_commit"),
+        "checkout_commit": summary_checkout_commit,
         "failed_checks": failed_checks,
         "runner_os": environment.get("runner_os") if isinstance(environment, dict) else None,
     }
@@ -679,6 +692,7 @@ def _validate_evidence_report(
     manifest_repo_path: str | None,
     manifest_sha256: str | None,
     fixture_candidates: list[tuple[Path, str]],
+    expected_checkout_commit: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     report_kind_hint = _report_kind({}, path, index)
     check, artifact = _check_file(
@@ -810,7 +824,9 @@ def _validate_evidence_report(
     elif report_kind == "shadow":
         invariant_details = _validate_shadow_invariants(payload, errors)
     else:
-        invariant_details = _validate_clean_invariants(payload, errors)
+        invariant_details = _validate_clean_invariants(
+            payload, errors, expected_checkout_commit=expected_checkout_commit
+        )
     errors.extend(_validate_nested_artifacts(repo_root, payload))
 
     check["status"] = "failed" if errors else "passed"
@@ -891,6 +907,34 @@ def _resolve_source_commit(
         return "0" * 40, str(exc)
 
 
+def _resolve_checkout_commit(
+    repo_root: Path,
+    requested: str | None,
+    source_commit: str,
+    event: str,
+) -> tuple[str, str | None]:
+    """Resolve the commit checked out while collecting evidence.
+
+    A local fixture can be collected from a temporary directory that is not a
+    Git repository, so it falls back to the already resolved source commit.
+    Remote events must retain an attestation of the actual checkout instead of
+    silently substituting the candidate source.
+    """
+
+    if requested is not None:
+        if len(requested) == 40 and all(
+            character in "0123456789abcdefABCDEF" for character in requested
+        ):
+            return requested.lower(), None
+        return "0" * 40, "Expected a 40-character checkout commit"
+    try:
+        return git_commit(repo_root).lower(), None
+    except ValueError as exc:
+        if event == "local":
+            return source_commit.lower(), None
+        return "0" * 40, f"Could not resolve checkout commit for remote event: {exc}"
+
+
 def _is_dependency_install_check(name: str) -> bool:
     normalized = name.lower().replace("_", "-")
     return "install" in normalized and (
@@ -948,6 +992,9 @@ def collect_evidence(args: argparse.Namespace) -> Path:
     repo_root = args.repo_root.resolve()
     if not repo_root.is_dir():
         raise ValueError(f"Repository root does not exist: {repo_root}")
+    event = args.event or os.environ.get("GITHUB_EVENT_NAME", "local")
+    if event not in {"pull_request", "push", "workflow_dispatch", "local"}:
+        event = "local"
     output_path = _repo_path(repo_root, args.output)
     if output_path is None:
         raise ValueError("--output is required")
@@ -1038,10 +1085,19 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         args.source_commit,
         manifest if isinstance(manifest, dict) else None,
     )
+    source_commit = source_commit.lower()
+    checkout_commit, checkout_error = _resolve_checkout_commit(
+        repo_root,
+        getattr(args, "checkout_commit", None),
+        source_commit,
+        event,
+    )
 
     binding_errors: list[str] = []
     if source_error:
         binding_errors.append(f"source commit: {source_error}")
+    if checkout_error:
+        binding_errors.append(f"checkout commit: {checkout_error}")
     if isinstance(manifest, dict):
         if expected_release_id is not None and manifest.get("release_id") != expected_release_id:
             binding_errors.append("manifest release_id does not match candidate release")
@@ -1096,6 +1152,7 @@ def collect_evidence(args: argparse.Namespace) -> Path:
             "manifest_sha256": manifest_sha256,
             "release_id": expected_release_id,
             "source_commit": source_commit,
+            "checkout_commit": checkout_commit,
         },
         "name": "candidate-binding",
         "status": (
@@ -1165,6 +1222,7 @@ def collect_evidence(args: argparse.Namespace) -> Path:
             manifest_repo_path=manifest_repo_path,
             manifest_sha256=manifest_sha256,
             fixture_candidates=fixture_candidates,
+            expected_checkout_commit=checkout_commit,
         )
         checks.append(report_check)
         if report_artifact:
@@ -1219,10 +1277,6 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         status = "passed"
     now = args.timestamp or isoformat_utc()
     started_at = args.started_at or now
-    event = args.event or os.environ.get("GITHUB_EVENT_NAME", "local")
-    if event not in {"pull_request", "push", "workflow_dispatch", "local"}:
-        event = "local"
-    source_commit = source_commit.lower()
     run_id = args.run_id or os.environ.get("GITHUB_RUN_ID", "0")
     run_attempt = args.run_attempt or os.environ.get("GITHUB_RUN_ATTEMPT", "0")
     if not run_id.isdigit():
@@ -1233,6 +1287,7 @@ def collect_evidence(args: argparse.Namespace) -> Path:
     payload: dict[str, Any] = {
         "artifacts": artifacts,
         "completed_at": now,
+        "checkout_commit": checkout_commit,
         "dependency_install_result": dependency_result,
         "event": event,
         "evidence_id": evidence_id,

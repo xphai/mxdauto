@@ -130,6 +130,7 @@
     "run_id",
     "run_attempt",
     "source_commit",
+    "checkout_commit",
     "runner_os",
     "python_version",
     "dependency_install_result",
@@ -169,6 +170,9 @@
       "pattern": "^[0-9]+$"
     },
     "source_commit": {
+      "$ref": "#/$defs/gitCommit"
+    },
+    "checkout_commit": {
       "$ref": "#/$defs/gitCommit"
     },
     "bundle_id": {

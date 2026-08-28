@@ -509,6 +509,14 @@ def _validated_source_commit(value: str | None, core_root: Path) -> str:
     return commit
 
 
+def _is_git_commit(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 40
+        and all(character in "0123456789abcdefABCDEF" for character in value)
+    )
+
+
 def _validate_packaging_worktree(core_root: Path) -> None:
     status = subprocess.run(
         ["git", "-C", str(core_root), "status", "--porcelain=v1", "--untracked-files=all"],
@@ -866,10 +874,19 @@ def _read_ci_result(
     ):
         errors.append("every recorded CI check must be passed")
 
-    checkout_commit = payload.get("source_commit")
-    if not isinstance(checkout_commit, str) or len(checkout_commit) != 40:
-        errors.append("CI source_commit must be a 40-character checkout commit")
+    source_commit = payload.get("source_commit")
+    if (
+        not _is_git_commit(source_commit)
+        or source_commit.lower() != candidate_source_commit.lower()
+    ):
+        errors.append("CI source_commit must match candidate source_commit")
+
+    checkout_commit = payload.get("checkout_commit")
+    changed_paths: list[str] = []
+    if not _is_git_commit(checkout_commit):
+        errors.append("CI checkout_commit must be a 40-character hexadecimal commit")
     else:
+        checkout_commit = checkout_commit.lower()
         exists = subprocess.run(
             ["git", "-C", str(core_root), "cat-file", "-e", f"{checkout_commit}^{{commit}}"],
             capture_output=True,
@@ -903,22 +920,35 @@ def _read_ci_result(
             text=True,
             check=False,
         )
-        changed_paths = [line.strip().replace("\\", "/") for line in changed.stdout.splitlines()]
-        unexpected = [
-            item
-            for item in changed_paths
-            if item and not item.startswith(ALLOWED_PACKAGING_PREFIXES)
-        ]
-        if exists.returncode != 0 or lineage.returncode != 0 or changed.returncode != 0:
-            errors.append("CI checkout commit is not a known descendant of candidate source")
-        if unexpected:
-            errors.append("CI checkout includes non-packaging changes: " + ", ".join(unexpected))
+        if exists.returncode != 0:
+            errors.append(
+                f"CI checkout commit does not exist in Core repository: {checkout_commit}"
+            )
+        if lineage.returncode != 0:
+            errors.append("CI checkout commit is not a descendant of candidate source")
+        if changed.returncode != 0:
+            errors.append("Could not compare candidate source with CI checkout commit")
+        else:
+            changed_paths = [
+                line.strip().replace("\\", "/") for line in changed.stdout.splitlines()
+            ]
+            unexpected = [
+                item
+                for item in changed_paths
+                if item and not item.startswith(ALLOWED_PACKAGING_PREFIXES)
+            ]
+            if unexpected:
+                errors.append(
+                    "CI checkout includes non-packaging changes: " + ", ".join(unexpected)
+                )
 
     details: dict[str, Any] = {
         "artifact_count": len(payload.get("artifacts", []))
         if isinstance(payload.get("artifacts"), list)
         else 0,
         "checkout_commit": checkout_commit,
+        "source_commit": source_commit,
+        "changed_paths": changed_paths,
         "run_attempt": payload.get("run_attempt"),
         "run_id": run_id,
         "run_url": (
