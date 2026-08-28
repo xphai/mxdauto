@@ -1,7 +1,7 @@
 # Maple Automation Core v2 战略路线图（G-1 → G6）
 
 > **状态截止**：2026-08-29（Asia/Shanghai）
-> **当前判定**：**G-1 Strategic PASS / G0 CONDITIONAL PASS / G1 Ready（未开始）**。Candidate source commit 为 [`7da29f4cfae0bd984b00c394b78e637088a7e452`](https://github.com/xphai/mxdauto/commit/7da29f4cfae0bd984b00c394b78e637088a7e452)，sealed packet commit 为 [`04c794c59eb98af6e739415e1ecb72a335795bb9`](https://github.com/xphai/mxdauto/commit/04c794c59eb98af6e739415e1ecb72a335795bb9)。`main` 已受保护，[PR #1](https://github.com/xphai/mxdauto/pull/1) 的 required `quality` 成功并 protected squash merge 时，G0 PASS 与 Owner countersign 同时生效。
+> **当前判定**：**G-1 Strategic PASS / G0 PASS / G1 Ready（未开始）**。Candidate source commit 为 [`7da29f4cfae0bd984b00c394b78e637088a7e452`](https://github.com/xphai/mxdauto/commit/7da29f4cfae0bd984b00c394b78e637088a7e452)，sealed packet commit 为 [`04c794c59eb98af6e739415e1ecb72a335795bb9`](https://github.com/xphai/mxdauto/commit/04c794c59eb98af6e739415e1ecb72a335795bb9)。`main` 已受保护；[PR #1](https://github.com/xphai/mxdauto/pull/1) 已通过 required `quality` 并 protected squash merge，主线 post-merge `quality` 也成功。
 > **战略与 Gate 负责人**：**5.6Sol Ultra**（GPT-5.6 Sol / Ultra；下文简称 **Sol-U**）
 > **战术包负责人**：**5.6 Luna max**（GPT-5.6 Luna / max；下文简称 **Luna-M**）
 > **现场输入边界**：G0～G2 期间，Core v2 的真实输入调用数保持为 0，Legacy 保持唯一真实输入下发权。G3 仅在独立 Gate 批准的 Canary 会话内切换单一输入所有者；任何时刻只保留一个写入者。
@@ -55,7 +55,7 @@ G-1 主线与范围封存
 | Pilot 决策 | `map_id=100040004`、匿名 `pilot-subject-01`、`best_forest_v3-candidate`、`[mob]`、`640×640`、`attack=a` | L0/L1 source | 只授权 G0/G1 Candidate/Shadow；模型与输入均未认证 |
 | 输入所有权 | ADR-004 规定 G0～G2 Legacy 独占、G3 有界独占租约、全阶段双写为 0 | L0/L3 | G0 最小 Shadow 已动态记录 Core v2 真实输入与双写均为 0；G2/G3 租约和现场证据仍未开始 |
 | 需求追踪 | `docs/REQUIREMENTS-TRACEABILITY.md` 已映射原始功能、Gate、证据与数据缺口 | L0 | G-1 矩阵完成；运行证据状态保持未开始/候选 |
-| G0 Gate Charter | `docs/gates/G0-GATE-CHARTER.md` v1.3 已按 sealed packet、保护配置与 PR #1 审计 | L0/L2 | `CONDITIONAL PASS`；required `quality` 与 protected squash merge 是唯一生效事件 |
+| G0 Gate Charter | `docs/gates/G0-GATE-CHARTER.md` v1.4 已按 sealed packet、保护配置、PR #1 与 main post-merge run 审计 | L0/L2 | `PASS`；工程、证据、治理和 Owner countersign 已闭环 |
 | 时间与状态契约 | `FramePacket`、`SourceGeometry`、`CaptureHealth`、坐标对象、`PlayerState`、`WorldObservation`、`WorldState` 已实现 | L1 | G0 契约工作包本地完成 |
 | 动作契约 | `ActionSpec`、`ActionHandle`、`ActionResult` 及终止类型已实现；`ADR-006` 已接受 | L1 | 领域对象已落地；`ActionController`、`ControlArbiter`、`ResultVerifier` 尚未实现 |
 | Event Tape | 哈希链、严格 JSON、顺序/会话校验与相关测试已实现 | L1/L3 | 记录契约与 G0 最小 deterministic Replay 已落地；G1 完整 corpus runner 仍未开始 |
@@ -69,8 +69,8 @@ G-1 主线与范围封存
 | Shadow | report digest `3b1e1f21...04118`；2 个差异均分类，未分类 0，Core v2 真实输入/双写 0 | L3 | G0 最小离线 Shadow 完成；不构成现场输入或 G1 完成 |
 | 干净机 | 本地 cacheless Windows venv 与 GitHub Windows runner 均完成 build/install/test/Manifest/Replay/Shadow/rollback smoke | L4（工程 smoke） | G0 控制端 clean smoke 完成；G2 游戏端 receiver clean-host 仍未开始 |
 | Core v2 现场 | 没有 Core v2 现场 session；Core v2 尚未接入真实输入 | — | 未开始 |
-| Git 历史 | source=`7da29f4...`；packaging/evidence-only sealed packet=`04c794c...`；后者为 PR #1 的 base | L2 | source/packet 双身份已绑定；docs/failure-index 由 PR #1 受控收口 |
-| GitHub 治理 | `origin=https://github.com/xphai/mxdauto.git`，repository ID `1349864993`；`main protected=true`；required `quality` strict；PR review、管理员约束、linear history、conversation resolution 已启用；force-push/delete disabled；实际评审为 PR #1 | L2（远端身份与治理） | SCM 门禁完成，等待 protected merge 生效 |
+| Git 历史 | source=`7da29f4...`；packaging/evidence-only sealed packet=`04c794c...`；治理 squash merge=`9fc36ab...` | L2 | source/packet 双身份、docs/failure-index 与治理合并均已绑定 |
+| GitHub 治理 | `origin=https://github.com/xphai/mxdauto.git`，repository ID `1349864993`；`main protected=true`；required `quality` strict；PR review、管理员约束、linear history、conversation resolution 已启用；force-push/delete disabled；PR #1 已合并 | L2（远端身份与治理） | SCM 门禁与 Owner countersign 完成；PR run `33221344548`、main run `33221465306` 均成功 |
 | 可追溯制品 | wheel SHA-256 `6c8148f0...ddab3`；sdist `fad8441a...9da08`；lock `00bbe87d...55fa` | L2/L4 | packet、clean smoke 与成功 CI 的字节 hash 一致 |
 
 ### 2.3 Legacy 与旧证据的可用范围
@@ -80,7 +80,7 @@ G-1 主线与范围封存
 3. Legacy 当前配置存在关键漂移：
    - `profiles/maple_legacy_cn/profile.yaml` 使用 `ctrl` 攻击、24 类模型、`960×960` 输入；
    - `config/config_custom.yaml` 使用 `a` 攻击、单类 `mob` 模型，并指向 `best_forest_v3.onnx`；
-   - DEC-001 已为 Core v2 Candidate 裁决为单类 `best_forest_v3-candidate`、`640×640`、`attack=a` 和匿名 Profile；实际 `ResolvedConfig`/Bundle 仍待 G0 生成。
+   - DEC-001 已为 Core v2 Candidate 裁决为单类 `best_forest_v3-candidate`、`640×640`、`attack=a` 和匿名 Profile；实际 Candidate Bundle 已在 G0 生成并绑定，G1 的完整数据/模型晋级仍未开始。
 4. Legacy 路线 manifest 中的 `certification.status: certified` 只说明旧路线资产通过其自身静态校验，不等价于 Core v2 Bundle、整机闭环或现场认证。
 5. Legacy 日志证明采集卡、远程输入和 YOLO 曾经接通，也同时证明闭环仍不稳定：
    - `MSBot_2026-08-28_22-44-34.log` 中有约 1.4～1.9 ms RTT、采集卡打开和 YOLO ready，同时在短会话内出现两次 10 秒 stuck；
@@ -182,7 +182,7 @@ rollback_release_id
 | Gate | 阶段主题 | 当前状态 | 阶段结束时获得的权限 |
 |---|---|---|---|
 | G-1 | 主线、范围、Pilot、所有权封存 | **Strategic PASS；文档已封存** | 允许在唯一主线执行 G0 战术包 |
-| G0 | Git/CI/契约/Bundle/最小证据流水线 | **CONDITIONAL PASS；PR #1 合并时生效** | 生效后 G1 Ready；真实输入仍为 0 |
+| G0 | Git/CI/契约/Bundle/最小证据流水线 | **PASS** | G1 Ready；真实输入仍为 0 |
 | G1 | 确定性 Replay、感知/WorldState、完整 Shadow | **未开始** | 允许构建执行内核；真实输入仍为 0 |
 | G2 | ActionController、Supervisor、receiver dry-run、故障安全 | **未开始** | 具备提交 Canary Gate 的资格；真实输入默认仍为 0 |
 | G3 | 单图、单档案、单 Bundle 的有界 Canary | **未开始** | 仅认证窗口内的 Core v2 独占输入权 |
@@ -203,7 +203,7 @@ rollback_release_id
 | ID | 工作与输出 | 依赖 | 模型分工 | 当前状态 |
 |---|---|---|---|---|
 | G-1-DEC-001 | 封存 ADR-001：主线、非目标、阶段链、签字人、决策日期 | 无 | Sol-U A/R；Luna-M C | **完成：ADR-001 + ROADMAP** |
-| G-1-PIL-002 | 冻结 Pilot：`map_id`、匿名 `profile_id`、攻击/跳跃键、模型、类别、输入尺寸、阈值、路线、MovementProfile、receiver | DEC-001 | Sol-U A；Luna-M R | **完成：DEC-001；实际 Bundle 待 G0** |
+| G-1-PIL-002 | 冻结 Pilot：`map_id`、匿名 `profile_id`、攻击/跳跃键、模型、类别、输入尺寸、阈值、路线、MovementProfile、receiver | DEC-001 | Sol-U A；Luna-M R | **完成：DEC-001 与 G0 Candidate Bundle** |
 | G-1-FRZ-003 | 建立 Legacy 变更白名单：只含迁移 adapter 与阻塞缺陷；新增功能进入 Core v2 | DEC-001 | Sol-U A；Luna-M R | **完成：战略政策；持续差异审计纳入 G0+** |
 | G-1-OWN-004 | 补充输入所有权 ADR：G0～G2、G3 Canary、G4+ 的单写入者切换 | DEC-001 | Sol-U A/R；Luna-M C | **完成：ADR-004；双写门槛 0** |
 | G-1-TRC-005 | 建立需求—战术包—测试—fixture—session—release 追踪矩阵 | DEC-001 | Sol-U A；Luna-M R | **完成：REQUIREMENTS-TRACEABILITY.md** |
@@ -211,14 +211,14 @@ rollback_release_id
 ### 退出门禁
 
 - [x] 主线、Pilot、非目标、Legacy 例外与输入交接均由 ADR/范围记录覆盖；
-- [x] Pilot 候选资产具有唯一逻辑 ID 和已知 SHA-256；待生成的 MovementProfile/PlatformGraph/split 明确列为 G0 缺口；
+- [x] Pilot 候选资产具有唯一逻辑 ID 和已知 SHA-256；MovementProfile/PlatformGraph/split 已由 G0 Candidate Bundle 绑定；
 - [x] Legacy 的 `profile.yaml` 与 `config_custom.yaml` 冲突由 DEC-001 明确裁决；
 - [x] Profile/subject 使用匿名 ID，原始身份字段不进入 Pilot 决策；
 - [x] Legacy 新功能冻结与例外审批策略已定义；持续差异审计由后续战术包执行；
 - [x] 追踪矩阵覆盖原始功能、工程约束和 G5 数据缺口；
 - [x] ADR-004 把 G0～G2 Legacy 独占、G3 有界租约与双写 0 固定为不变量；
 - [x] Sol-U 于 2026-08-29 给出 G-1 Strategic `PASS`；本轮指令已明确产品范围；
-- [x] G-1 战略文档已进入 Candidate source commit `7da29f4cfae0bd984b00c394b78e637088a7e452`；本次事实收口修订仍需后续 docs/packet commit，不授予 G0 PASS。
+- [x] G-1 战略文档已进入 Candidate source commit `7da29f4cfae0bd984b00c394b78e637088a7e452`；G0 事实收口与治理记录已通过 PR #1 进入 `main`。
 
 ### 必需证据
 
@@ -243,7 +243,7 @@ rollback_release_id
 | G0-CON-001 | Frame/坐标/Player/WorldState/Action 不可变契约及 contract tests | G-1-DEC | Sol-U A；Luna-M R | **已绑定 source 与成功 CI** |
 | G0-EVT-002 | Event Tape 严格序列化、hash chain、篡改/顺序/会话检测 | G0-CON | Sol-U A；Luna-M R | **已绑定 source 与成功 CI** |
 | G0-MAN-003 | Manifest schema、validator、示例 fixture；生成第一个使用真实 hash 的 Candidate manifest | G-1-PIL、G0-CON | Sol-U A；Luna-M R | Candidate/asset index 已生成，strict metadata/full-external 通过 |
-| G0-SCM-004 | source/packet commit、Core v2 remote、PR、main 保护和必需检查 | G-1 Gate | Sol-U A；Luna-M R，发布负责人 R | **完成：protected main、required `quality` strict 与 PR #1 已建立** |
+| G0-SCM-004 | source/packet commit、Core v2 remote、PR、main 保护和必需检查 | G-1 Gate | Sol-U A；Luna-M R，发布负责人 R | **完成：protected main、required `quality` strict、PR #1 合并与 main 复验** |
 | G0-CI-005 | CI 生成 JUnit、coverage、Manifest/Bundle、Replay/Shadow/clean/build 和 fail-closed evidence metadata | G0-SCM | Sol-U A；Luna-M R | run `33204844985` 与四组 artifact 已完成；run `33202897083` 已隔离 |
 | G0-DEP-006 | 锁定依赖与构建工具；wheel/sdist 绑定 commit、锁文件和 SHA-256 | G0-SCM | Sol-U A；Luna-M R | 已绑定 packet、clean smoke 与成功 CI |
 | G0-RPL-007 | 冻结最小去标识 synthetic fixture；重复 3 次输出同一事件 digest | G0-EVT、G0-MAN | Sol-U 定义样本/阈值；Luna-M 实现 | G0 最小 smoke 完成；G1 完整 corpus 未开始 |
@@ -262,7 +262,7 @@ rollback_release_id
 - [x] Replay 3 次相同；Shadow 真实输入 0、双写 0；隔离 Windows clean smoke 通过；
 - [x] rollback 已验证为停止 Core v2 runner 并保持 Legacy owner；
 - [x] failed run 已纳入统一 failure index，原始 artifact 与 payload digest 已复核；
-- [ ] PR #1 的 required `quality` 与 protected squash merge 完成；Sol-U 的条件性 `PASS` 在该合并时生效。
+- [x] PR #1 的 required `quality`、protected squash merge、Owner countersign 与 Sol-U `PASS` 已完成；main post-merge `quality` 成功。
 
 ### 必需证据
 
@@ -570,9 +570,9 @@ Fixture/Contract → Golden Replay → Shadow → bounded Canary → Certified
 
 以下是当前最短关键路径。Luna-M 每次只领取一个有界战术包；Sol-U 在指定节点审计。
 
-1. **发布负责人 / G0-SCM-004**：已启用 `main` branch protection、required `quality` strict，并创建 [PR #1](https://github.com/xphai/mxdauto/pull/1)。
-2. **仓库 Owner**：在 required `quality` 成功后 squash merge PR #1，以受保护合并形成发布 countersign。
-3. **Sol-U**：已签发合并条件 `PASS`；PR #1 进入 `main` 时 G0 Passed，随后按新战术包启动 G1，真实输入边界继续保持不变。
+1. **G0 收口（完成）**：protected main、required `quality`、PR #1、Owner countersign 和 post-merge run 已闭环。
+2. **Sol-U / G1 启动**：从 G1-FRM-001 签发首个有界战术包，固定录像 corpus、人工 truth/split、采集 geometry 与 freshness 门槛。
+3. **Luna-M / G1 执行**：按 G1-FRM-001 → G1-OBS-002 → G1-LOC-003 → G1-WST-004 → G1-RPL-006 → G1-SHD-007 的依赖链实施；全程保持 Core v2 真实输入为 0。
 
 ---
 
