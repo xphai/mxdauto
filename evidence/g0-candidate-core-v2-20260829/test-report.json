@@ -30,7 +30,7 @@
   "release_id": "candidate-core-v2-20260829-shadow",
   "report_kind": "test",
   "schema_version": "1.0.0",
-  "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
+  "source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6",
   "status": "not-run",
   "subject_id": "subject-01",
   "summary": {

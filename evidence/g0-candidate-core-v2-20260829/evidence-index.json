@@ -9,7 +9,7 @@
       "evidence_id": "test-report-g0-candidate-shadow-20260829",
       "kind": "test",
       "path": "evidence/g0-candidate-core-v2-20260829/test-report.json",
-      "sha256": "8b0740704ed08b71097bdd21d64985de5836d00d07f13e8f2da7787f17b5fbbb",
+      "sha256": "f09d10afb588f995f3e4761faddc6a9ede85b8ee5df87426c4bfa7cf6a9935bc",
       "size_bytes": 1104,
       "status": "not-run"
     },
@@ -21,7 +21,7 @@
       "evidence_id": "replay-report-g0-candidate-shadow-20260829",
       "kind": "replay",
       "path": "evidence/g0-candidate-core-v2-20260829/replay-report.json",
-      "sha256": "779249780e549b6b83f66ec8b01449df64449371cb18b08125e356f35da3e01c",
+      "sha256": "0399436424bf705921d8fb42d8aa3e1c6dfbd8e0f7fb2bf5eea8137822ef8aab",
       "size_bytes": 1685,
       "status": "passed"
     },
@@ -33,7 +33,7 @@
       "evidence_id": "shadow-report-g0-candidate-shadow-20260829",
       "kind": "shadow",
       "path": "evidence/g0-candidate-core-v2-20260829/shadow-report.json",
-      "sha256": "d689c9777cd515431858a443f023d54acb07ed6285bd5dc49e652065b8e47889",
+      "sha256": "14e2b2c1eb1e9279f3d8852207f9f588dbf785f3efc38b844593f8a26b3be857",
       "size_bytes": 1741,
       "status": "passed"
     },
@@ -45,7 +45,7 @@
       "evidence_id": "clean-report-g0-candidate-shadow-20260829",
       "kind": "clean-smoke",
       "path": "evidence/g0-candidate-core-v2-20260829/clean-report.json",
-      "sha256": "8eefcf519eb591fd72a49f75a08729d00569a5699b85a48b9d2f54924e4c5b48",
+      "sha256": "3c880e4f55f610ad348d01b73afa052bc437e40cf26f1fa0dae7d8231bc335d0",
       "size_bytes": 946,
       "status": "not-run"
     },
@@ -57,7 +57,7 @@
       "evidence_id": "dependency-report-g0-candidate-shadow-20260829",
       "kind": "dependency",
       "path": "evidence/g0-candidate-core-v2-20260829/dependency-report.json",
-      "sha256": "ea0943f820793528c9072dc45b8aeb7b9d7829d7ca162fcde6ba07805291205f",
+      "sha256": "8a3100981233d5386e96e2b17c693fc5b62dbea6e35d9617f591bd4bf3ee82b2",
       "size_bytes": 1445,
       "status": "passed"
     },
@@ -69,7 +69,7 @@
       "evidence_id": "build-report-g0-candidate-shadow-20260829",
       "kind": "build",
       "path": "evidence/g0-candidate-core-v2-20260829/build-report.json",
-      "sha256": "d6b1f5bfc140aee47cae2140609ee82a48be47e519711dc6810dadcc329b3e6c",
+      "sha256": "d06b6b9843b5c02d17f1c8cde39169de855739223803d5b7eb31efcc94dd7e7d",
       "size_bytes": 868,
       "status": "not-run"
     },
@@ -81,7 +81,7 @@
       "evidence_id": "manifest-report-g0-candidate-shadow-20260829",
       "kind": "manifest",
       "path": "evidence/g0-candidate-core-v2-20260829/manifest-report.json",
-      "sha256": "ef6f3f9a7f0f849b3f8663fe25000b99ff1bbf27339dd1cbe5aee62a1c9481f4",
+      "sha256": "8648199baaa08abe47fbd7aa72f96925259e986df9729187f667ab216d9ac04c",
       "size_bytes": 1251,
       "status": "passed"
     },
@@ -93,29 +93,29 @@
       "evidence_id": "hash-report-g0-candidate-shadow-20260829",
       "kind": "hash",
       "path": "evidence/g0-candidate-core-v2-20260829/hash-report.json",
-      "sha256": "6ec3589c94b558aee86d1010f1de9a05abf05c3b2ba32873cb4e1728f8b974e1",
+      "sha256": "360172c746174189b40a12b9ab57583fd6a7606334fa3964c030861ce0db167a",
       "size_bytes": 1009,
       "status": "passed"
     },
     {
       "claims": [
-        "sha256:2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98"
+        "sha256:5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17"
       ],
       "evidence_id": "manifest-artifact-g0-candidate-shadow-20260829",
       "kind": "manifest",
       "path": "bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-      "sha256": "2e5a678838e7fb5ec82ae0ee22e921b67b13c5ab1213cc7bf00abac275449d98",
+      "sha256": "5d545496f9b9b8de9302eb2a2b83eb85204a55ca3cff7147940a75e888044f17",
       "size_bytes": 2702,
       "status": "passed"
     },
     {
       "claims": [
-        "sha256:d5e766f01dcc3d65a6cf539ce8365eacaee15a5cd93b9ab03cf9a63901e17abd"
+        "sha256:2f48c9c99585ee16e4abfa6135651ed506431073cdfa9ad8381154441c41a93e"
       ],
       "evidence_id": "asset-index-g0-candidate-shadow-20260829",
       "kind": "asset-index",
       "path": "bundles/candidate-core-v2-20260829-shadow/asset-index.json",
-      "sha256": "d5e766f01dcc3d65a6cf539ce8365eacaee15a5cd93b9ab03cf9a63901e17abd",
+      "sha256": "2f48c9c99585ee16e4abfa6135651ed506431073cdfa9ad8381154441c41a93e",
       "size_bytes": 5207,
       "status": "passed"
     },
@@ -141,6 +141,6 @@
   "lifecycle": "candidate",
   "release_id": "candidate-core-v2-20260829-shadow",
   "schema_version": "1.0.0",
-  "source_commit": "190e3d49870485f8ea59cddbfa433e349103cdff",
+  "source_commit": "c5679a01394df5f7e2f61b3b2bd2cfdcdb2444a6",
   "subject_id": "subject-01"
 }
