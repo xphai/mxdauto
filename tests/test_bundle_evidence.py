@@ -200,21 +200,23 @@ def test_ci_evidence_dependency_success_is_not_a_parse_error(tmp_path: Path) -> 
 
 
 def test_ci_evidence_accepts_clean_smoke_without_replay_digest_fields() -> None:
-    manifest_path = BUNDLE_DIR / "runtime-manifest.json"
-    manifest = _load_json(manifest_path)
+    clean_path = PROJECT_ROOT / "evidence" / "clean-smoke" / "clean-smoke-report.json"
+    clean = _load_json(clean_path)
+    clean_summary = clean["summary"]
+    assert isinstance(clean_summary, dict)
     fixture_path = PROJECT_ROOT / "fixtures" / "golden" / "pilot_minimal_v1.json"
     schema = _load_json(PROJECT_ROOT / "schemas" / "evidence-report.schema.json")
 
     check, _ = collect_ci_evidence._validate_evidence_report(
         repo_root=PROJECT_ROOT,
-        path=PROJECT_ROOT / "evidence" / "clean-smoke" / "clean-smoke-report.json",
+        path=clean_path,
         index=2,
         schema=schema,
         expected_bundle_id=BUNDLE_ID,
         expected_release_id=BUNDLE_ID,
-        expected_source_commit=str(manifest["source_commit"]),
-        manifest_repo_path="bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json",
-        manifest_sha256=sha256_file(manifest_path),
+        expected_source_commit=str(clean["source_commit"]),
+        manifest_repo_path=str(clean_summary["runtime_manifest_path"]),
+        manifest_sha256=str(clean_summary["runtime_manifest_sha256"]),
         fixture_candidates=[(fixture_path, sha256_file(fixture_path))],
     )
 
