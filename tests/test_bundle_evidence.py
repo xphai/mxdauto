@@ -36,14 +36,39 @@ def test_candidate_bundle_metadata_verifies() -> None:
     assert errors == []
 
 
-def test_ci_clean_smoke_preserves_the_sealed_static_packet() -> None:
+def test_ci_checkout_regression_preserves_the_sealed_static_packet() -> None:
     workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-    ci_report = "evidence/ci-run/clean-smoke-report.json"
+    ci_report = "evidence/ci-run/checkout-smoke-report.json"
     static_report = "evidence/clean-smoke/clean-smoke-report.json"
 
-    assert f"run_clean_smoke.py --output {ci_report}" in workflow
-    assert f"--evidence-report {ci_report}" in workflow
+    assert f"run_clean_smoke.py --mode checkout-regression --output {ci_report}" in workflow
+    assert f'$artifactArgs += "{ci_report}"' in workflow
+    assert f"--evidence-report {ci_report}" not in workflow
     assert f"run_clean_smoke.py --output {static_report}" not in workflow
+    assert "$checkoutSource = (git rev-parse HEAD).Trim()" in workflow
+    assert "$candidateSource =" not in workflow
+    assert (
+        "run_golden_replay.py --runs 3 --report evidence/ci-run/golden-replay-report.json"
+    ) in workflow
+    assert "run_shadow.py --report evidence/ci-run/golden-shadow-report.json" in workflow
+    assert "run_golden_replay.py --runs 3 --manifest bundles/" not in workflow
+    assert "run_shadow.py --manifest bundles/" not in workflow
+    assert "--evidence-report evidence/ci-run/" not in workflow
+    assert "--bundle-id candidate-core-v2-20260829-shadow" not in workflow
+    assert "evidence/ci-run/clean-frame-admission-report.json" in workflow
+
+
+def test_ci_collects_g1_frame_admission_as_checkout_evidence() -> None:
+    workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    report = "evidence/ci-run/frame-admission-report.json"
+
+    assert "run_frame_admission_replay.py --runs 3" in workflow
+    assert "--fixture fixtures/g1/frame_admission_v1.json" in workflow
+    assert "--schema schemas/frame-admission-report.schema.json" in workflow
+    assert f"--report {report}" in workflow
+    assert f'$artifactArgs += "{report}"' in workflow
+    assert f"--evidence-report {report}" not in workflow
+    assert "name: g1-frame-admission-${{ github.run_id }}" in workflow
 
 
 def test_candidate_manifest_matches_dec_001_and_has_passed_offline_reports() -> None:

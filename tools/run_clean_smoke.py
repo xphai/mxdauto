@@ -1,4 +1,4 @@
-"""Run the G0 cacheless Windows clean smoke and emit one evidence report."""
+"""Run a cacheless Windows smoke for the G0 seal or the current checkout."""
 
 from __future__ import annotations
 
@@ -64,6 +64,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--fixture",
         type=Path,
         default=Path("fixtures") / "golden" / "pilot_minimal_v1.json",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=("g0-seal", "checkout-regression"),
+        default="g0-seal",
+        help=(
+            "g0-seal preserves the packaging-only G0 lineage contract; "
+            "checkout-regression builds and tests the current checkout without "
+            "rebinding the sealed G0 Candidate."
+        ),
     )
     return parser.parse_args(argv)
 
@@ -152,6 +162,19 @@ def _artifact(root: Path, path: Path, kind: str, artifact_id: str) -> dict[str, 
     }
 
 
+def _lineage_is_allowed(
+    mode: str,
+    *,
+    ancestor_ok: bool,
+    unexpected_paths: list[str],
+) -> bool:
+    if mode == "g0-seal":
+        return ancestor_ok and not unexpected_paths
+    if mode == "checkout-regression":
+        return ancestor_ok
+    raise ValueError(f"Unsupported clean-smoke mode: {mode}")
+
+
 def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     repo_root = args.repo_root.resolve()
     if not repo_root.is_dir():
@@ -172,6 +195,9 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     if not isinstance(subject_id, str) or not subject_id:
         raise ValueError("Runtime manifest subject_id is missing.")
 
+    mode = getattr(args, "mode", "g0-seal")
+    if mode not in {"g0-seal", "checkout-regression"}:
+        raise ValueError(f"Unsupported clean-smoke mode: {mode}")
     checkout_commit = git_commit(repo_root)
     checks: list[dict[str, Any]] = []
     artifacts: list[dict[str, Any]] = []
@@ -240,7 +266,13 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     unexpected_paths = [
         path for path in changed_paths if path and not path.startswith(allowed_packaging_prefixes)
     ]
-    lineage_ok = lineage.returncode == 0 and changed.returncode == 0 and not unexpected_paths
+    ancestor_ok = lineage.returncode == 0 and changed.returncode == 0
+    packaging_only = not unexpected_paths
+    lineage_ok = _lineage_is_allowed(
+        mode,
+        ancestor_ok=ancestor_ok,
+        unexpected_paths=unexpected_paths,
+    )
     checks.append(
         {
             "command": (
@@ -251,7 +283,9 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 "allowed_packaging_prefixes": list(allowed_packaging_prefixes),
                 "changed_paths": changed_paths,
                 "checkout_commit": checkout_commit,
+                "lineage_policy": mode,
                 "manifest_source_commit": source_commit,
+                "packaging_only": packaging_only,
                 "unexpected_paths": unexpected_paths,
             },
             "duration_seconds": 0.0,
@@ -261,8 +295,9 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     )
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    epoch_commit = source_commit if mode == "g0-seal" else checkout_commit
     source_epoch = subprocess.run(
-        ["git", "show", "-s", "--format=%ct", source_commit],
+        ["git", "show", "-s", "--format=%ct", epoch_commit],
         cwd=repo_root,
         capture_output=True,
         text=True,
@@ -270,7 +305,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     )
     source_date_epoch = source_epoch.stdout.strip()
     if source_epoch.returncode != 0 or not source_date_epoch.isdigit():
-        raise ValueError("Could not derive SOURCE_DATE_EPOCH from source_commit.")
+        raise ValueError("Could not derive SOURCE_DATE_EPOCH from the tested commit.")
 
     env = os.environ.copy()
     for inherited in ("PYTHONHOME", "PYTHONPATH", "VIRTUAL_ENV", "__PYVENV_LAUNCHER__"):
@@ -291,8 +326,12 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
         if not cache_baseline_ok:
             raise SmokeFailure("checkout contains reusable build or project-environment state")
         if not lineage_ok:
-            raise SmokeFailure("checkout is not a packaging/docs-only descendant of source_commit")
-        with tempfile.TemporaryDirectory(prefix="maple-core-g0-clean-") as temp_name:
+            if mode == "g0-seal":
+                raise SmokeFailure(
+                    "checkout is not a packaging/docs-only descendant of source_commit"
+                )
+            raise SmokeFailure("sealed G0 source is not an ancestor of the checkout")
+        with tempfile.TemporaryDirectory(prefix=f"maple-core-{mode}-") as temp_name:
             temp_root = Path(temp_name).resolve()
             venv_dir = temp_root / "venv"
             artifact_dir = output_dir / "artifacts"
@@ -301,6 +340,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             coverage_path = output_dir / "clean-coverage.xml"
             replay_path = output_dir / "clean-replay-report.json"
             shadow_path = output_dir / "clean-shadow-report.json"
+            frame_admission_path = output_dir / "clean-frame-admission-report.json"
 
             _run_step(
                 checks=checks,
@@ -465,42 +505,63 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 cwd=temp_root,
                 env=env,
             )
+            replay_command = [
+                str(venv_python),
+                str(repo_root / "tools" / "run_golden_replay.py"),
+                "--require-installed",
+                "--fixture",
+                str(fixture_path),
+                "--runs",
+                "3",
+            ]
+            shadow_command = [
+                str(venv_python),
+                str(repo_root / "tools" / "run_shadow.py"),
+                "--require-installed",
+                "--fixture",
+                str(fixture_path),
+            ]
+            if mode == "g0-seal":
+                replay_command.extend(("--manifest", str(manifest_path)))
+                shadow_command.extend(("--manifest", str(manifest_path)))
+            replay_command.extend(("--report", str(replay_path)))
+            shadow_command.extend(("--report", str(shadow_path)))
             _run_step(
                 checks=checks,
                 name="golden-replay-three-runs",
-                command=[
-                    str(venv_python),
-                    str(repo_root / "tools" / "run_golden_replay.py"),
-                    "--require-installed",
-                    "--fixture",
-                    str(fixture_path),
-                    "--runs",
-                    "3",
-                    "--manifest",
-                    str(manifest_path),
-                    "--report",
-                    str(replay_path),
-                ],
+                command=replay_command,
                 cwd=temp_root,
                 env=env,
             )
             _run_step(
                 checks=checks,
                 name="shadow-zero-real-input",
-                command=[
-                    str(venv_python),
-                    str(repo_root / "tools" / "run_shadow.py"),
-                    "--require-installed",
-                    "--fixture",
-                    str(fixture_path),
-                    "--manifest",
-                    str(manifest_path),
-                    "--report",
-                    str(shadow_path),
-                ],
+                command=shadow_command,
                 cwd=temp_root,
                 env=env,
             )
+            if mode == "checkout-regression":
+                _run_step(
+                    checks=checks,
+                    name="installed-frame-admission-three-runs",
+                    command=[
+                        str(venv_python),
+                        str(repo_root / "tools" / "run_frame_admission_replay.py"),
+                        "--require-installed",
+                        "--fixture",
+                        str(repo_root / "fixtures" / "g1" / "frame_admission_v1.json"),
+                        "--schema",
+                        str(repo_root / "schemas" / "frame-admission-report.schema.json"),
+                        "--runs",
+                        "3",
+                        "--repo-root",
+                        str(repo_root),
+                        "--report",
+                        str(frame_admission_path),
+                    ],
+                    cwd=temp_root,
+                    env=env,
+                )
             shadow = read_json(shadow_path)
             input_audit = shadow.get("input_audit", {})
             rollback_ok = (
@@ -530,12 +591,21 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             if not rollback_ok:
                 raise SmokeFailure("rollback ownership audit failed")
 
-            for path, kind, artifact_id in (
+            report_artifacts = [
                 (junit_path, "junit", "clean-junit"),
                 (coverage_path, "coverage", "clean-coverage"),
                 (replay_path, "evidence-report", "clean-replay-result"),
                 (shadow_path, "evidence-report", "clean-shadow-result"),
-            ):
+            ]
+            if mode == "checkout-regression":
+                report_artifacts.append(
+                    (
+                        frame_admission_path,
+                        "evidence-report",
+                        "clean-frame-admission-result",
+                    )
+                )
+            for path, kind, artifact_id in report_artifacts:
                 artifacts.append(_artifact(repo_root, path, kind, artifact_id))
             for path in sorted(artifact_dir.iterdir()):
                 kind = "wheel" if path.suffix == ".whl" else "sdist"
@@ -551,9 +621,13 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
         if error is None and all(check["status"] == "passed" for check in checks)
         else "failed"
     )
+    report_source_commit = source_commit if mode == "g0-seal" else checkout_commit
+    report_release_id = (
+        release_id if mode == "g0-seal" else f"checkout-regression-{checkout_commit[:12]}"
+    )
     payload: dict[str, Any] = {
         "artifacts": artifacts,
-        "bundle_id": release_id,
+        "bundle_id": report_release_id,
         "checks": checks,
         "environment": {
             "python_version": platform.python_version(),
@@ -567,17 +641,21 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             if os.environ.get("GITHUB_RUN_ATTEMPT", "0").isdigit()
             else "0",
         },
-        "evidence_id": f"clean-smoke-{source_commit[:12]}",
-        "execution_mode": "shadow",
+        "evidence_id": f"{mode}-{report_source_commit[:12]}",
+        "execution_mode": "shadow" if mode == "g0-seal" else "offline",
         "generated_at": completed_at,
-        "release_id": release_id,
-        "report_kind": "clean-smoke",
+        "release_id": report_release_id,
+        "report_kind": "clean-smoke" if mode == "g0-seal" else "test",
         "schema_version": SCHEMA_VERSION,
-        "source_commit": source_commit,
+        "source_commit": report_source_commit,
         "status": status,
         "subject_id": subject_id,
         "summary": {
             "checkout_commit": checkout_commit,
+            "tested_commit": checkout_commit,
+            "lineage_policy": mode,
+            "baseline_bundle_id": release_id,
+            "baseline_manifest_source_commit": source_commit,
             "error": error,
             "os_build": platform.version(),
             "platform": platform.platform(),
@@ -587,7 +665,9 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             "runtime_manifest_sha256": manifest_sha256,
             "source_date_epoch": source_date_epoch,
             "source_assets_policy": (
-                "checkout metadata plus content-addressed external attestations"
+                "sealed candidate metadata plus content-addressed external attestations"
+                if mode == "g0-seal"
+                else "current checkout source with sealed G0 manifest as read-only baseline"
             ),
             "wheel_install": True,
         },

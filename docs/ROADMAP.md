@@ -1,7 +1,7 @@
 # Maple Automation Core v2 战略路线图（G-1 → G6）
 
 > **状态截止**：2026-08-29（Asia/Shanghai）
-> **当前判定**：**G-1 Strategic PASS / G0 PASS / G1 Ready（未开始）**。Candidate source commit 为 [`7da29f4cfae0bd984b00c394b78e637088a7e452`](https://github.com/xphai/mxdauto/commit/7da29f4cfae0bd984b00c394b78e637088a7e452)，sealed packet commit 为 [`04c794c59eb98af6e739415e1ecb72a335795bb9`](https://github.com/xphai/mxdauto/commit/04c794c59eb98af6e739415e1ecb72a335795bb9)。`main` 已受保护；[PR #1](https://github.com/xphai/mxdauto/pull/1) 已通过 required `quality` 并 protected squash merge，主线 post-merge `quality` 也成功。
+> **当前判定**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。Candidate source commit 为 [`7da29f4cfae0bd984b00c394b78e637088a7e452`](https://github.com/xphai/mxdauto/commit/7da29f4cfae0bd984b00c394b78e637088a7e452)，sealed packet commit 为 [`04c794c59eb98af6e739415e1ecb72a335795bb9`](https://github.com/xphai/mxdauto/commit/04c794c59eb98af6e739415e1ecb72a335795bb9)。G0 packet 保持不可变；当前只实施 `G1-FRM-001A` 纯 Python frame admission 子包，完整 `G1-FRM-001` 仍处于进行中。
 > **战略与 Gate 负责人**：**5.6Sol Ultra**（GPT-5.6 Sol / Ultra；下文简称 **Sol-U**）
 > **战术包负责人**：**5.6 Luna max**（GPT-5.6 Luna / max；下文简称 **Luna-M**）
 > **现场输入边界**：G0～G2 期间，Core v2 的真实输入调用数保持为 0，Legacy 保持唯一真实输入下发权。G3 仅在独立 Gate 批准的 Canary 会话内切换单一输入所有者；任何时刻只保留一个写入者。
@@ -58,7 +58,8 @@ G-1 主线与范围封存
 | G0 Gate Charter | `docs/gates/G0-GATE-CHARTER.md` v1.4 已按 sealed packet、保护配置、PR #1 与 main post-merge run 审计 | L0/L2 | `PASS`；工程、证据、治理和 Owner countersign 已闭环 |
 | 时间与状态契约 | `FramePacket`、`SourceGeometry`、`CaptureHealth`、坐标对象、`PlayerState`、`WorldObservation`、`WorldState` 已实现 | L1 | G0 契约工作包本地完成 |
 | 动作契约 | `ActionSpec`、`ActionHandle`、`ActionResult` 及终止类型已实现；`ADR-006` 已接受 | L1 | 领域对象已落地；`ActionController`、`ControlArbiter`、`ResultVerifier` 尚未实现 |
-| Event Tape | 哈希链、严格 JSON、顺序/会话校验与相关测试已实现 | L1/L3 | 记录契约与 G0 最小 deterministic Replay 已落地；G1 完整 corpus runner 仍未开始 |
+| Event Tape | 哈希链、严格 JSON、顺序/会话校验、同进程多 writer 路径锁与额外键拒绝已实现 | L1/L3 | 记录契约与并发完整性回归已落地；跨进程 writer 与 G1 完整 corpus 仍待后续包 |
+| Frame admission | `FrameSource`、单槽 latest buffer、DEC-001 geometry/calibration hash、250 ms freshness、fault latch/reset 与 synthetic fault matrix 已进入 `G1-FRM-001A` | L1，远端证据待绑定 | 子包进行中；VC-003 adapter、真实 raw corpus、压力与 5 分钟硬件 smoke 尚未纳入本子包 |
 | Runtime Manifest | 实际 Candidate `candidate-core-v2-20260829-shadow` 已绑定 source、10 个资产条目和报告；Manifest SHA-256 `c3382e8...2007` | L2/L3 | strict metadata 与 full-external 验证通过；lifecycle 仍为 Candidate，不是 Certified |
 | 可绑定远端 CI | [run `33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985)，attempt 1，`source=7da29f4...`、`checkout=4317c47...`、conclusion/status=`success/passed` | L2/L4 | 109 tests、94.61%、27 checks 与四组 artifacts 已下载、验 hash 并纳入 sealed packet |
 | Sealed successor CI | [run `33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227)，attempt 1，`checkout=04c794c...`，conclusion/status=`success/passed` | L4 outer seal | 最终 packet 的 27 checks 再次全绿；避免自引用，不回写到被验证 packet |
@@ -183,7 +184,7 @@ rollback_release_id
 |---|---|---|---|
 | G-1 | 主线、范围、Pilot、所有权封存 | **Strategic PASS；文档已封存** | 允许在唯一主线执行 G0 战术包 |
 | G0 | Git/CI/契约/Bundle/最小证据流水线 | **PASS** | G1 Ready；真实输入仍为 0 |
-| G1 | 确定性 Replay、感知/WorldState、完整 Shadow | **未开始** | 允许构建执行内核；真实输入仍为 0 |
+| G1 | 确定性 Replay、感知/WorldState、完整 Shadow | **进行中：G1-FRM-001A** | 允许构建执行内核；真实输入仍为 0 |
 | G2 | ActionController、Supervisor、receiver dry-run、故障安全 | **未开始** | 具备提交 Canary Gate 的资格；真实输入默认仍为 0 |
 | G3 | 单图、单档案、单 Bundle 的有界 Canary | **未开始** | 仅认证窗口内的 Core v2 独占输入权 |
 | G4 | 单图 Certified，5 次独立 4 小时会话 | **未开始** | Pilot 范围内的常态 Core v2 输入权 |
@@ -282,16 +283,16 @@ rollback_release_id
 
 ### 工作包
 
-| ID | 工作与输出 | 依赖 | 模型分工 |
-|---|---|---|---|
-| G1-FRM-001 | `FrameSource` adapter、最新帧策略、内容区/ROI 校准、陈旧/断序/画幅变化检测 | G0 PASS | Sol-U 契约；Luna-M 实现 |
-| G1-OBS-002 | 采集→标准化→检测 adapter；统一部署 ONNX、classes、input size、thresholds | G1-FRM、Pilot Bundle | Sol-U 晋级规则；Luna-M 实现 |
-| G1-LOC-003 | 玩家身份、地图/平台坐标、置信度和未知态；所有变换携带版本 | G1-OBS | Sol-U 不变量；Luna-M 实现 |
-| G1-WST-004 | 纯函数式 WorldState reducer、clock/randomness 注入、状态版本与 provenance | G1-OBS、LOC | Sol-U 契约；Luna-M 实现 |
-| G1-PLN-005 | Pilot 静态路线 Planner，仅输出 `ActionSpec`；无输入 adapter 依赖 | G1-WST | Sol-U 范围；Luna-M 实现 |
-| G1-RPL-006 | Golden corpus 扩展、人工真值、负样本、会话隔离 split、确定性报告 | G1-* | Sol-U 样本/阈值；Luna-M + QA/CV 执行 |
-| G1-SHD-007 | Legacy Event adapter、时间对齐、diff taxonomy、原因码、覆盖率报告 | G1-PLN | Sol-U 定义风险差异；Luna-M 实现 |
-| G1-MDL-008 | Model Card、PT→ONNX 一致性、独立真实 holdout、已知失败与回滚模型 | G1-OBS | Sol-U Gate；Luna-M + CV 执行 |
+| ID | 工作与输出 | 依赖 | 模型分工 | 当前状态 |
+|---|---|---|---|---|
+| G1-FRM-001 | `FrameSource` adapter、最新帧策略、内容区/ROI 校准、陈旧/断序/画幅变化检测 | G0 PASS | Sol-U 契约；Luna-M 实现 | **进行中**：001A synthetic admission；001B VC-003/corpus/stress/hardware 待实施 |
+| G1-OBS-002 | 采集→标准化→检测 adapter；统一部署 ONNX、classes、input size、thresholds | G1-FRM、Pilot Bundle | Sol-U 晋级规则；Luna-M 实现 | 等待完整 G1-FRM-001 |
+| G1-LOC-003 | 玩家身份、地图/平台坐标、置信度和未知态；所有变换携带版本 | G1-OBS | Sol-U 不变量；Luna-M 实现 | 未开始 |
+| G1-WST-004 | 纯函数式 WorldState reducer、clock/randomness 注入、状态版本与 provenance | G1-OBS、LOC | Sol-U 契约；Luna-M 实现 | 未开始 |
+| G1-PLN-005 | Pilot 静态路线 Planner，仅输出 `ActionSpec`；无输入 adapter 依赖 | G1-WST | Sol-U 范围；Luna-M 实现 | 未开始 |
+| G1-RPL-006 | Golden corpus 扩展、人工真值、负样本、会话隔离 split、确定性报告 | G1-* | Sol-U 样本/阈值；Luna-M + QA/CV 执行 | 未开始 |
+| G1-SHD-007 | Legacy Event adapter、时间对齐、diff taxonomy、原因码、覆盖率报告 | G1-PLN | Sol-U 定义风险差异；Luna-M 实现 | 未开始 |
+| G1-MDL-008 | Model Card、PT→ONNX 一致性、独立真实 holdout、已知失败与回滚模型 | G1-OBS | Sol-U Gate；Luna-M + CV 执行 | 未开始 |
 
 ### 退出门禁
 
@@ -571,14 +572,15 @@ Fixture/Contract → Golden Replay → Shadow → bounded Canary → Certified
 以下是当前最短关键路径。Luna-M 每次只领取一个有界战术包；Sol-U 在指定节点审计。
 
 1. **G0 收口（完成）**：protected main、required `quality`、PR #1、Owner countersign 和 post-merge run 已闭环。
-2. **Sol-U / G1 启动**：从 G1-FRM-001 签发首个有界战术包，固定录像 corpus、人工 truth/split、采集 geometry 与 freshness 门槛。
-3. **Luna-M / G1 执行**：按 G1-FRM-001 → G1-OBS-002 → G1-LOC-003 → G1-WST-004 → G1-RPL-006 → G1-SHD-007 的依赖链实施；全程保持 Core v2 真实输入为 0。
+2. **Luna-M / G1-FRM-001A（当前）**：完成 frame admission/latest/freshness/fault-latch 契约、三次 synthetic deterministic replay、checkout provenance split 与受保护 CI 绑定。
+3. **Sol-U / G1-FRM-001B 审计点**：冻结 raw corpus/truth、VC-003 read-only adapter、latest stress、5 分钟硬件 smoke 和 source provenance；001B 通过前保持 `G1-FRM-001=In Progress`。
+4. **后续依赖链**：完整 G1-FRM-001 → G1-OBS-002 → G1-LOC-003 → G1-WST-004 → G1-RPL-006 → G1-SHD-007；全程保持 Core v2 真实输入为 0。
 
 ---
 
 ## 16. 文档一致性与表述规则
 
-1. `README.md`、ADR、`CONTRIBUTING.md` 与本路线图统一使用：**G0 工程基线建设 / Shadow 准备；Legacy 当前独占真实输入；G3 才是首次有界接管**。
+1. `README.md`、ADR、`CONTRIBUTING.md` 与本路线图统一使用：**G0 PASS / G1 In Progress；Legacy 当前独占真实输入；G3 才是首次有界接管**。
 2. `runtime-manifest.example.json` 始终称为 schema fixture；只有绑定真实资产 hash、真实 commit 和真实报告 ID 的 manifest 才称 Candidate Bundle。
 3. “CI passed”需同时给出 remote、run ID、attempt、head/packet commit、source commit、metadata status 和 artifact；workflow conclusion=`success` 但 metadata=`failed` 的 run 必须隔离。
 4. “G0 Replay smoke passed”只描述当前 synthetic fixture；G1 Replay ready 仍需完整录像 corpus、人工 truth/split 和感知/WorldState 链。
@@ -595,7 +597,7 @@ Fixture/Contract → Golden Replay → Shadow → bounded Canary → Certified
 - [x] 每阶段包含目标、工作包、依赖、退出门禁、证据和回退；
 - [x] 明确 Sol-U 负责战略/Gate，Luna-M 负责战术包；
 - [x] 明确当前完成、证据待绑定和未开始项；
-- [x] 明确 G0 最小 Replay/Shadow/clean 工程证据已形成，同时 G1 完整 corpus、receiver clean-host 和现场仍未开始；
+- [x] 明确 G0 最小 Replay/Shadow/clean 工程证据已形成，G1-FRM-001A 已启动，同时 G1 完整 corpus、receiver clean-host 和现场仍待实施；
 - [x] 明确可绑定 run `33204844985`、successor run `33205169227`、统一 failure index、source/packet 双 commit，以及 protected main/required `quality`/PR #1 的治理生效链；
 - [x] Legacy/upstream GitHub 远端与 Core v2 `origin` 分开表述；
 - [x] 输入所有权从 Shadow 到 Canary/Certified 的切换点唯一；

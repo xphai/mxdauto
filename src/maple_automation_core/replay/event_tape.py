@@ -25,6 +25,39 @@ from maple_automation_core.domain._contract_utils import (
 REPLAY_SCHEMA_VERSION = "1.0.0"
 GENESIS_HASH = "0" * 64
 
+_EVENT_RECORD_KEYS = frozenset(
+    {
+        "schema_version",
+        "session_id",
+        "frame_id",
+        "world_state_version",
+        "sequence",
+        "event_type",
+        "payload",
+        "recorded_at_ns",
+        "previous_record_hash",
+        "record_hash",
+    }
+)
+_PATH_LOCK_REGISTRY_LOCK = Lock()
+_PATH_LOCKS: dict[str, Lock] = {}
+
+
+def _normalized_path(path: str | Path) -> str:
+    """Return the process-local key used to coordinate a tape path."""
+
+    return os.path.normcase(str(Path(path).expanduser().resolve(strict=False)))
+
+
+def _get_path_lock(path: str | Path) -> Lock:
+    normalized = _normalized_path(path)
+    with _PATH_LOCK_REGISTRY_LOCK:
+        lock = _PATH_LOCKS.get(normalized)
+        if lock is None:
+            lock = Lock()
+            _PATH_LOCKS[normalized] = lock
+        return lock
+
 
 @dataclass(frozen=True, slots=True)
 class EventRecord:
@@ -148,6 +181,7 @@ class EventTape:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         ensure_non_empty_str(schema_version, "schema_version")
         self.schema_version = schema_version
+        self._path_lock = _get_path_lock(self.path)
         self._lock = Lock()
         self._next_sequence = 0
         self._next_previous_hash = GENESIS_HASH
@@ -155,7 +189,8 @@ class EventTape:
         self._last_frame_id = -1
         self._last_world_state_version = -1
         self._last_recorded_at_ns = -1
-        self._load_existing()
+        with self._path_lock:
+            self._load_existing()
 
     @property
     def session_id(self) -> str | None:
@@ -210,6 +245,10 @@ class EventTape:
         for key in required:
             if key not in values:
                 raise ValueError(f"Missing required key in tape record: {key}")
+        extra_keys = set(values).difference(_EVENT_RECORD_KEYS)
+        if extra_keys:
+            extras = ", ".join(sorted(extra_keys))
+            raise ValueError(f"Unexpected key(s) in tape record: {extras}")
         return dict(values)
 
     def _read_validated(self) -> tuple[EventRecord, ...]:
@@ -297,10 +336,9 @@ class EventTape:
         ensure_json_value(payload_mapping, "payload")
         frozen_payload = freeze_json_value(payload_mapping)
 
-        with self._lock:
-            # Refresh the tail under the append lock so a second EventTape
-            # instance cannot reuse a sequence/hash after writing to the same
-            # path.
+        with self._path_lock, self._lock:
+            # Refresh the tail under the shared path lock so separate
+            # EventTape instances cannot reuse a sequence/hash.
             self._load_existing()
             if self._session_id is not None and session_id != self._session_id:
                 raise ValueError("A tape is bound to exactly one session_id.")
@@ -352,5 +390,5 @@ class EventTape:
         return self.read_all()
 
     def read_all(self) -> tuple[EventRecord, ...]:
-        with self._lock:
+        with self._path_lock, self._lock:
             return self._read_validated()
