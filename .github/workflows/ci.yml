@@ -364,10 +364,6 @@ jobs:
           $artifactArgs += "evidence/ci-run/g1-installed-pressure-report.json"
           $artifactArgs += "--artifact"
           $artifactArgs += "evidence/ci-run/g1-installed-pressure-tool-report.json"
-          $artifactArgs += "--artifact"
-          $artifactArgs += "evidence/ci-run/golden-replay-report.json"
-          $artifactArgs += "--artifact"
-          $artifactArgs += "evidence/ci-run/golden-shadow-report.json"
           python tools/collect_ci_evidence.py `
             --output evidence/ci-run/ci-evidence.json `
             --repo-root . `
@@ -375,6 +371,14 @@ jobs:
             --junit evidence/ci-run/junit.xml `
             --coverage evidence/ci-run/coverage.xml `
             --lock configs/requirements.lock `
+            --fixture fixtures/golden/pilot_minimal_v1.json `
+            --expected-fixture-sha256 22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34 `
+            --expected-fixture-replay-digest 767cad8215a420e0f01c36d434cc96530a74acc552f97c8685740a81de6baaed `
+            --expected-fixture-shadow-digest ac6f55d4cf3b57d494c951a8affafef73aa99eee3b49b3d76cff7c7dd46ee07b `
+            --fixture-evidence-report current-replay::evidence/ci-run/golden-replay-report.json `
+            --fixture-evidence-report current-shadow::evidence/ci-run/golden-shadow-report.json `
+            --fixture-evidence-report clean-replay::evidence/ci-run/clean-replay-report.json `
+            --fixture-evidence-report clean-shadow::evidence/ci-run/clean-shadow-report.json `
             --check-result "install-dependencies::${{ steps.install_dependencies.outcome }}::install configs/requirements.lock and hash-locked configs/g1-frame-requirements.lock" `
             --check-result "verify-dependency-lock::${{ steps.verify_dependency_lock.outcome }}::python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed" `
             --check-result "verify-g1-dependency-lock::${{ steps.verify_g1_dependency_lock.outcome }}::G1 hash lock parser and installed exact pins" `
@@ -414,7 +418,7 @@ jobs:
           retention-days: 30
 
       - name: Upload build artifacts
-        if: always()
+        if: ${{ always() && steps.collect_ci_evidence.outputs.upload_ready == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: build-artifacts-${{ github.run_id }}

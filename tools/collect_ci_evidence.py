@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import os
 import platform
@@ -11,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 try:
     from jsonschema import Draft202012Validator, FormatChecker  # type: ignore[import-untyped]
@@ -42,10 +43,16 @@ except ImportError:  # pragma: no cover - exercised when invoked as a script
 SCHEMA_VERSION = "1.0.0"
 REPORT_SCHEMA_NAME = "evidence-report.schema.json"
 DEFAULT_FIXTURE = Path("fixtures") / "golden" / "pilot_minimal_v1.json"
+FIXTURE_REPORT_ROLES = {
+    "current-replay": "replay",
+    "current-shadow": "shadow",
+    "clean-replay": "replay",
+    "clean-shadow": "shadow",
+}
 _ABSOLUTE_PATH = re.compile(
     r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/][^\r\n\"'<>]+|\\\\[^\\/\s\"'<>]+[\\/][^\r\n\"'<>]+)"
 )
-_TEXT_SUFFIXES = {".json", ".jsonl", ".xml", ".txt", ".log"}
+_TEXT_SUFFIXES = {".json", ".jsonl", ".xml", ".txt", ".log", ".lock"}
 
 # GitHub exposes these values as ``steps.<id>.outcome``.  The evidence schema
 # deliberately keeps its smaller passed/failed/skipped vocabulary, while the
@@ -130,7 +137,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="append",
         default=[],
         type=Path,
-        help="Replay, Shadow or clean-smoke JSON report; repeatable.",
+        help="Candidate-bound Replay, Shadow or clean-smoke JSON report; repeatable.",
+    )
+    parser.add_argument(
+        "--fixture-evidence-report",
+        action="append",
+        default=[],
+        help=(
+            "Fixture-only report encoded as ROLE::PATH, where ROLE is current-replay, "
+            "current-shadow, clean-replay or clean-shadow. When used, all four roles "
+            "must be supplied exactly once with unique paths."
+        ),
     )
     parser.add_argument(
         "--fixture",
@@ -138,6 +155,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=[],
         type=Path,
         help="Fixture JSON used by evidence reports; repeatable (defaults to the golden fixture).",
+    )
+    parser.add_argument(
+        "--expected-fixture-sha256",
+        help="Pinned SHA-256 required whenever fixture-only evidence is supplied.",
+    )
+    parser.add_argument(
+        "--expected-fixture-replay-digest",
+        help="Pinned canonical Replay digest required for fixture-only evidence.",
+    )
+    parser.add_argument(
+        "--expected-fixture-shadow-digest",
+        help="Pinned canonical Shadow digest required for fixture-only evidence.",
     )
     parser.add_argument(
         "--check-result",
@@ -210,6 +239,53 @@ def _repo_path(repo_root: Path, value: Path | None) -> Path | None:
     return resolved
 
 
+def _fixture_evidence_reports(repo_root: Path, values: list[str]) -> list[tuple[str, str, Path]]:
+    reports: list[tuple[str, str, Path]] = []
+    roles_seen: set[str] = set()
+    paths_seen: set[Path] = set()
+    for encoded in values:
+        parts = encoded.split("::", 1)
+        if len(parts) != 2:
+            raise ValueError(
+                "--fixture-evidence-report must use current-replay::PATH, "
+                "current-shadow::PATH, clean-replay::PATH or clean-shadow::PATH syntax"
+            )
+        report_role, raw_path = (part.strip() for part in parts)
+        if report_role not in FIXTURE_REPORT_ROLES or not raw_path:
+            raise ValueError(
+                "--fixture-evidence-report must use current-replay::PATH, "
+                "current-shadow::PATH, clean-replay::PATH or clean-shadow::PATH syntax"
+            )
+        if report_role in roles_seen:
+            raise ValueError(f"fixture evidence report role is duplicated: {report_role}")
+        path = _repo_path(repo_root, Path(raw_path))
+        if path is None:  # pragma: no cover - Path is always supplied above
+            raise ValueError("fixture evidence report path is missing")
+        if path in paths_seen:
+            raise ValueError("fixture evidence report paths must be unique")
+        roles_seen.add(report_role)
+        paths_seen.add(path)
+        reports.append((report_role, FIXTURE_REPORT_ROLES[report_role], path))
+    if reports and roles_seen != set(FIXTURE_REPORT_ROLES):
+        missing = sorted(set(FIXTURE_REPORT_ROLES) - roles_seen)
+        raise ValueError(
+            "fixture evidence reports require all four roles exactly once; missing: "
+            + ", ".join(missing)
+        )
+    return reports
+
+
+def _optional_sha256(value: str | None, *, option: str) -> str | None:
+    if value is None:
+        return None
+    normalized = value.lower()
+    if len(normalized) != 64 or any(
+        character not in "0123456789abcdef" for character in normalized
+    ):
+        raise ValueError(f"{option} must be a 64-character SHA-256")
+    return normalized
+
+
 def _portable_path(repo_root: Path, path: Path) -> str:
     try:
         relative = path.resolve().relative_to(repo_root.resolve())
@@ -244,13 +320,204 @@ def _sanitize_text(value: str, *, repo_root: Path, temp_root: Path | None = None
     return _ABSOLUTE_PATH.sub("[absolute-path]", result)
 
 
+def _reject_nonfinite_json(value: str) -> Any:
+    raise ValueError(f"non-finite JSON value: {value}")
+
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    payload: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in payload:
+            raise ValueError(f"duplicate JSON key: {key}")
+        payload[key] = value
+    return payload
+
+
+def _parse_json_text(value: str, *, format_name: str) -> Any:
+    try:
+        return json.loads(
+            value,
+            object_pairs_hook=_reject_duplicate_json_keys,
+            parse_constant=_reject_nonfinite_json,
+        )
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise ValueError(f"invalid {format_name}") from exc
+
+
+def _sanitize_json_text(
+    value: str, *, repo_root: Path, temp_root: Path | None = None
+) -> tuple[str, bool]:
+    """Sanitize decoded JSON strings so escaped quotes remain structural."""
+
+    payload = _parse_json_text(value, format_name="JSON")
+    sanitized_payload = _sanitize_payload(payload, repo_root=repo_root, temp_root=temp_root)
+    if sanitized_payload == payload:
+        return value, False
+    sanitized = (
+        json.dumps(
+            sanitized_payload,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    _parse_json_text(sanitized, format_name="sanitized JSON")
+    return sanitized, True
+
+
+def _sanitize_json_lines_text(
+    value: str, *, repo_root: Path, temp_root: Path | None = None
+) -> tuple[str, bool]:
+    """Sanitize JSON Lines one decoded record at a time and revalidate it."""
+
+    rewritten = False
+    sanitized_lines: list[str] = []
+    for line_number, line in enumerate(value.splitlines(), start=1):
+        if not line.strip():
+            sanitized_lines.append(line)
+            continue
+        payload = _parse_json_text(line, format_name=f"JSONL record {line_number}")
+        sanitized_payload = _sanitize_payload(payload, repo_root=repo_root, temp_root=temp_root)
+        if sanitized_payload == payload:
+            sanitized_lines.append(line)
+            continue
+        encoded = json.dumps(
+            sanitized_payload,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        _parse_json_text(encoded, format_name=f"sanitized JSONL record {line_number}")
+        sanitized_lines.append(encoded)
+        rewritten = True
+    if not rewritten:
+        return value, False
+    sanitized = "\n".join(sanitized_lines)
+    if value.endswith(("\n", "\r")):
+        sanitized += "\n"
+    return sanitized, True
+
+
+def _parse_xml_text(value: str, *, format_name: str) -> ElementTree.Element:
+    parser = ElementTree.XMLParser(
+        target=ElementTree.TreeBuilder(insert_comments=True, insert_pis=True)
+    )
+    try:
+        return ElementTree.fromstring(value, parser=parser)
+    except ElementTree.ParseError as exc:
+        raise ValueError(f"invalid {format_name}") from exc
+
+
+def _sanitize_xml_text(
+    value: str, *, repo_root: Path, temp_root: Path | None = None
+) -> tuple[str, bool]:
+    """Sanitize parsed XML values, including decoded entities and CDATA text."""
+
+    root = _parse_xml_text(value, format_name="XML")
+    rewritten = False
+    for element in root.iter():
+        for key, item in list(element.attrib.items()):
+            sanitized_item = _sanitize_text(item, repo_root=repo_root, temp_root=temp_root)
+            if sanitized_item != item:
+                element.set(key, sanitized_item)
+                rewritten = True
+        for field in ("text", "tail"):
+            item = getattr(element, field)
+            if not isinstance(item, str):
+                continue
+            sanitized_item = _sanitize_text(item, repo_root=repo_root, temp_root=temp_root)
+            if sanitized_item != item:
+                setattr(element, field, sanitized_item)
+                rewritten = True
+    if not rewritten:
+        return value, False
+    sanitized = ElementTree.tostring(root, encoding="unicode")
+    _parse_xml_text(sanitized, format_name="sanitized XML")
+    return sanitized, True
+
+
+def _validate_structured_text(value: str, *, suffix: str) -> None:
+    if suffix == ".json":
+        _parse_json_text(value, format_name="written JSON")
+    elif suffix == ".jsonl":
+        for line_number, line in enumerate(value.splitlines(), start=1):
+            if line.strip():
+                _parse_json_text(line, format_name=f"written JSONL record {line_number}")
+    elif suffix == ".xml":
+        _parse_xml_text(value, format_name="written XML")
+
+
 def _sanitize_text_file(path: Path, *, repo_root: Path, temp_root: Path | None = None) -> bool:
-    value = path.read_text(encoding="utf-8", errors="replace")
-    sanitized = _sanitize_text(value, repo_root=repo_root, temp_root=temp_root)
-    if sanitized != value:
+    value = path.read_text(encoding="utf-8")
+    suffix = path.suffix.lower()
+    if suffix == ".json":
+        sanitized, rewritten = _sanitize_json_text(
+            value,
+            repo_root=repo_root,
+            temp_root=temp_root,
+        )
+    elif suffix == ".jsonl":
+        sanitized, rewritten = _sanitize_json_lines_text(
+            value,
+            repo_root=repo_root,
+            temp_root=temp_root,
+        )
+    elif suffix == ".xml":
+        sanitized, rewritten = _sanitize_xml_text(
+            value,
+            repo_root=repo_root,
+            temp_root=temp_root,
+        )
+    else:
+        sanitized = _sanitize_text(value, repo_root=repo_root, temp_root=temp_root)
+        rewritten = sanitized != value
+    if rewritten:
         path.write_text(sanitized, encoding="utf-8")
-        return True
-    return False
+        written = path.read_text(encoding="utf-8")
+        _validate_structured_text(written, suffix=suffix)
+    return rewritten
+
+
+def _absolute_path_count(value: Any) -> int:
+    if isinstance(value, str):
+        return len(list(_ABSOLUTE_PATH.finditer(value)))
+    if isinstance(value, list):
+        return sum(_absolute_path_count(item) for item in value)
+    if isinstance(value, dict):
+        return sum(
+            _absolute_path_count(key) + _absolute_path_count(item) for key, item in value.items()
+        )
+    return 0
+
+
+def _absolute_path_count_file(path: Path) -> int:
+    value = path.read_text(encoding="utf-8")
+    suffix = path.suffix.lower()
+    if suffix == ".json":
+        return _absolute_path_count(_parse_json_text(value, format_name="JSON"))
+    if suffix == ".jsonl":
+        return sum(
+            _absolute_path_count(_parse_json_text(line, format_name=f"JSONL record {line_number}"))
+            for line_number, line in enumerate(value.splitlines(), start=1)
+            if line.strip()
+        )
+    if suffix == ".xml":
+        root = _parse_xml_text(value, format_name="XML")
+        structured_count = sum(
+            _absolute_path_count(element.tag)
+            + _absolute_path_count(element.attrib)
+            + _absolute_path_count(element.text)
+            + _absolute_path_count(element.tail)
+            for element in root.iter()
+        )
+        # ElementTree returns the document element and omits comments/PIs
+        # outside it. The raw scan is detection-only, so such paths close the
+        # gate without risking a structure-breaking replacement.
+        return structured_count + len(list(_ABSOLUTE_PATH.finditer(value)))
+    return len(list(_ABSOLUTE_PATH.finditer(value)))
 
 
 def _remove_or_quarantine(path: Path, *, repo_root: Path, temp_root: Path | None = None) -> bool:
@@ -306,7 +573,7 @@ def _sanitize_uploaded_paths(
                 repo_root=repo_root,
                 temp_root=temp_root,
             )
-        except OSError:
+        except (OSError, ValueError):
             display_path = _display_path(repo_root, path)
             sanitizer_errors.append(display_path)
             if _remove_or_quarantine(path, repo_root=repo_root, temp_root=temp_root):
@@ -321,13 +588,12 @@ def _sanitize_uploaded_paths(
         if not path.is_file() or path.suffix.lower() not in _TEXT_SUFFIXES:
             continue
         try:
-            value = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            findings[path.name] = 1
+            count = _absolute_path_count_file(path)
+        except (OSError, ValueError):
+            findings[_display_path(repo_root, path)] = 1
             continue
-        count = len(list(_ABSOLUTE_PATH.finditer(value)))
         if count:
-            findings[path.name] = count
+            findings[_display_path(repo_root, path)] = count
     return findings, rewritten, sanitizer_errors, quarantined, quarantine_failures
 
 
@@ -544,17 +810,20 @@ def _read_build_artifacts(
     )
 
 
-def _canonical_report_digest(payload: dict[str, Any]) -> str:
-    canonical_payload = dict(payload)
-    canonical_payload.pop("report_digest", None)
-    encoded = json.dumps(
-        canonical_payload,
+def _canonical_json_bytes(value: Any) -> bytes:
+    return json.dumps(
+        value,
         ensure_ascii=False,
         allow_nan=False,
         separators=(",", ":"),
         sort_keys=True,
     ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+
+
+def _canonical_report_digest(payload: dict[str, Any]) -> str:
+    canonical_payload = dict(payload)
+    canonical_payload.pop("report_digest", None)
+    return hashlib.sha256(_canonical_json_bytes(canonical_payload)).hexdigest()
 
 
 def _report_kind(payload: dict[str, Any], path: Path, index: int) -> str:
@@ -772,7 +1041,7 @@ def _validate_shadow_invariants(payload: dict[str, Any], errors: list[str]) -> d
         "core_execution_event_count",
     )
     for counter in counters:
-        if audit.get(counter) != 0:
+        if type(audit.get(counter)) is not int or audit.get(counter) != 0:
             errors.append(f"{counter} must be zero")
     if audit.get("boundary_attempts") != []:
         errors.append("boundary_attempts must be empty")
@@ -795,7 +1064,11 @@ def _validate_shadow_invariants(payload: dict[str, Any], errors: list[str]) -> d
     if not diffs:
         errors.append("Shadow must compare at least one planned/observed action")
     diff_summary = payload.get("diff_summary")
-    if not isinstance(diff_summary, dict) or diff_summary.get("unclassified_diff_count") != 0:
+    if (
+        not isinstance(diff_summary, dict)
+        or type(diff_summary.get("unclassified_diff_count")) is not int
+        or diff_summary.get("unclassified_diff_count") != 0
+    ):
         errors.append("Shadow diff summary must report zero unclassified diffs")
     return {
         "diff_count": len(diffs),
@@ -1030,6 +1303,211 @@ def _validate_evidence_report(
     return check, artifact
 
 
+def _fixture_runtime_classes() -> tuple[Any, Any]:
+    """Load Replay/Shadow from the checkout when the collector runs as a script."""
+
+    source_root = Path(__file__).resolve().parent.parent / "src"
+    source_text = str(source_root)
+    if source_root.is_dir() and source_text not in sys.path:
+        sys.path.insert(0, source_text)
+    try:
+        runtime = importlib.import_module("maple_automation_core.replay")
+        return runtime.GoldenReplayRunner, runtime.ShadowRunner
+    except (AttributeError, ModuleNotFoundError) as exc:
+        raise ValueError("Replay/Shadow runtime is unavailable for semantic validation") from exc
+
+
+def _regenerate_fixture_report(
+    *,
+    fixture_path: Path,
+    fixture_file_sha256: str,
+    expected_kind: str,
+    repeat_count: object,
+) -> dict[str, Any]:
+    replay_runner, shadow_runner = _fixture_runtime_classes()
+    if expected_kind == "replay":
+        if type(repeat_count) is not int or repeat_count != 3:
+            raise ValueError("fixture-only replay repeat_count must be exactly 3")
+        payload = replay_runner(fixture_path).run_repeated(3).to_dict()
+    else:
+        payload = shadow_runner(fixture_path).run().to_dict()
+    payload["fixture_file_sha256"] = fixture_file_sha256
+    payload["report_digest"] = _canonical_report_digest(payload)
+    return cast(dict[str, Any], payload)
+
+
+def _fixture_semantic_mismatch_fields(
+    payload: dict[str, Any], expected: dict[str, Any]
+) -> list[str]:
+    """Return fields that differ under canonical, JSON-type-strict comparison."""
+
+    mismatches: list[str] = []
+    for key in sorted(set(payload) | set(expected)):
+        if key == "report_digest":
+            continue
+        if key not in payload or key not in expected:
+            mismatches.append(key)
+            continue
+        try:
+            matches = _canonical_json_bytes(payload[key]) == _canonical_json_bytes(expected[key])
+        except (TypeError, ValueError):
+            matches = False
+        if not matches:
+            mismatches.append(key)
+    return mismatches
+
+
+def _validate_fixture_evidence_report(
+    *,
+    repo_root: Path,
+    path: Path,
+    report_role: str,
+    expected_kind: str,
+    expected_report_digest: str | None,
+    schema: dict[str, Any] | None,
+    fixture_candidates: list[tuple[Path, str]],
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Validate an unbound deterministic fixture report without Candidate claims."""
+
+    check, artifact = _check_file(
+        repo_root,
+        path,
+        "fixture-evidence-report",
+        f"validate {report_role} fixture-only evidence report {path.name}",
+    )
+    if artifact is not None:
+        # The CI evidence schema has one portable kind for all evidence reports;
+        # the check name and details retain the narrower fixture-only scope.
+        artifact["kind"] = "evidence-report"
+    if check["status"] != "passed":
+        return check, artifact
+
+    payload, read_error = _read_json_object(path)
+    if payload is None:
+        check["status"] = "failed"
+        check["details"] = {**check["details"], "reason": read_error or "invalid JSON"}
+        return check, artifact
+
+    report_type = payload.get("report_type")
+    declared_kind = (
+        "replay"
+        if report_type == "golden_replay"
+        else "shadow"
+        if report_type == "shadow"
+        else "unsupported"
+    )
+    errors: list[str] = []
+    if declared_kind == "unsupported":
+        errors.append("fixture-only report_type must be golden_replay or shadow")
+    elif declared_kind != expected_kind:
+        errors.append(
+            f"fixture-only report role mismatch: expected {expected_kind}, got {declared_kind}"
+        )
+
+    schema_valid, schema_errors = _validate_report_schema(payload, expected_kind, schema)
+    if not schema_valid:
+        errors.extend(f"schema: {message}" for message in schema_errors)
+    if payload.get("status") != "PASS":
+        errors.append("status must be PASS")
+
+    candidate_claim_fields = sorted(
+        set(payload)
+        & {
+            "candidate_binding",
+            "release_id",
+            "runtime_manifest_path",
+            "runtime_manifest_sha256",
+            "source_commit",
+        }
+    )
+    if candidate_claim_fields:
+        errors.append(
+            "fixture-only report declares Candidate binding fields: "
+            + ", ".join(candidate_claim_fields)
+        )
+
+    fixture_sha = payload.get("fixture_file_sha256")
+    expected_fixture_path = fixture_candidates[0][0] if fixture_candidates else None
+    expected_fixture_sha = fixture_candidates[0][1] if fixture_candidates else None
+    if expected_fixture_sha is None:
+        errors.append("fixture file is missing")
+    elif fixture_sha != expected_fixture_sha:
+        errors.append("fixture_file_sha256 does not match the repository fixture")
+
+    declared_digest = payload.get("report_digest")
+    computed_digest: str | None = None
+    try:
+        computed_digest = _canonical_report_digest(payload)
+    except (TypeError, ValueError):
+        computed_digest = None
+    if not isinstance(declared_digest, str) or computed_digest is None:
+        errors.append("report_digest is missing")
+    elif declared_digest != computed_digest:
+        errors.append("report_digest does not match canonical report content")
+    if expected_report_digest is None:
+        errors.append(f"pinned {expected_kind} report digest is required")
+    elif declared_digest != expected_report_digest:
+        errors.append(f"report_digest does not match pinned {expected_kind} digest")
+
+    if expected_kind == "replay":
+        invariant_details = _validate_replay_invariants(payload, errors)
+    else:
+        invariant_details = _validate_shadow_invariants(payload, errors)
+    errors.extend(_validate_nested_artifacts(repo_root, payload))
+
+    semantic_mismatch_fields: list[str] = []
+    if expected_fixture_path is not None and expected_fixture_sha is not None:
+        try:
+            expected_payload = _regenerate_fixture_report(
+                fixture_path=expected_fixture_path,
+                fixture_file_sha256=expected_fixture_sha,
+                expected_kind=expected_kind,
+                repeat_count=payload.get("repeat_count"),
+            )
+        except (OSError, TypeError, ValueError) as exc:
+            errors.append(f"could not regenerate fixture semantics: {exc}")
+        else:
+            semantic_mismatch_fields = _fixture_semantic_mismatch_fields(
+                payload,
+                expected_payload,
+            )
+            if semantic_mismatch_fields:
+                errors.append(
+                    "fixture-only report differs from regenerated fixture semantics: "
+                    + ", ".join(semantic_mismatch_fields)
+                )
+
+    check["status"] = "failed" if errors else "passed"
+    check["details"] = {
+        **check["details"],
+        "binding_scope": "fixture-only",
+        "computed_report_digest": computed_digest,
+        "expected_fixture_file_sha256": expected_fixture_sha,
+        "fixture_bundle_id": payload.get("bundle_id"),
+        "fixture_file_sha256": fixture_sha,
+        "fixture_report_role": report_role,
+        "expected_report_kind": expected_kind,
+        "declared_report_kind": declared_kind,
+        "report_digest": declared_digest,
+        "expected_report_digest": expected_report_digest,
+        "report_digest_valid": (
+            isinstance(declared_digest, str)
+            and computed_digest is not None
+            and declared_digest == computed_digest
+        ),
+        "report_id": payload.get("report_id"),
+        "report_kind": expected_kind,
+        "report_status": payload.get("status"),
+        "semantic_mismatch_fields": semantic_mismatch_fields,
+        "schema_errors": schema_errors,
+        "schema_valid": schema_valid,
+        **invariant_details,
+    }
+    if errors:
+        check["details"]["errors"] = errors
+    return check, artifact
+
+
 def _metadata_file(
     repo_root: Path,
     path: Path | None,
@@ -1153,6 +1631,9 @@ def _parse_check_results(args: argparse.Namespace) -> tuple[list[dict[str, Any]]
 
 
 def collect_evidence(args: argparse.Namespace) -> Path:
+    # A later successful, fully validated write is the only path that opens
+    # the upload gate. This also covers exceptions before the output exists.
+    _set_github_output("upload_ready", "false")
     repo_root = args.repo_root.resolve()
     if not repo_root.is_dir():
         raise ValueError(f"Repository root does not exist: {repo_root}")
@@ -1169,16 +1650,41 @@ def collect_evidence(args: argparse.Namespace) -> Path:
     evidence_report_paths = [
         path for value in args.evidence_report if (path := _repo_path(repo_root, value))
     ]
+    fixture_evidence_reports = _fixture_evidence_reports(
+        repo_root,
+        list(getattr(args, "fixture_evidence_report", []) or []),
+    )
+    fixture_evidence_report_paths = [path for _, _, path in fixture_evidence_reports]
     fixture_paths = [
         path for value in getattr(args, "fixture", []) if (path := _repo_path(repo_root, value))
     ]
+    expected_fixture_sha256 = _optional_sha256(
+        getattr(args, "expected_fixture_sha256", None),
+        option="--expected-fixture-sha256",
+    )
+    expected_fixture_report_digests = {
+        "replay": _optional_sha256(
+            getattr(args, "expected_fixture_replay_digest", None),
+            option="--expected-fixture-replay-digest",
+        ),
+        "shadow": _optional_sha256(
+            getattr(args, "expected_fixture_shadow_digest", None),
+            option="--expected-fixture-shadow-digest",
+        ),
+    }
 
     sanitize_paths = bool(getattr(args, "sanitize_paths", False))
     temp_value = os.environ.get("RUNNER_TEMP")
     sanitize_temp_root = Path(temp_value) if temp_value else None
     uploaded_paths: list[Path] = [
         path
-        for path in [junit_path, coverage_path, *artifact_paths, *evidence_report_paths]
+        for path in [
+            junit_path,
+            coverage_path,
+            *artifact_paths,
+            *evidence_report_paths,
+            *fixture_evidence_report_paths,
+        ]
         if path is not None
     ]
     if output_path.parent.is_dir():
@@ -1370,6 +1876,7 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         if schema_path.is_file()
         else (None, "schema file does not exist")
     )
+    report_validation_requested = bool(evidence_report_paths or fixture_evidence_report_paths)
     schema_check: dict[str, Any] = {
         "command": f"validate evidence reports against schemas/{REPORT_SCHEMA_NAME}",
         "details": {
@@ -1379,7 +1886,9 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         },
         "name": "evidence-report-schema",
         "status": (
-            "passed" if schema is not None else ("failed" if evidence_report_paths else "skipped")
+            "passed"
+            if schema is not None
+            else ("failed" if report_validation_requested else "skipped")
         ),
     }
     if schema_error:
@@ -1401,14 +1910,39 @@ def collect_evidence(args: argparse.Namespace) -> Path:
     report_fixture_check: dict[str, Any] = {
         "command": "resolve Replay/Shadow/Clean fixture SHA",
         "details": {
+            "expected_sha256": expected_fixture_sha256,
             "fixture_count": len(fixture_candidates),
             "sha256": fixture_candidates[0][1] if fixture_candidates else None,
         },
         "name": "evidence-fixture",
         "status": (
-            "passed" if fixture_candidates else ("failed" if evidence_report_paths else "skipped")
+            "failed"
+            if fixture_evidence_reports and expected_fixture_sha256 is None
+            else (
+                "failed"
+                if expected_fixture_sha256 is not None
+                and (
+                    not fixture_candidates
+                    or fixture_candidates[0][1].lower() != expected_fixture_sha256
+                )
+                else (
+                    "passed"
+                    if fixture_candidates
+                    else ("failed" if report_validation_requested else "skipped")
+                )
+            )
         ),
     }
+    if fixture_evidence_reports and expected_fixture_sha256 is None:
+        report_fixture_check["details"]["reason"] = (
+            "--expected-fixture-sha256 is required for fixture-only evidence"
+        )
+    elif (
+        expected_fixture_sha256 is not None
+        and fixture_candidates
+        and fixture_candidates[0][1].lower() != expected_fixture_sha256
+    ):
+        report_fixture_check["details"]["reason"] = "fixture SHA-256 does not match pin"
     checks.append(report_fixture_check)
 
     for index, path in enumerate(evidence_report_paths):
@@ -1424,6 +1958,20 @@ def collect_evidence(args: argparse.Namespace) -> Path:
             manifest_sha256=manifest_sha256,
             fixture_candidates=fixture_candidates,
             expected_checkout_commit=checkout_commit,
+        )
+        checks.append(report_check)
+        if report_artifact:
+            artifacts.append(report_artifact)
+
+    for report_role, expected_kind, path in fixture_evidence_reports:
+        report_check, report_artifact = _validate_fixture_evidence_report(
+            repo_root=repo_root,
+            path=path,
+            report_role=report_role,
+            expected_kind=expected_kind,
+            expected_report_digest=expected_fixture_report_digests[expected_kind],
+            schema=schema,
+            fixture_candidates=fixture_candidates,
         )
         checks.append(report_check)
         if report_artifact:
@@ -1466,7 +2014,6 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         and not path_findings
         and not path_quarantine_failures
     )
-    _set_github_output("upload_ready", "true" if upload_ready else "false")
 
     workflow_result = (
         getattr(args, "workflow_result", None)
@@ -1556,6 +2103,24 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         if isinstance(sanitized_payload, dict):
             payload = sanitized_payload
     write_json(output_path, payload)
+    try:
+        written_payload = _parse_json_text(
+            output_path.read_text(encoding="utf-8"),
+            format_name="written CI evidence JSON",
+        )
+        if not isinstance(written_payload, dict):
+            raise ValueError("written CI evidence must be a JSON object")
+        if sanitize_paths and _absolute_path_count(written_payload):
+            raise ValueError("written CI evidence contains an absolute path")
+    except (OSError, ValueError) as exc:
+        _remove_or_quarantine(
+            output_path,
+            repo_root=repo_root,
+            temp_root=sanitize_temp_root,
+        )
+        raise ValueError("written CI evidence failed final validation") from exc
+    if upload_ready:
+        _set_github_output("upload_ready", "true")
     return output_path
 
 
