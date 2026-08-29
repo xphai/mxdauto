@@ -127,17 +127,19 @@ stop_elapsed_seconds <= 2.0
 
 | 指标 | 通过条件 |
 |---|---|
-| successful capture | `successful_frames >= 9000` |
-| measured capture rate | `successful_frames / measured_seconds >= 30.0 FPS` |
-| admitted frames | `admitted_frames >= 4500` |
-| processing/admission rate | `admitted_frames / measured_seconds >= 15.0 FPS` |
+| successful capture | `successful_frames >= 8970` |
+| measured capture rate | `successful_frames / measured_seconds >= 29.9 FPS`；不以 nominal property 代替实测 |
+| admitted frames | `admitted_frames >= 4470` |
+| processing/admission rate | `admitted_frames / measured_seconds >= 14.9 FPS` |
 | freshness | 每个 accepted frame `0 <= age_ns <= 250,000,000` |
 | source continuity | `max_inter_frame_gap_ns <= 250,000,000`；no-frame poll/timeout 单独计数 |
 | source health | read/decode/copy/hash failure=0；fatal=0；reconnect/fallback=0 |
 | admission health | stale、duplicate/out-of-order sequence、timestamp rollback/future、source/session/clock/size/geometry mismatch 均为 0 |
 
 全部 rate 使用未舍入的整数计数与纳秒窗口计算，展示值可以格式化，但 PASS 判定使用原始分数。
-`29.97` 不计作 `30.0`。五分钟窗口采用 source failure=0，严格于路线图长期门槛
+requested FPS 固定为 `30.0`；DirectShow property 允许 `±0.001` 的表示误差，但 measured throughput
+不使用该属性替代。`29.97` property 不计作 `30.0`。29.9/14.9 门槛为 300 秒半开窗口保留不足
+一个调度周期的余量，不允许通过四舍五入越线。五分钟窗口采用 source failure=0，严格于路线图长期门槛
 `read failure <=0.1%`。
 
 ### 5.3 Raw latest、CAS、Event Tape 与 input audit

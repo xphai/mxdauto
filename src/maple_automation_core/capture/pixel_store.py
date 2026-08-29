@@ -309,6 +309,14 @@ DEFAULT_PIXEL_SPEC = PixelSpec()
 def _pixel_bytes(spec: PixelSpec, pixels: object) -> bytes:
     if not isinstance(spec, PixelSpec):
         raise TypeError("spec must be PixelSpec.")
+    # The capture adapter already freezes every decoded frame as immutable
+    # ``bytes``.  Reusing that exact object avoids another 6.22 MB allocation
+    # before every digest/CAS verification while preserving the immutability
+    # boundary.  Mutable or shaped buffers still take the validated copy path.
+    if isinstance(pixels, bytes):
+        if len(pixels) != spec.length:
+            raise ValueError(f"pixels length must be exactly {spec.length} bytes.")
+        return pixels
     # Objects such as a NumPy uint8 ndarray expose the buffer protocol but are
     # deliberately not imported by this package.  ``memoryview`` is the
     # standard-library bridge for that protocol.
@@ -366,6 +374,8 @@ digest_pixels = pixel_digest
 def encoded_sha256(encoded: object) -> str:
     """Hash an encoded source payload separately from the pixel digest."""
 
+    if isinstance(encoded, bytes):
+        return sha256(encoded).hexdigest()
     try:
         view = memoryview(encoded)  # type: ignore[arg-type]
     except TypeError as exc:
@@ -1169,6 +1179,7 @@ class PixelStore:
         parent_pixel_digest: str | None = None,
         transform_version: str | None = None,
         calibration_sha256: str | None = None,
+        expected_pixel_digest: str | None = None,
     ) -> str:
         """Atomically store pixels and return their canonical pixel digest.
 
@@ -1194,6 +1205,10 @@ class PixelStore:
 
         data = _pixel_bytes(spec, pixels)
         digest = pixel_digest(spec, data)
+        if expected_pixel_digest is not None:
+            expected_digest = _ensure_sha256(expected_pixel_digest, "expected_pixel_digest")
+            if expected_digest != digest:
+                raise PixelIntegrityError("expected_pixel_digest does not match canonical pixels.")
         source_encoded_digest: str | None = None
         source_encoded_size: int | None = None
         if encoded_bytes is not None:
@@ -1339,6 +1354,7 @@ class PixelStore:
         parent_pixel_digest: str | None = None,
         transform_version: str | None = None,
         calibration_sha256: str | None = None,
+        expected_pixel_digest: str | None = None,
     ) -> PixelArtifact:
         digest = self.put(
             spec_or_pixels,
@@ -1356,6 +1372,7 @@ class PixelStore:
             parent_pixel_digest=parent_pixel_digest,
             transform_version=transform_version,
             calibration_sha256=calibration_sha256,
+            expected_pixel_digest=expected_pixel_digest,
         )
         return self.occurrence(
             digest,

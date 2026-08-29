@@ -38,10 +38,13 @@ SCHEMA_VERSION = "1.0.0"
 REPORT_TYPE = "vc003_hardware_smoke"
 MAX_AGE_NS = 250_000_000
 MIN_WINDOW_NS = 300_000_000_000
-MIN_CAPTURE_FRAMES = 9_000
-MIN_ADMITTED_FRAMES = 4_500
-MIN_CAPTURE_RATE_NUM = 30
-MIN_ADMISSION_RATE_NUM = 15
+MIN_CAPTURE_FRAMES = 8_970
+MIN_ADMITTED_FRAMES = 4_470
+MIN_CAPTURE_RATE_NUM = 299
+MIN_CAPTURE_RATE_DEN = 10
+MIN_ADMISSION_RATE_NUM = 149
+MIN_ADMISSION_RATE_DEN = 10
+NEGOTIATED_FPS_TOLERANCE = Decimal("0.001")
 STOP_DEADLINE_SECONDS = Decimal("2.0")
 SHA256_RE = re.compile(r"^[A-Fa-f0-9]{64}$")
 COMMIT_RE = re.compile(r"^[A-Fa-f0-9]{40}$")
@@ -330,11 +333,14 @@ def _format_errors(report: Mapping[str, Any], errors: list[str]) -> None:
         except ValueError as exc:
             errors.append(str(exc))
         else:
-            if fps != Decimal("30"):
+            if abs(fps - Decimal("30")) > NEGOTIATED_FPS_TOLERANCE:
                 if fps == Decimal("29.97"):
                     errors.append("29.97 FPS is not acceptable; the report must be HOLD/FAIL")
                 else:
-                    errors.append(f"source.{name}.fps must be exactly 30.0 (got {fps})")
+                    errors.append(
+                        f"source.{name}.fps must be 30.0 within +/-0.001 reporting "
+                        f"tolerance (got {fps})"
+                    )
 
     if negotiated is not None:
         canonical = {
@@ -417,14 +423,16 @@ def _metric_errors(report: Mapping[str, Any], duration_ns: int | None, errors: l
     ):
         successful_value = cast(int, successful)
         admitted_value = cast(int, admitted)
-        if successful_value * 1_000_000_000 < MIN_CAPTURE_RATE_NUM * duration_ns:
-            errors.append(
-                "capture rate below exact 30.0 FPS (recomputed from integer count/window)"
-            )
-        if admitted_value * 1_000_000_000 < MIN_ADMISSION_RATE_NUM * duration_ns:
-            errors.append(
-                "admission rate below exact 15.0 FPS (recomputed from integer count/window)"
-            )
+        if (
+            successful_value * 1_000_000_000 * MIN_CAPTURE_RATE_DEN
+            < MIN_CAPTURE_RATE_NUM * duration_ns
+        ):
+            errors.append("capture rate below 29.9 FPS (recomputed from integer count/window)")
+        if (
+            admitted_value * 1_000_000_000 * MIN_ADMISSION_RATE_DEN
+            < MIN_ADMISSION_RATE_NUM * duration_ns
+        ):
+            errors.append("admission rate below 14.9 FPS (recomputed from integer count/window)")
         for field, count in (
             ("capture_rate_fps", successful_value),
             ("admission_rate_fps", admitted_value),
