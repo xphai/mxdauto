@@ -24,7 +24,7 @@ import weakref
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from hashlib import sha256
-from math import isfinite
+from math import isclose, isfinite
 from time import monotonic, monotonic_ns
 from typing import Any, Protocol, TypeVar, cast
 
@@ -48,6 +48,7 @@ _DEFAULT_DEVICE_NAME = "VC-003 Video"
 _DEFAULT_WIDTH = 1920
 _DEFAULT_HEIGHT = 1080
 _DEFAULT_FPS = 30.0
+_NEGOTIATED_FPS_ABS_TOLERANCE = 0.001
 _SUPPORTED_BACKENDS = frozenset({"dshow", "msmf"})
 RawBytes = bytes
 
@@ -57,6 +58,17 @@ RawBytes = bytes
 RawFrameSpec = PixelSpec
 SampleT = TypeVar("SampleT")
 _DEFAULT_RAW_SPEC = RawFrameSpec(width=1, height=1)
+
+
+def _negotiated_fps_matches(actual: float, requested: float) -> bool:
+    """Accept only sub-millihertz backend reporting noise around the requested rate."""
+
+    return isclose(
+        float(actual),
+        float(requested),
+        rel_tol=0.0,
+        abs_tol=_NEGOTIATED_FPS_ABS_TOLERANCE,
+    )
 
 
 def _spec_from_value(value: RawFrameSpec | Mapping[str, Any] | None) -> RawFrameSpec:
@@ -1176,16 +1188,18 @@ class OpenCVCaptureBackend:
         self._stopped = False
 
         # MJPG is a device-side request; OpenCV exposes decoded BGR8 frames.
+        # DirectShow may reset FourCC when dimensions or FPS change, so apply
+        # the compression request last and then freeze the measured contract.
         frame_width = getattr(cv2, "CAP_PROP_FRAME_WIDTH", 3)
         frame_height = getattr(cv2, "CAP_PROP_FRAME_HEIGHT", 4)
         frame_fps = getattr(cv2, "CAP_PROP_FPS", 5)
+        capture.set(frame_width, self.config.width)
+        capture.set(frame_height, self.config.height)
+        capture.set(frame_fps, float(self.config.fps))
         if self.config.pixel_format.lower() in {"mjpg", "mjpeg"}:
             fourcc_fn = getattr(cv2, "VideoWriter_fourcc", None)
             if callable(fourcc_fn):
                 capture.set(getattr(cv2, "CAP_PROP_FOURCC", 6), fourcc_fn(*"MJPG"))
-        capture.set(frame_width, self.config.width)
-        capture.set(frame_height, self.config.height)
-        capture.set(frame_fps, float(self.config.fps))
 
         # Freeze actual negotiated properties.  A missing/zero value is not
         # evidence and therefore fails the strict hardware path.
@@ -1201,7 +1215,7 @@ class OpenCVCaptureBackend:
                 f"{measured.width!r}x{measured.height!r}, expected "
                 f"{self.config.width}x{self.config.height}."
             )
-        if measured.fps != float(self.config.fps):
+        if not _negotiated_fps_matches(measured.fps, float(self.config.fps)):
             self.stop()
             raise RuntimeError(
                 f"VC-003 negotiated fps {measured.fps!r}, expected {self.config.fps!r}."
@@ -1818,7 +1832,7 @@ class VC003Source:
         if (
             negotiated.width != self.config.width
             or negotiated.height != self.config.height
-            or negotiated.fps != float(self.config.fps)
+            or not _negotiated_fps_matches(negotiated.fps, float(self.config.fps))
             or negotiated.fourcc != expected_fourcc
             or negotiated.backend != self.config.backend
             or negotiated.backend_api.strip().lower() != self.config.backend

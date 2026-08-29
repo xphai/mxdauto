@@ -1312,10 +1312,13 @@ class PixelStore:
             # envelope.  Missing metadata is never reconstructed: an
             # orphan raw file is corruption.
             self._verified_read(digest, spec)
-            # Keep the complete graph check in this same transaction.  A
-            # second process therefore cannot validate against a stale
-            # pre-write graph and append the reverse edge.
-            self._verify_derivation_dag()
+            # Only a derived occurrence changes the graph.  Keep its complete
+            # check in this same transaction so a second process cannot append
+            # a reverse edge after validating stale state.  Parentless live
+            # capture objects add no edge and must not turn admission into an
+            # O(total-CAS-occurrences) scan on every frame.
+            if parent_digest is not None:
+                self._verify_derivation_dag()
         return digest
 
     def put_artifact(

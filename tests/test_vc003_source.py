@@ -479,7 +479,7 @@ def test_backend_identity_drift_is_rejected_at_start() -> None:
     assert backend.stopped == 1
 
 
-def test_backend_must_report_exact_negotiated_facts_after_start() -> None:
+def test_backend_must_report_bounded_negotiated_facts_after_start() -> None:
     missing = FakeBackend([])
     del missing.negotiated_facts
     with pytest.raises(TypeError, match="NegotiatedCaptureFacts"):
@@ -489,6 +489,15 @@ def test_backend_must_report_exact_negotiated_facts_after_start() -> None:
     fractional.negotiated_facts = replace(fractional.negotiated_facts, fps=29.97)
     with pytest.raises(RuntimeError, match="contradict source config"):
         VC003Source(_config(), backend=fractional).start()
+
+    directshow_rounding = FakeBackend([])
+    directshow_rounding.negotiated_facts = replace(
+        directshow_rounding.negotiated_facts,
+        fps=30.00003000003,
+    )
+    rounded_source = VC003Source(_config(), backend=directshow_rounding)
+    rounded_source.start()
+    rounded_source.stop()
 
     substring_api = FakeBackend([])
     substring_api.negotiated_facts = replace(
@@ -875,6 +884,7 @@ def test_opencv_backend_import_is_lazy_and_uses_only_selected_backend(
     assert isinstance(backend, OpenCVCaptureBackend)
     backend.start()
     assert imports == ["cv2"]
+    assert [property_id for property_id, _value in capture.settings] == [3, 4, 5, 6]
     assert backend.read() is not None
     backend.stop()
     backend.stop()
@@ -924,6 +934,53 @@ def test_opencv_backend_rejects_measured_fps_and_fourcc_drift(
     backend = OpenCVCaptureBackend(_config())
     with pytest.raises(RuntimeError, match="negotiated fps"):
         backend.start()
+
+
+def test_opencv_backend_accepts_directshow_sub_millihertz_fps_rounding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Capture:
+        def isOpened(self) -> bool:
+            return True
+
+        def set(self, _prop: int, _value: float) -> bool:
+            return True
+
+        def get(self, prop: int) -> float:
+            return {
+                3: 2.0,
+                4: 1.0,
+                5: 30.00003000003,
+                6: float(sum(ord(char) << (8 * index) for index, char in enumerate("MJPG"))),
+            }[prop]
+
+        def getBackendName(self) -> str:
+            return "DSHOW"
+
+        def release(self) -> None:
+            pass
+
+    fake_cv2 = SimpleNamespace(
+        __version__="4.10.0",
+        CAP_DSHOW=700,
+        CAP_PROP_FRAME_WIDTH=3,
+        CAP_PROP_FRAME_HEIGHT=4,
+        CAP_PROP_FPS=5,
+        CAP_PROP_FOURCC=6,
+        VideoWriter_fourcc=lambda *chars: sum(
+            ord(char) << (8 * index) for index, char in enumerate(chars)
+        ),
+        VideoCapture=lambda _index, _api: Capture(),
+    )
+    monkeypatch.setattr(
+        "maple_automation_core.capture.vc003_source.importlib.import_module",
+        lambda _name: fake_cv2,
+    )
+    backend = OpenCVCaptureBackend(_config())
+    backend.start()
+    assert backend.negotiated_facts is not None
+    assert backend.negotiated_facts.fps == pytest.approx(30.00003000003)
+    backend.stop()
 
 
 @pytest.mark.parametrize(
