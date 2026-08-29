@@ -526,24 +526,39 @@ def _load_json_artifact(
     return value, path
 
 
-def _generic_digest(value: Mapping[str, Any]) -> str | None:
-    digest_fields = (
-        "report_digest",
-        "canonical_report_sha256",
-        "record_digest",
-        "corpus_digest",
-        "snapshot_digest",
-        "audit_digest",
-    )
-    present = [field for field in digest_fields if field in value]
-    if not present:
-        return None
+def _generic_digest(value: Mapping[str, Any], self_fields: Sequence[str]) -> str:
+    """Hash one evidence object while excluding only its role-specific self fields."""
+
     body = dict(value)
-    for field in present:
+    for field in self_fields:
         body.pop(field, None)
     return sha256(
         json.dumps(
             body, ensure_ascii=False, allow_nan=False, separators=(",", ":"), sort_keys=True
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _semantic_contract_digest(value: Mapping[str, Any], *, calibration: bool = False) -> str:
+    """Return the runtime binding represented by a canonical contract artifact.
+
+    Capture config provenance hashes canonical config content rather than the
+    formatting of its JSON file.  Calibration artifacts already carry the
+    domain-separated geometry digest used by FramePacket provenance.  The
+    packet separately binds each artifact's exact file SHA-256.
+    """
+
+    if calibration:
+        declared = value.get("calibration_sha256")
+        if isinstance(declared, str) and SHA256_RE.fullmatch(declared):
+            return declared.lower()
+    return sha256(
+        json.dumps(
+            dict(value),
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
         ).encode("utf-8")
     ).hexdigest()
 
@@ -862,17 +877,23 @@ def _verify_cross_links(
                 )
             ):
                 errors.append("evidence.privacy_audit.status is not PASS")
-            digest = _generic_digest(value)
-            if digest is not None:
-                for digest_field in (
-                    "report_digest",
-                    "canonical_report_sha256",
-                    "record_digest",
-                    "corpus_digest",
-                    "snapshot_digest",
-                    "audit_digest",
-                ):
-                    if digest_field in value and not _same_digest(value.get(digest_field), digest):
+            self_fields_by_role = {
+                "hardware_smoke": ("report_digest", "canonical_report_sha256"),
+                "corpus_manifest": ("corpus_digest",),
+                "truth_set": ("index_digest",),
+                "deterministic_replay": ("report_digest",),
+                "event_tape": ("index_digest",),
+                "provenance_audit": ("canonical_report_sha256", "report_digest"),
+                "privacy_audit": ("report_digest",),
+                "zero_input_audit": ("report_digest",),
+            }
+            self_fields = tuple(
+                field for field in self_fields_by_role.get(role, ()) if field in value
+            )
+            if self_fields:
+                digest = _generic_digest(value, self_fields)
+                for digest_field in self_fields:
+                    if not _same_digest(value.get(digest_field), digest):
                         errors.append(
                             f"evidence.{role}.{digest_field} does not match canonical content"
                         )
@@ -884,21 +905,46 @@ def _verify_cross_links(
     wheel = _mapping(b1.get("wheel"))
     wheel_sha = None if wheel is None else wheel.get("sha256")
     lock_sha = b1.get("dependency_lock_sha256")
-    contracts = _mapping(packet.get("contracts"))
-    config = _mapping(None if contracts is None else contracts.get("capture_config"))
-    calibration = _mapping(None if contracts is None else contracts.get("calibration"))
-    config_sha = None if config is None else config.get("sha256")
-    calibration_sha = None if calibration is None else calibration.get("sha256")
+    semantic_config_sha: str | None = None
+    semantic_calibration_sha: str | None = None
+    for artifact_id, is_calibration in (("capture-config", False), ("calibration", True)):
+        artifact = artifacts.get(artifact_id)
+        if artifact is None:
+            continue
+        contract_value, _ = _load_json_artifact(
+            artifact,
+            repo_root=repo_root,
+            external_roots=external_roots,
+            metadata_only=metadata_only,
+            errors=errors,
+            field=f"contracts.{artifact_id}",
+        )
+        if contract_value is None:
+            continue
+        semantic_digest = _semantic_contract_digest(
+            contract_value,
+            calibration=is_calibration,
+        )
+        if is_calibration:
+            semantic_calibration_sha = semantic_digest
+        else:
+            semantic_config_sha = semantic_digest
     for role, value in loaded.items():
         report_source = value.get("source_commit")
         if report_source is not None and str(report_source).lower() != str(source_commit).lower():
             errors.append(f"evidence.{role}.source_commit does not match B1 source commit")
-        for key, expected in (
+        binding_fields: list[tuple[str, object]] = [
             ("wheel_sha256", wheel_sha),
             ("dependency_lock_sha256", lock_sha),
-            ("config_sha256", config_sha),
-            ("calibration_sha256", calibration_sha),
-        ):
+        ]
+        if role in {"source_provenance", "hardware_smoke"}:
+            binding_fields.extend(
+                (
+                    ("config_sha256", semantic_config_sha),
+                    ("calibration_sha256", semantic_calibration_sha),
+                )
+            )
+        for key, expected in binding_fields:
             if key in value and expected is not None:
                 actual = value.get(key)
                 matches = (

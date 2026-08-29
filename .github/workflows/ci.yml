@@ -89,6 +89,18 @@ jobs:
         id: verify_candidate_bundle
         run: python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0
 
+      - name: Verify packaged G1 Frame Candidate when present
+        id: verify_g1_frame_candidate
+        shell: pwsh
+        run: |
+          $packet = "evidence/g1-frame-candidate-20260829/g1-frame-candidate-packet.json"
+          if (Test-Path -LiteralPath $packet -PathType Leaf) {
+            python tools/verify_g1_frame_candidate.py --packet $packet --repo-root . --metadata-only
+            if ($LASTEXITCODE -ne 0) { throw "G1 Frame Candidate metadata verification failed" }
+          } else {
+            Write-Host "No packaged G1 Frame Candidate is present on this checkout."
+          }
+
       - name: Verify G1 capture source snapshot
         id: verify_capture_snapshot
         run: python tools/verify_capture_source_snapshot.py --metadata-only
@@ -386,6 +398,7 @@ jobs:
             --check-result "ruff-format::${{ steps.ruff_format.outcome }}::python -m ruff format --check src tests tools" `
             --check-result "validate-runtime-manifests::${{ steps.validate_runtime_manifests.outcome }}::python tools/validate_runtime_manifest.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json" `
             --check-result "candidate-bundle::${{ steps.verify_candidate_bundle.outcome }}::python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0" `
+            --check-result "g1-frame-candidate::${{ steps.verify_g1_frame_candidate.outcome }}::python tools/verify_g1_frame_candidate.py --packet evidence/g1-frame-candidate-20260829/g1-frame-candidate-packet.json --repo-root . --metadata-only when present" `
             --check-result "capture-source-snapshot::${{ steps.verify_capture_snapshot.outcome }}::python tools/verify_capture_source_snapshot.py --metadata-only" `
             --check-result "mypy::${{ steps.mypy.outcome }}::python -m mypy" `
             --check-result "checkout-smoke::${{ steps.checkout_smoke.outcome }}::python tools/run_clean_smoke.py --mode checkout-regression --output evidence/ci-run/checkout-smoke-report.json" `

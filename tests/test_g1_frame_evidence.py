@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -8,7 +9,12 @@ from jsonschema import Draft202012Validator
 
 from tools.build_g1_frame_candidate import build_candidate_packet, canonical_packet_digest
 from tools.bundle_common import sha256_file
-from tools.verify_g1_frame_candidate import _capture_formats_match, verify_g1_frame_candidate
+from tools.verify_g1_frame_candidate import (
+    _capture_formats_match,
+    _generic_digest,
+    _semantic_contract_digest,
+    verify_g1_frame_candidate,
+)
 from tools.verify_hardware_smoke_report import (
     ZERO_FAILURE_FIELDS,
     canonical_report_digest,
@@ -179,6 +185,36 @@ def test_candidate_capture_format_cross_link_allows_only_sub_millihertz_fps_nois
     assert _capture_formats_match(requested, negotiated)
     assert not _capture_formats_match(requested, {**negotiated, "fps": 29.97})
     assert not _capture_formats_match(requested, {**negotiated, "fourcc": "YUY2"})
+
+
+def test_candidate_contract_uses_semantic_runtime_bindings_beside_exact_file_hashes() -> None:
+    config = {"fps": 30.0, "source_id": "capture-card-primary"}
+    compact = json.dumps(config, separators=(",", ":"), sort_keys=True).encode()
+    pretty = json.dumps(config, indent=2, sort_keys=True).encode()
+
+    assert sha256(compact).hexdigest() != sha256(pretty).hexdigest()
+    assert _semantic_contract_digest(config) == sha256(compact).hexdigest()
+    calibration_sha = "b" * 64
+    assert (
+        _semantic_contract_digest(
+            {"calibration_sha256": calibration_sha, "geometry": {}},
+            calibration=True,
+        )
+        == calibration_sha
+    )
+
+
+def test_candidate_role_digest_does_not_treat_bound_corpus_digest_as_self_hash() -> None:
+    bound_corpus_digest = "c" * 64
+    replay = {
+        "report_type": "deterministic_frame_corpus_replay",
+        "corpus_digest": bound_corpus_digest,
+        "runs": ["same", "same", "same"],
+    }
+    replay["report_digest"] = _generic_digest(replay, ("report_digest",))
+
+    assert replay["corpus_digest"] == bound_corpus_digest
+    assert _generic_digest(replay, ("report_digest",)) == replay["report_digest"]
 
 
 def _candidate_tree(tmp_path: Path) -> tuple[Path, dict[str, object]]:
