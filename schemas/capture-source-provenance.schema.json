@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/capture-source-provenance.schema.json",
+  "title": "Maple Automation Core Capture Source Provenance",
+  "description": "De-identified capture source provenance. Physical device identity is represented only by a SHA-256 fingerprint.",
+  "type": "object",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "portableToken": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "pixelSpec": {
+      "type": "object",
+      "required": [
+        "width",
+        "height",
+        "channels",
+        "pixel_format",
+        "dtype",
+        "stride",
+        "length"
+      ],
+      "properties": {
+        "width": {"type": "integer", "exclusiveMinimum": 0},
+        "height": {"type": "integer", "exclusiveMinimum": 0},
+        "channels": {"const": 3},
+        "pixel_format": {"const": "BGR8"},
+        "dtype": {"const": "uint8"},
+        "stride": {"type": "integer", "exclusiveMinimum": 0},
+        "length": {"type": "integer", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "format": {
+      "type": "object",
+      "required": ["width", "height", "fps", "fourcc", "backend"],
+      "properties": {
+        "width": {"type": "integer", "exclusiveMinimum": 0},
+        "height": {"type": "integer", "exclusiveMinimum": 0},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "fourcc": {"type": "string", "minLength": 1},
+        "backend": {"type": "string", "minLength": 1},
+        "channels": {"type": "integer", "const": 3},
+        "pixel_format": {"type": "string", "minLength": 1},
+        "dtype": {"type": "string", "minLength": 1},
+        "stride": {"type": "integer", "exclusiveMinimum": 0},
+        "length": {"type": "integer", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "source_id",
+    "session_id",
+    "requested",
+    "negotiated",
+    "backend",
+    "backend_version",
+    "timestamp_origin",
+    "upstream_queue",
+    "upstream_queue_depth",
+    "physical_device_fingerprint_sha256",
+    "input_owner",
+    "real_input_enabled",
+    "real_input_call_count",
+    "tool_artifact_sha256",
+    "dependency_lock_sha256",
+    "source_artifact_sha256",
+    "source_commit",
+    "config_sha256",
+    "calibration_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "source_id": {"$ref": "#/$defs/portableToken"},
+    "session_id": {"$ref": "#/$defs/portableToken"},
+    "requested": {"$ref": "#/$defs/format"},
+    "negotiated": {"$ref": "#/$defs/format"},
+    "backend": {"enum": ["dshow", "msmf", "ffmpeg", "fake", "unknown"]},
+    "backend_version": {"type": "string", "minLength": 1, "maxLength": 128},
+    "timestamp_origin": {"const": "host_monotonic_post_retrieve"},
+    "upstream_queue": {"const": "unknown"},
+    "upstream_queue_depth": {"const": "unknown"},
+    "physical_device_fingerprint_sha256": {"$ref": "#/$defs/sha256"},
+    "input_owner": {"const": "legacy"},
+    "real_input_enabled": {"const": false},
+    "real_input_call_count": {"const": 0},
+    "tool_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "dependency_lock_sha256": {"$ref": "#/$defs/sha256"},
+    "source_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "source_commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "config_sha256": {"$ref": "#/$defs/sha256"},
+    "calibration_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/frame-truth.schema.json",
+  "title": "Maple Automation Core Frame Ingestion Truth",
+  "description": "Strict ingestion-only truth. No detector, model, world-state, or action labels are permitted.",
+  "type": "object",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "pixelSpec": {
+      "type": "object",
+      "required": ["channels", "dtype", "height", "length", "pixel_format", "stride", "width"],
+      "properties": {
+        "channels": {"const": 3},
+        "dtype": {"const": "uint8"},
+        "height": {"type": "integer", "minimum": 1},
+        "length": {"type": "integer", "minimum": 3},
+        "pixel_format": {"const": "BGR8"},
+        "stride": {"type": "integer", "minimum": 3},
+        "width": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "sourceLocator": {
+      "type": "object",
+      "required": ["kind", "timing_truth", "value"],
+      "properties": {
+        "kind": {"enum": ["frame_index", "pts_locator", "live_sequence"]},
+        "timing_truth": {"type": "boolean"},
+        "value": {}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "kind": {"enum": ["frame_index", "live_sequence"]},
+            "value": {"type": "integer", "minimum": 0}
+          },
+          "required": ["kind", "value"]
+        },
+        {
+          "properties": {
+            "kind": {"const": "pts_locator"},
+            "timing_truth": {"const": false},
+            "value": {
+              "type": "string",
+              "pattern": "^pts:[0-9]+(?:/[1-9][0-9]*)?$"
+            }
+          },
+          "required": ["kind", "timing_truth", "value"]
+        }
+      ],
+      "additionalProperties": false
+    },
+    "derivation": {
+      "type": "object",
+      "required": [
+        "calibration_sha256",
+        "deidentified_derivative_sha256",
+        "extraction_artifact_sha256",
+        "extraction_tool_sha256",
+        "extraction_tool_version",
+        "parent_pixel_digest",
+        "redaction_artifact_sha256",
+        "redaction_mode",
+        "source_artifact_sha256",
+        "transform_version"
+      ],
+      "properties": {
+        "calibration_sha256": {"$ref": "#/$defs/sha256"},
+        "extraction_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "extraction_tool_sha256": {"$ref": "#/$defs/sha256"},
+        "extraction_tool_version": {"$ref": "#/$defs/id"},
+        "parent_pixel_digest": {
+          "anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+        },
+        "source_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "transform_version": {"$ref": "#/$defs/id"},
+        "redaction_mode": {
+          "enum": ["not_applicable_hash_only", "applied_deidentified_derivative"]
+        },
+        "redaction_artifact_sha256": {
+          "anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+        },
+        "deidentified_derivative_sha256": {
+          "anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"redaction_mode": {"const": "not_applicable_hash_only"}},
+            "required": ["redaction_mode"]
+          },
+          "then": {
+            "properties": {
+              "redaction_artifact_sha256": {"const": null},
+              "deidentified_derivative_sha256": {"const": null}
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "privacy": {
+      "type": "object",
+      "required": ["class", "license_id", "retention"],
+      "properties": {
+        "class": {"enum": ["private", "restricted", "deidentified_public", "hash_only"]},
+        "license_id": {"$ref": "#/$defs/id"},
+        "retention": {"enum": ["ephemeral", "candidate", "persistent"]}
+      },
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "required": [
+        "adjudication_id",
+        "independent_decision",
+        "independent_reviewer_id",
+        "primary_decision",
+        "primary_reviewer_id"
+      ],
+      "properties": {
+        "adjudication_id": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
+        "independent_decision": {
+          "enum": ["confirmed", "disputed_then_adjudicated", null]
+        },
+        "independent_reviewer_id": {
+          "anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]
+        },
+        "primary_decision": {"const": "confirmed"},
+        "primary_reviewer_id": {"$ref": "#/$defs/id"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "truth_id",
+    "truth_scope",
+    "sample_id",
+    "source_id",
+    "session_id",
+    "sequence",
+    "source_locator",
+    "pixel_spec",
+    "pixel_digest",
+    "pixel_artifact_sha256",
+    "source_provenance_id",
+    "cas_ref",
+    "expected_admission",
+    "expected_status",
+    "expected_reason_code",
+    "category",
+    "wrong_size_negative",
+    "derivation",
+    "privacy",
+    "review",
+    "record_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "truth_id": {"$ref": "#/$defs/id"},
+    "truth_scope": {"const": "frame_ingestion_only"},
+    "sample_id": {"$ref": "#/$defs/id"},
+    "source_id": {"$ref": "#/$defs/id"},
+    "session_id": {"$ref": "#/$defs/id"},
+    "sequence": {"type": "integer", "minimum": 0},
+    "source_locator": {"$ref": "#/$defs/sourceLocator"},
+    "pixel_spec": {"$ref": "#/$defs/pixelSpec"},
+    "pixel_digest": {"$ref": "#/$defs/sha256"},
+    "pixel_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "source_provenance_id": {"$ref": "#/$defs/sha256"},
+    "cas_ref": {"type": "string", "pattern": "^cas://sha256/[a-f0-9]{64}$"},
+    "expected_admission": {"enum": ["accepted", "suppressed", "fatal"]},
+    "expected_status": {
+      "enum": [
+        "accepted",
+        "no_frame",
+        "stale",
+        "duplicate",
+        "out_of_order",
+        "timestamp_regression",
+        "frame_size_changed",
+        "source_mismatch",
+        "session_mismatch",
+        "clock_domain_mismatch",
+        "source_error"
+      ]
+    },
+    "expected_reason_code": {
+      "enum": [
+        "accepted",
+        "no_frame",
+        "stale",
+        "duplicate",
+        "out_of_order",
+        "timestamp_regression",
+        "frame_size_changed",
+        "source_mismatch",
+        "session_mismatch",
+        "clock_domain_mismatch",
+        "source_error"
+      ]
+    },
+    "category": {"enum": ["static", "motion", "transition", "dark", "crop_edge", "wrong_size"]},
+    "wrong_size_negative": {"type": "boolean"},
+    "derivation": {"$ref": "#/$defs/derivation"},
+    "privacy": {"$ref": "#/$defs/privacy"},
+    "review": {"$ref": "#/$defs/review"},
+    "record_digest": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"category": {"const": "wrong_size"}}, "required": ["category"]},
+      "then": {
+        "properties": {
+          "expected_admission": {"const": "fatal"},
+          "wrong_size_negative": {"const": true}
+        }
+      },
+      "else": {"properties": {"wrong_size_negative": {"const": false}}}
+    }
+  ],
+  "additionalProperties": false
+}

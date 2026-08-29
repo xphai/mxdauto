@@ -1,6 +1,8 @@
 * text=auto eol=lf
 
 *.gz binary
+*.bgr binary
+*.bin binary
 *.onnx binary
 *.png binary
 *.sqlite3 binary

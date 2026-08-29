@@ -5,16 +5,19 @@ import hashlib
 import json
 import os
 import platform
+import re
+import shutil
 import sys
+import tempfile
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 from typing import Any
 
 try:
-    from jsonschema import Draft202012Validator, FormatChecker
+    from jsonschema import Draft202012Validator, FormatChecker  # type: ignore[import-untyped]
 except ImportError:  # pragma: no cover - dependencies are installed in CI
-    Draft202012Validator = None  # type: ignore[assignment,misc]
-    FormatChecker = None  # type: ignore[assignment,misc]
+    Draft202012Validator = None
+    FormatChecker = None
 
 try:
     from .bundle_common import (
@@ -39,6 +42,10 @@ except ImportError:  # pragma: no cover - exercised when invoked as a script
 SCHEMA_VERSION = "1.0.0"
 REPORT_SCHEMA_NAME = "evidence-report.schema.json"
 DEFAULT_FIXTURE = Path("fixtures") / "golden" / "pilot_minimal_v1.json"
+_ABSOLUTE_PATH = re.compile(
+    r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/][^\r\n\"'<>]+|\\\\[^\\/\s\"'<>]+[\\/][^\r\n\"'<>]+)"
+)
+_TEXT_SUFFIXES = {".json", ".jsonl", ".xml", ".txt", ".log"}
 
 # GitHub exposes these values as ``steps.<id>.outcome``.  The evidence schema
 # deliberately keeps its smaller passed/failed/skipped vocabulary, while the
@@ -182,6 +189,14 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="passed",
         help="Legacy result of the lock installation step (default: passed).",
     )
+    parser.add_argument(
+        "--sanitize-paths",
+        action="store_true",
+        help=(
+            "Rewrite runner roots in XML and checkout-smoke text, then fail if any "
+            "absolute path remains in uploaded evidence."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -201,6 +216,147 @@ def _portable_path(repo_root: Path, path: Path) -> str:
     except ValueError as exc:
         raise ValueError(f"Evidence artifact must be inside repository root: {path}") from exc
     return safe_relative_path(relative.as_posix())
+
+
+def _display_path(repo_root: Path, path: Path) -> str:
+    """Return a portable path for diagnostics, including missing-file cases."""
+
+    try:
+        return _portable_path(repo_root, path)
+    except (OSError, ValueError):
+        return path.name or "<path>"
+
+
+def _replace_root(value: str, root: Path | None, replacement: str) -> str:
+    if root is None:
+        return value
+    resolved = str(root.resolve()).rstrip("\\/")
+    spellings = {resolved, resolved.replace("\\", "/")}
+    result = value
+    for spelling in sorted(spellings, key=len, reverse=True):
+        result = re.sub(re.escape(spelling), replacement, result, flags=re.IGNORECASE)
+    return result
+
+
+def _sanitize_text(value: str, *, repo_root: Path, temp_root: Path | None = None) -> str:
+    result = _replace_root(value, repo_root, ".")
+    result = _replace_root(result, temp_root, "[temp]")
+    return _ABSOLUTE_PATH.sub("[absolute-path]", result)
+
+
+def _sanitize_text_file(path: Path, *, repo_root: Path, temp_root: Path | None = None) -> bool:
+    value = path.read_text(encoding="utf-8", errors="replace")
+    sanitized = _sanitize_text(value, repo_root=repo_root, temp_root=temp_root)
+    if sanitized != value:
+        path.write_text(sanitized, encoding="utf-8")
+        return True
+    return False
+
+
+def _remove_or_quarantine(path: Path, *, repo_root: Path, temp_root: Path | None = None) -> bool:
+    """Remove a failed scrub file or move it outside the repository upload tree."""
+
+    try:
+        if not path.exists():
+            return True
+        path.unlink()
+        return not path.exists()
+    except OSError:
+        pass
+
+    try:
+        quarantine_base: str | None = None
+        if temp_root is not None:
+            try:
+                if not temp_root.resolve().is_relative_to(repo_root.resolve()):
+                    quarantine_base = str(temp_root)
+            except (OSError, ValueError):
+                quarantine_base = None
+        quarantine_dir = Path(
+            tempfile.mkdtemp(prefix="maple-ci-evidence-quarantine-", dir=quarantine_base)
+        )
+        target = quarantine_dir / path.name
+        shutil.move(str(path), str(target))
+        return not path.exists()
+    except (OSError, shutil.Error):
+        return False
+
+
+def _sanitize_uploaded_paths(
+    paths: list[Path], *, repo_root: Path, temp_root: Path | None = None
+) -> tuple[dict[str, int], list[str], list[str], list[str], list[str]]:
+    """Scrub uploaded text files and quarantine files whose scrub fails.
+
+    The final three lists contain sanitizer errors, quarantined paths and paths
+    that could not be removed/quarantined. Callers use the last list as the
+    upload guard: a failed scrub must never leave a path-bearing file in the
+    upload tree.
+    """
+
+    rewritten: list[str] = []
+    sanitizer_errors: list[str] = []
+    quarantine_failures: list[str] = []
+    quarantined: list[str] = []
+    for path in paths:
+        if not path.is_file() or path.suffix.lower() not in _TEXT_SUFFIXES:
+            continue
+        try:
+            was_rewritten = _sanitize_text_file(
+                path,
+                repo_root=repo_root,
+                temp_root=temp_root,
+            )
+        except OSError:
+            display_path = _display_path(repo_root, path)
+            sanitizer_errors.append(display_path)
+            if _remove_or_quarantine(path, repo_root=repo_root, temp_root=temp_root):
+                quarantined.append(display_path)
+            else:
+                quarantine_failures.append(display_path)
+            continue
+        if was_rewritten:
+            rewritten.append(_display_path(repo_root, path))
+    findings: dict[str, int] = {}
+    for path in paths:
+        if not path.is_file() or path.suffix.lower() not in _TEXT_SUFFIXES:
+            continue
+        try:
+            value = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            findings[path.name] = 1
+            continue
+        count = len(list(_ABSOLUTE_PATH.finditer(value)))
+        if count:
+            findings[path.name] = count
+    return findings, rewritten, sanitizer_errors, quarantined, quarantine_failures
+
+
+def _sanitize_payload(value: Any, *, repo_root: Path, temp_root: Path | None = None) -> Any:
+    """Sanitize strings in the collector envelope, including failure details."""
+
+    if isinstance(value, str):
+        return _sanitize_text(value, repo_root=repo_root, temp_root=temp_root)
+    if isinstance(value, list):
+        return [_sanitize_payload(item, repo_root=repo_root, temp_root=temp_root) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _sanitize_payload(item, repo_root=repo_root, temp_root=temp_root)
+            for key, item in value.items()
+        }
+    return value
+
+
+def _set_github_output(name: str, value: str) -> None:
+    output_file = os.environ.get("GITHUB_OUTPUT")
+    if not output_file:
+        return
+    try:
+        with Path(output_file).open("a", encoding="utf-8", newline="\n") as stream:
+            stream.write(f"{name}={value}\n")
+    except OSError:
+        # The workflow initializes the output to false before invoking this
+        # tool, so an unavailable output file keeps uploads fail-closed.
+        return
 
 
 def _check_file(
@@ -223,7 +379,10 @@ def _check_file(
         return (
             {
                 "command": command,
-                "details": {"path": str(path), "reason": "file does not exist"},
+                "details": {
+                    "path": _display_path(repo_root, path),
+                    "reason": "file does not exist",
+                },
                 "name": name,
                 "status": "failed",
             },
@@ -236,7 +395,10 @@ def _check_file(
         return (
             {
                 "command": command,
-                "details": {"path": str(path), "reason": str(exc)},
+                "details": {
+                    "path": _display_path(repo_root, path),
+                    "reason": _sanitize_text(str(exc), repo_root=repo_root),
+                },
                 "name": name,
                 "status": "failed",
             },
@@ -345,13 +507,15 @@ def _read_build_artifacts(
     errors: list[str] = []
     for path in paths:
         if not path.is_file():
-            missing.append(str(path))
+            missing.append(_display_path(repo_root, path))
             continue
         try:
             size_bytes, digest, _ = file_metadata(path)
             portable = _portable_path(repo_root, path)
         except (OSError, ValueError) as exc:
-            errors.append(f"{path}: {exc}")
+            errors.append(
+                f"{_display_path(repo_root, path)}: {_sanitize_text(str(exc), repo_root=repo_root)}"
+            )
             continue
         artifacts.append(
             {
@@ -1009,6 +1173,43 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         path for value in getattr(args, "fixture", []) if (path := _repo_path(repo_root, value))
     ]
 
+    sanitize_paths = bool(getattr(args, "sanitize_paths", False))
+    temp_value = os.environ.get("RUNNER_TEMP")
+    sanitize_temp_root = Path(temp_value) if temp_value else None
+    uploaded_paths: list[Path] = [
+        path
+        for path in [junit_path, coverage_path, *artifact_paths, *evidence_report_paths]
+        if path is not None
+    ]
+    if output_path.parent.is_dir():
+        uploaded_paths.extend(
+            path
+            for path in output_path.parent.rglob("*")
+            if path.is_file() and path.suffix.lower() in _TEXT_SUFFIXES
+        )
+    uploaded_paths = sorted(set(uploaded_paths))
+    path_sanitization_error: str | None = None
+    path_findings: dict[str, int] = {}
+    path_rewrites: list[str] = []
+    path_sanitizer_errors: list[str] = []
+    path_quarantine_failures: list[str] = []
+    path_quarantined: list[str] = []
+    if sanitize_paths:
+        try:
+            (
+                path_findings,
+                path_rewrites,
+                path_sanitizer_errors,
+                path_quarantined,
+                path_quarantine_failures,
+            ) = _sanitize_uploaded_paths(
+                uploaded_paths,
+                repo_root=repo_root,
+                temp_root=sanitize_temp_root,
+            )
+        except (OSError, ValueError):
+            path_sanitization_error = "could not sanitize one or more evidence files"
+
     checks: list[dict[str, Any]] = []
     artifacts: list[dict[str, Any]] = []
     parsed_checks, parse_error = _parse_check_results(args)
@@ -1058,9 +1259,9 @@ def collect_evidence(args: argparse.Namespace) -> Path:
     )
     metadata_artifacts: dict[str, dict[str, Any] | None] = {}
     for name, path in metadata_paths:
-        metadata_check, metadata_artifact, payload = _metadata_file(repo_root, path, name)
+        metadata_check, metadata_artifact, metadata_payload = _metadata_file(repo_root, path, name)
         checks.append(metadata_check)
-        metadata[name] = payload
+        metadata[name] = metadata_payload
         metadata_artifacts[name] = metadata_artifact
         if metadata_artifact:
             artifacts.append(metadata_artifact)
@@ -1174,7 +1375,7 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         "details": {
             "path": _portable_path(repo_root, schema_path)
             if schema_path.is_file()
-            else str(schema_path)
+            else REPORT_SCHEMA_NAME
         },
         "name": "evidence-report-schema",
         "status": (
@@ -1227,6 +1428,45 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         checks.append(report_check)
         if report_artifact:
             artifacts.append(report_artifact)
+
+    if sanitize_paths:
+        files_checked = sum(path.is_file() for path in uploaded_paths)
+        unexpected_rewrites = [
+            path
+            for path in path_rewrites
+            if Path(path).suffix.lower() != ".xml"
+            and Path(path).name != "checkout-smoke-report.json"
+        ]
+        privacy_status = "passed"
+        if path_sanitization_error or path_sanitizer_errors or path_findings or unexpected_rewrites:
+            privacy_status = "failed"
+        elif files_checked == 0:
+            privacy_status = "skipped"
+        checks.append(
+            {
+                "command": "sanitize and scan uploaded evidence, coverage and JUnit paths",
+                "details": {
+                    "absolute_path_files": sorted(path_findings),
+                    "files_checked": files_checked,
+                    "rewritten_files": path_rewrites,
+                    "quarantined_files": path_quarantined,
+                    "sanitizer_errors": path_sanitizer_errors,
+                    "quarantine_failures": path_quarantine_failures,
+                    "sanitization_error": path_sanitization_error,
+                    "unexpected_rewritten_files": unexpected_rewrites,
+                },
+                "name": "evidence-path-privacy",
+                "status": privacy_status,
+            }
+        )
+
+    upload_ready = bool(
+        sanitize_paths
+        and path_sanitization_error is None
+        and not path_findings
+        and not path_quarantine_failures
+    )
+    _set_github_output("upload_ready", "true" if upload_ready else "false")
 
     workflow_result = (
         getattr(args, "workflow_result", None)
@@ -1307,6 +1547,14 @@ def collect_evidence(args: argparse.Namespace) -> Path:
         payload["bundle_id"] = expected_bundle_id
     if expected_release_id:
         payload["release_id"] = expected_release_id
+    if sanitize_paths:
+        sanitized_payload = _sanitize_payload(
+            payload,
+            repo_root=repo_root,
+            temp_root=sanitize_temp_root,
+        )
+        if isinstance(sanitized_payload, dict):
+            payload = sanitized_payload
     write_json(output_path, payload)
     return output_path
 

@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/frame-corpus-manifest.schema.json",
+  "title": "Maple Automation Core Frame Ingestion Corpus Manifest",
+  "type": "object",
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sessionIdArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/id"}
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "artifact_sha256",
+        "artifact_size",
+        "license_id",
+        "locator_kind",
+        "privacy_class",
+        "source_id",
+        "timing_truth"
+      ],
+      "properties": {
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_size": {"type": "integer", "minimum": 1},
+        "license_id": {"$ref": "#/$defs/id"},
+        "locator_kind": {"enum": ["live_session", "video_container", "raw_fixture"]},
+        "privacy_class": {"enum": ["private", "restricted", "deidentified_public", "hash_only"]},
+        "source_id": {"$ref": "#/$defs/id"},
+        "timing_truth": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "session": {
+      "type": "object",
+      "required": ["independent", "sample_count", "session_id", "source_id", "split"],
+      "properties": {
+        "independent": {"type": "boolean"},
+        "sample_count": {"type": "integer", "minimum": 1},
+        "session_id": {"$ref": "#/$defs/id"},
+        "source_id": {"$ref": "#/$defs/id"},
+        "split": {"enum": ["train", "validation", "test"]}
+      },
+      "additionalProperties": false
+    },
+    "sample": {
+      "type": "object",
+      "required": [
+        "cas_ref",
+        "category",
+        "pixel_digest",
+        "pixel_artifact_sha256",
+        "source_provenance_id",
+        "sample_id",
+        "sequence",
+        "session_id",
+        "truth_id",
+        "truth_path",
+        "truth_sha256",
+        "wrong_size_negative"
+      ],
+      "properties": {
+        "cas_ref": {"type": "string", "pattern": "^cas://sha256/[a-f0-9]{64}$"},
+        "category": {"enum": ["static", "motion", "transition", "dark", "crop_edge", "wrong_size"]},
+        "pixel_digest": {"$ref": "#/$defs/sha256"},
+        "pixel_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "source_provenance_id": {"$ref": "#/$defs/sha256"},
+        "sample_id": {"$ref": "#/$defs/id"},
+        "sequence": {"type": "integer", "minimum": 0},
+        "session_id": {"$ref": "#/$defs/id"},
+        "truth_id": {"$ref": "#/$defs/id"},
+        "truth_path": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+\\.json$"
+        },
+        "truth_sha256": {"$ref": "#/$defs/sha256"},
+        "wrong_size_negative": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "corpus_id",
+    "truth_scope",
+    "created_at",
+    "source_commit",
+    "sources",
+    "sessions",
+    "samples",
+    "splits",
+    "review_summary",
+    "privacy_summary",
+    "limitations",
+    "corpus_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "corpus_id": {"$ref": "#/$defs/id"},
+    "truth_scope": {"const": "frame_ingestion_only"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "source_commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source"}},
+    "sessions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/session"}},
+    "samples": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sample"}},
+    "splits": {
+      "type": "object",
+      "required": ["test", "train", "validation"],
+      "properties": {
+        "test": {"$ref": "#/$defs/sessionIdArray"},
+        "train": {"$ref": "#/$defs/sessionIdArray"},
+        "validation": {"$ref": "#/$defs/sessionIdArray"}
+      },
+      "additionalProperties": false
+    },
+    "review_summary": {
+      "type": "object",
+      "required": ["independent_fraction_ppm", "independent_reviewed", "primary_reviewed"],
+      "properties": {
+        "independent_fraction_ppm": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "independent_reviewed": {"type": "integer", "minimum": 0},
+        "primary_reviewed": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "privacy_summary": {
+      "type": "object",
+      "required": [
+        "pii_findings",
+        "public_mode",
+        "raw_artifacts_public",
+        "scan_contract_sha256",
+        "scanned_json_count",
+        "scan_digest"
+      ],
+      "properties": {
+        "pii_findings": {"const": 0},
+        "public_mode": {"enum": ["hash_only", "deidentified_derivatives"]},
+        "raw_artifacts_public": {"const": false},
+        "scan_contract_sha256": {"$ref": "#/$defs/sha256"},
+        "scanned_json_count": {"type": "integer", "minimum": 2},
+        "scan_digest": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "corpus_digest": {"$ref": "#/$defs/sha256"}
+  },
+  "additionalProperties": false
+}

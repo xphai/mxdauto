@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/g1-frame-candidate-packet.schema.json",
+  "title": "Maple Automation Core G1 Frame Candidate packet",
+  "description": "Strict, metadata-safe packet for G1-FRM. The packet is a candidate/shadow record and remains In Progress; packet_digest excludes itself.",
+  "type": "object",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "gitCommit": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*//)(?!.*(?:^|/)[^/]*[. ](?:/|$)).+$"
+    },
+    "artifactRef": {
+      "type": "object",
+      "required": ["artifact_id", "sha256"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/id"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "role": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "ciRun": {
+      "type": "object",
+      "required": ["run_id", "run_attempt", "workflow", "status"],
+      "properties": {
+        "run_id": {"type": "string", "pattern": "^[0-9]+$"},
+        "run_attempt": {"type": "string", "pattern": "^[0-9]+$"},
+        "workflow": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "enum": ["success", "failure", "cancelled", "unknown"]}
+      },
+      "additionalProperties": false
+    },
+    "wheel": {
+      "type": "object",
+      "required": ["name", "sha256", "size_bytes", "locator"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "locator": {
+          "anyOf": [
+            {"$ref": "#/$defs/portablePath"},
+            {"type": "string", "pattern": "^external://[^\\s]+$"}
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "b1Binding": {
+      "type": "object",
+      "required": ["source_commit", "ci_run", "wheel", "dependency_lock_sha256"],
+      "properties": {
+        "source_commit": {"$ref": "#/$defs/gitCommit"},
+        "ci_run": {"$ref": "#/$defs/ciRun"},
+        "wheel": {"$ref": "#/$defs/wheel"},
+        "dependency_lock_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "g0Baseline": {
+      "type": "object",
+      "required": [
+        "immutable",
+        "source_commit",
+        "packet_sha256",
+        "bundle_id",
+        "bundle_sha256",
+        "packet_ref",
+        "bundle_ref"
+      ],
+      "properties": {
+        "immutable": {"const": true},
+        "source_commit": {"$ref": "#/$defs/gitCommit"},
+        "packet_sha256": {"$ref": "#/$defs/sha256"},
+        "bundle_id": {"$ref": "#/$defs/id"},
+        "bundle_sha256": {"$ref": "#/$defs/sha256"},
+        "packet_ref": {"$ref": "#/$defs/portablePath"},
+        "bundle_ref": {"$ref": "#/$defs/portablePath"}
+      },
+      "additionalProperties": false
+    },
+    "configRef": {
+      "type": "object",
+      "required": ["artifact_id", "sha256", "path"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/id"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "path": {"$ref": "#/$defs/portablePath"}
+      },
+      "additionalProperties": false
+    },
+    "pixelContract": {
+      "type": "object",
+      "required": ["schema_version", "schema_path", "schema_sha256", "digest_domain", "raw_spec"],
+      "properties": {
+        "schema_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+        "schema_path": {"$ref": "#/$defs/portablePath"},
+        "schema_sha256": {"$ref": "#/$defs/sha256"},
+        "digest_domain": {"const": "MAPLE_PIXEL_V1"},
+        "raw_spec": {
+          "type": "object",
+          "required": ["width", "height", "channels", "pixel_format", "dtype", "stride", "length"],
+          "properties": {
+            "width": {"const": 1920},
+            "height": {"const": 1080},
+            "channels": {"const": 3},
+            "pixel_format": {"const": "BGR8"},
+            "dtype": {"const": "uint8"},
+            "stride": {"const": 5760},
+            "length": {"const": 6220800}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "contracts": {
+      "type": "object",
+      "required": ["capture_config", "calibration", "pixel_contract"],
+      "properties": {
+        "capture_config": {"$ref": "#/$defs/configRef"},
+        "calibration": {"$ref": "#/$defs/configRef"},
+        "pixel_contract": {"$ref": "#/$defs/pixelContract"}
+      },
+      "additionalProperties": false
+    },
+    "artifactLocator": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["local", "external"]},
+        "path": {"$ref": "#/$defs/portablePath"},
+        "uri": {"type": "string", "pattern": "^external://[^\\s]+$"},
+        "access_class": {"type": "string", "enum": ["public", "restricted", "private"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "local"}}},
+          "then": {"required": ["path"], "properties": {"access_class": {"enum": ["public", "restricted", "private"]}}}
+        },
+        {
+          "if": {"properties": {"kind": {"const": "external"}}},
+          "then": {"required": ["uri", "access_class"], "properties": {"access_class": {"enum": ["restricted", "private"]}}}
+        }
+      ],
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "artifact_id",
+        "role",
+        "locator",
+        "sha256",
+        "size_bytes",
+        "privacy_class",
+        "retention_class",
+        "restricted"
+      ],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/id"},
+        "role": {"type": "string", "minLength": 1},
+        "locator": {"$ref": "#/$defs/artifactLocator"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "privacy_class": {"type": "string", "enum": ["public", "deidentified", "restricted", "private", "hash_only"]},
+        "retention_class": {"type": "string", "minLength": 1},
+        "restricted": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"locator": {"properties": {"kind": {"const": "external"}}}}},
+          "then": {"properties": {"restricted": {"const": true}}}
+        }
+      ],
+      "additionalProperties": false
+    },
+    "evidenceRefs": {
+      "type": "object",
+      "required": [
+        "source_provenance",
+        "hardware_smoke",
+        "frame_ledger",
+        "corpus_manifest",
+        "truth_set",
+        "deterministic_replay",
+        "event_tape",
+        "provenance_audit",
+        "privacy_audit",
+        "zero_input_audit"
+      ],
+      "properties": {
+        "source_provenance": {"$ref": "#/$defs/artifactRef"},
+        "hardware_smoke": {"$ref": "#/$defs/artifactRef"},
+        "frame_ledger": {"$ref": "#/$defs/artifactRef"},
+        "corpus_manifest": {"$ref": "#/$defs/artifactRef"},
+        "truth_set": {"$ref": "#/$defs/artifactRef"},
+        "deterministic_replay": {"$ref": "#/$defs/artifactRef"},
+        "event_tape": {"$ref": "#/$defs/artifactRef"},
+        "provenance_audit": {"$ref": "#/$defs/artifactRef"},
+        "privacy_audit": {"$ref": "#/$defs/artifactRef"},
+        "zero_input_audit": {"$ref": "#/$defs/artifactRef"}
+      },
+      "additionalProperties": false
+    },
+    "inputAudit": {
+      "type": "object",
+      "required": [
+        "input_owner",
+        "real_input_enabled",
+        "real_input_call_count",
+        "core_v2_real_input_call_count",
+        "receiver_connect_count",
+        "window_write_count",
+        "double_write_event_count"
+      ],
+      "properties": {
+        "input_owner": {"const": "legacy"},
+        "real_input_enabled": {"const": false},
+        "real_input_call_count": {"const": 0},
+        "core_v2_real_input_call_count": {"const": 0},
+        "receiver_connect_count": {"const": 0},
+        "window_write_count": {"const": 0},
+        "double_write_event_count": {"const": 0}
+      },
+      "additionalProperties": false
+    },
+    "signoff": {
+      "type": "object",
+      "required": ["reviewer_id", "role", "decision"],
+      "properties": {
+        "reviewer_id": {"$ref": "#/$defs/id"},
+        "role": {"type": "string", "minLength": 1},
+        "decision": {"type": "string", "enum": ["pending", "approved", "rejected"]}
+      },
+      "additionalProperties": false
+    },
+    "outerVerification": {
+      "type": "object",
+      "required": ["packaging_commit", "ci_run_id", "run_attempt", "metadata_status"],
+      "properties": {
+        "packaging_commit": {"$ref": "#/$defs/gitCommit"},
+        "ci_run_id": {"type": "string", "pattern": "^[0-9]+$"},
+        "run_attempt": {"type": "string", "pattern": "^[0-9]+$"},
+        "metadata_status": {"type": "string", "enum": ["passed", "failed", "pending"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "packet_type",
+    "packet_id",
+    "lifecycle",
+    "scope",
+    "overall_g1_state",
+    "generated_at",
+    "b1_binding",
+    "g0_baseline",
+    "contracts",
+    "evidence",
+    "artifacts",
+    "input_audit",
+    "limitations",
+    "signoffs",
+    "packet_digest"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "packet_type": {"const": "g1_frame_candidate"},
+    "packet_id": {"$ref": "#/$defs/id"},
+    "lifecycle": {"type": "string", "enum": ["candidate", "shadow"]},
+    "scope": {"const": "G1-FRM"},
+    "overall_g1_state": {"const": "In Progress"},
+    "generated_at": {"$ref": "#/$defs/timestamp"},
+    "b1_binding": {"$ref": "#/$defs/b1Binding"},
+    "g0_baseline": {"$ref": "#/$defs/g0Baseline"},
+    "contracts": {"$ref": "#/$defs/contracts"},
+    "evidence": {"$ref": "#/$defs/evidenceRefs"},
+    "artifacts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "input_audit": {"$ref": "#/$defs/inputAudit"},
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "signoffs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/signoff"}
+    },
+    "outer_verification": {"$ref": "#/$defs/outerVerification"},
+    "packet_digest": {"$ref": "#/$defs/sha256"}
+  },
+  "additionalProperties": false
+}

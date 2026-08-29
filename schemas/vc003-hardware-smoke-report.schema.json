@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/vc003-hardware-smoke-report.schema.json",
+  "title": "Maple Automation Core VC-003 hardware smoke report",
+  "description": "Strict metadata for one continuous VC-003 hardware smoke window. Semantic verification recomputes the window, rates, counters and zero-failure gates; status and display rates are not assertions.",
+  "type": "object",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "gitCommit": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "nonNegativeInt": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "format": {
+      "type": "object",
+      "required": ["width", "height", "fps", "fourcc", "backend"],
+      "properties": {
+        "width": {"type": "integer", "exclusiveMinimum": 0},
+        "height": {"type": "integer", "exclusiveMinimum": 0},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "fourcc": {"type": "string", "minLength": 1},
+        "backend": {"type": "string", "minLength": 1},
+        "channels": {"const": 3},
+        "pixel_format": {"type": "string", "minLength": 1},
+        "dtype": {"type": "string", "minLength": 1},
+        "stride": {"type": "integer", "exclusiveMinimum": 0},
+        "length": {"type": "integer", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "ciRun": {
+      "type": "object",
+      "required": ["run_id", "run_attempt", "workflow", "status"],
+      "properties": {
+        "run_id": {"type": "string", "pattern": "^[0-9]+$"},
+        "run_attempt": {"type": "string", "pattern": "^[0-9]+$"},
+        "workflow": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "enum": ["success", "failure", "cancelled", "unknown"]}
+      },
+      "additionalProperties": false
+    },
+    "window": {
+      "type": "object",
+      "required": [
+        "warmup_seconds",
+        "measurement_start_ns",
+        "measurement_end_ns",
+        "measured_seconds",
+        "continuous",
+        "session_id"
+      ],
+      "properties": {
+        "warmup_seconds": {"type": "number", "minimum": 0},
+        "measurement_start_ns": {"type": "integer", "minimum": 0},
+        "measurement_end_ns": {"type": "integer", "minimum": 0},
+        "measured_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "continuous": {"type": "boolean"},
+        "session_id": {"$ref": "#/$defs/id"}
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "successful_frames",
+        "admitted_frames",
+        "no_frame_polls",
+        "timeout_count",
+        "capture_rate_fps",
+        "admission_rate_fps",
+        "max_inter_frame_gap_ns",
+        "max_accepted_age_ns",
+        "min_accepted_age_ns"
+      ],
+      "properties": {
+        "successful_frames": {"$ref": "#/$defs/nonNegativeInt"},
+        "admitted_frames": {"$ref": "#/$defs/nonNegativeInt"},
+        "no_frame_polls": {"$ref": "#/$defs/nonNegativeInt"},
+        "timeout_count": {"$ref": "#/$defs/nonNegativeInt"},
+        "capture_rate_fps": {"type": "number", "minimum": 0},
+        "admission_rate_fps": {"type": "number", "minimum": 0},
+        "max_inter_frame_gap_ns": {"$ref": "#/$defs/nonNegativeInt"},
+        "min_inter_frame_gap_ns": {"$ref": "#/$defs/nonNegativeInt"},
+        "max_accepted_age_ns": {"$ref": "#/$defs/nonNegativeInt"},
+        "min_accepted_age_ns": {"$ref": "#/$defs/nonNegativeInt"},
+        "accepted_age_ns": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 0}
+        },
+        "inter_frame_gaps_ns": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 0}
+        }
+      },
+      "additionalProperties": false
+    },
+    "failureCounts": {
+      "type": "object",
+      "required": [
+        "source_read_failures",
+        "decode_failures",
+        "copy_failures",
+        "hash_failures",
+        "fatal_errors",
+        "reconnects",
+        "backend_fallbacks",
+        "stale_frames",
+        "duplicate_sequences",
+        "out_of_order_sequences",
+        "timestamp_regressions",
+        "source_mismatches",
+        "session_mismatches",
+        "clock_mismatches",
+        "size_mismatches",
+        "geometry_mismatches",
+        "admission_failures",
+        "cas_mismatches",
+        "event_tape_orphans",
+        "event_tape_mismatches",
+        "frame_ledger_orphans",
+        "pixel_orphans",
+        "provenance_failures",
+        "privacy_failures",
+        "cleanup_failures"
+      ],
+      "properties": {
+        "source_read_failures": {"$ref": "#/$defs/nonNegativeInt"},
+        "decode_failures": {"$ref": "#/$defs/nonNegativeInt"},
+        "copy_failures": {"$ref": "#/$defs/nonNegativeInt"},
+        "hash_failures": {"$ref": "#/$defs/nonNegativeInt"},
+        "fatal_errors": {"$ref": "#/$defs/nonNegativeInt"},
+        "reconnects": {"$ref": "#/$defs/nonNegativeInt"},
+        "backend_fallbacks": {"$ref": "#/$defs/nonNegativeInt"},
+        "stale_frames": {"$ref": "#/$defs/nonNegativeInt"},
+        "duplicate_sequences": {"$ref": "#/$defs/nonNegativeInt"},
+        "out_of_order_sequences": {"$ref": "#/$defs/nonNegativeInt"},
+        "timestamp_regressions": {"$ref": "#/$defs/nonNegativeInt"},
+        "source_mismatches": {"$ref": "#/$defs/nonNegativeInt"},
+        "session_mismatches": {"$ref": "#/$defs/nonNegativeInt"},
+        "clock_mismatches": {"$ref": "#/$defs/nonNegativeInt"},
+        "size_mismatches": {"$ref": "#/$defs/nonNegativeInt"},
+        "geometry_mismatches": {"$ref": "#/$defs/nonNegativeInt"},
+        "admission_failures": {"$ref": "#/$defs/nonNegativeInt"},
+        "cas_mismatches": {"$ref": "#/$defs/nonNegativeInt"},
+        "event_tape_orphans": {"$ref": "#/$defs/nonNegativeInt"},
+        "event_tape_mismatches": {"$ref": "#/$defs/nonNegativeInt"},
+        "frame_ledger_orphans": {"$ref": "#/$defs/nonNegativeInt"},
+        "pixel_orphans": {"$ref": "#/$defs/nonNegativeInt"},
+        "provenance_failures": {"$ref": "#/$defs/nonNegativeInt"},
+        "privacy_failures": {"$ref": "#/$defs/nonNegativeInt"},
+        "cleanup_failures": {"$ref": "#/$defs/nonNegativeInt"}
+      },
+      "additionalProperties": false
+    },
+    "rawSlot": {
+      "type": "object",
+      "required": [
+        "produced",
+        "delivered",
+        "superseded",
+        "pending",
+        "discarded_on_reset",
+        "max_depth",
+        "reset_count",
+        "last_produced_sequence",
+        "final_delivered_sequence",
+        "final_drain_performed",
+        "final_drain_matches_last_produced"
+      ],
+      "properties": {
+        "produced": {"$ref": "#/$defs/nonNegativeInt"},
+        "delivered": {"$ref": "#/$defs/nonNegativeInt"},
+        "superseded": {"$ref": "#/$defs/nonNegativeInt"},
+        "pending": {"type": "integer", "minimum": 0, "maximum": 1},
+        "discarded_on_reset": {"$ref": "#/$defs/nonNegativeInt"},
+        "max_depth": {"$ref": "#/$defs/nonNegativeInt"},
+        "reset_count": {"$ref": "#/$defs/nonNegativeInt"},
+        "last_produced_sequence": {
+          "anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]
+        },
+        "final_delivered_sequence": {
+          "anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]
+        },
+        "final_drain_performed": {"type": "boolean"},
+        "final_drain_matches_last_produced": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "process": {
+      "type": "object",
+      "required": [
+        "capture_thread_alive",
+        "backend_child_alive",
+        "residual_thread_count",
+        "residual_child_count",
+        "stop_elapsed_seconds"
+      ],
+      "properties": {
+        "capture_thread_alive": {"type": "boolean"},
+        "backend_child_alive": {"type": "boolean"},
+        "residual_thread_count": {"$ref": "#/$defs/nonNegativeInt"},
+        "residual_child_count": {"$ref": "#/$defs/nonNegativeInt"},
+        "stop_elapsed_seconds": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "inputAudit": {
+      "type": "object",
+      "required": [
+        "input_owner",
+        "real_input_enabled",
+        "real_input_call_count",
+        "core_v2_real_input_call_count",
+        "receiver_connect_count",
+        "window_write_count",
+        "keyboard_call_count",
+        "mouse_call_count",
+        "double_write_event_count"
+      ],
+      "properties": {
+        "input_owner": {"const": "legacy"},
+        "real_input_enabled": {"const": false},
+        "real_input_call_count": {"const": 0},
+        "core_v2_real_input_call_count": {"const": 0},
+        "receiver_connect_count": {"const": 0},
+        "window_write_count": {"const": 0},
+        "keyboard_call_count": {"const": 0},
+        "mouse_call_count": {"const": 0},
+        "double_write_event_count": {"const": 0}
+      },
+      "additionalProperties": false
+    },
+    "privacyAudit": {
+      "type": "object",
+      "required": ["status", "raw_artifacts_public", "pii_findings", "failure_count"],
+      "properties": {
+        "status": {"type": "string", "enum": ["PASS", "FAIL", "HOLD"]},
+        "raw_artifacts_public": {"const": false},
+        "pii_findings": {"$ref": "#/$defs/nonNegativeInt"},
+        "failure_count": {"$ref": "#/$defs/nonNegativeInt"}
+      },
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["artifact_id", "role", "path", "sha256", "size_bytes", "privacy_class", "retention_class"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/id"},
+        "role": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "privacy_class": {"type": "string", "minLength": 1},
+        "retention_class": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_type",
+    "report_id",
+    "generated_at",
+    "status",
+    "source_commit",
+    "tool_artifact_sha256",
+    "wheel_sha256",
+    "dependency_lock_sha256",
+    "config_sha256",
+    "calibration_sha256",
+    "ci_run",
+    "source",
+    "measurement_window",
+    "metrics",
+    "failure_counts",
+    "raw_slot",
+    "process",
+    "input_audit",
+    "privacy_audit",
+    "failures",
+    "limitations",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "report_type": {"const": "vc003_hardware_smoke"},
+    "report_id": {"$ref": "#/$defs/id"},
+    "generated_at": {"$ref": "#/$defs/timestamp"},
+    "status": {"type": "string", "enum": ["PASS", "FAIL", "HOLD/NOT-RUN", "QUARANTINE", "SUPERSEDED"]},
+    "source_commit": {"$ref": "#/$defs/gitCommit"},
+    "tool_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "wheel_sha256": {"$ref": "#/$defs/sha256"},
+    "dependency_lock_sha256": {"$ref": "#/$defs/sha256"},
+    "config_sha256": {"$ref": "#/$defs/sha256"},
+    "calibration_sha256": {"$ref": "#/$defs/sha256"},
+    "ci_run": {"$ref": "#/$defs/ciRun"},
+    "source": {
+      "type": "object",
+      "required": [
+        "logical_source_id",
+        "selector",
+        "device_fingerprint_sha256",
+        "requested",
+        "negotiated",
+        "timestamp_origin",
+        "clock_domain",
+        "upstream_queue",
+        "upstream_queue_depth"
+      ],
+      "properties": {
+        "logical_source_id": {"const": "capture-card-primary"},
+        "selector": {"const": "VC-003 Video"},
+        "device_fingerprint_sha256": {"$ref": "#/$defs/sha256"},
+        "requested": {"$ref": "#/$defs/format"},
+        "negotiated": {"$ref": "#/$defs/format"},
+        "timestamp_origin": {"const": "host_monotonic_post_retrieve"},
+        "clock_domain": {"type": "string", "minLength": 1},
+        "upstream_queue": {"const": "unknown"},
+        "upstream_queue_depth": {"const": "unknown"}
+      },
+      "additionalProperties": false
+    },
+    "measurement_window": {"$ref": "#/$defs/window"},
+    "metrics": {"$ref": "#/$defs/metrics"},
+    "failure_counts": {"$ref": "#/$defs/failureCounts"},
+    "raw_slot": {"$ref": "#/$defs/rawSlot"},
+    "process": {"$ref": "#/$defs/process"},
+    "input_audit": {"$ref": "#/$defs/inputAudit"},
+    "privacy_audit": {"$ref": "#/$defs/privacyAudit"},
+    "failures": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "preflight": {
+      "type": "object",
+      "required": ["device_available", "run_started"],
+      "properties": {
+        "device_available": {"type": "boolean"},
+        "run_started": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "report_digest": {"$ref": "#/$defs/sha256"},
+    "canonical_report_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "anyOf": [
+    {"required": ["report_digest"]},
+    {"required": ["canonical_report_sha256"]}
+  ],
+  "additionalProperties": false
+}

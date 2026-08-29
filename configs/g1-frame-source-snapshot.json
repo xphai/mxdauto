@@ -1,0 +1,61 @@
+{
+  "entries": [
+    {
+      "last_write_utc": "2026-08-21T08:42:53.010889Z",
+      "migration_use": "clean_room_semantic_reference_only",
+      "relative_path": "src/input/capture_card_source.py",
+      "role": "legacy-capture-adapter-reference",
+      "sha256": "a2f312da774ca61e2fae0f043c933f2be90ff08a239fc7d56bb151f36b39050c",
+      "size_bytes": 11243
+    },
+    {
+      "last_write_utc": "2026-08-21T08:17:45.703776Z",
+      "migration_use": "clean_room_semantic_reference_only",
+      "relative_path": "src/input/frame_source.py",
+      "role": "legacy-frame-contract-reference",
+      "sha256": "3cebd1e60d450143fabe7efc9de3c5ac698919e6d33a9024fa43b565b2c7e2d8",
+      "size_bytes": 1659
+    },
+    {
+      "last_write_utc": "2026-08-23T08:24:23.039699Z",
+      "migration_use": "clean_room_semantic_reference_only",
+      "relative_path": "src/input/frame_normalizer.py",
+      "role": "legacy-geometry-reference",
+      "sha256": "8eb0c84caae10dbf3564c52ef770a75e81548801f15fe485d2462c33a26a4be1",
+      "size_bytes": 6949
+    },
+    {
+      "last_write_utc": "2026-08-26T13:05:00.117224Z",
+      "migration_use": "configuration_reference_only",
+      "relative_path": "profiles/maple_legacy_cn/profile.yaml",
+      "role": "legacy-capture-profile-reference",
+      "sha256": "41b28c8d6f09efdbed8c1de80beafdeaac4cc975a3a30226de93f698b511f161",
+      "size_bytes": 2405
+    }
+  ],
+  "generated_at": "2026-08-29T02:00:00Z",
+  "input_audit": {
+    "input_owner": "legacy",
+    "real_input_call_count": 0
+  },
+  "limitations": [
+    "The snapshot root is a local unpacked tree without Git metadata.",
+    "Entries are migration references and are not imported as Core runtime truth.",
+    "The upstream commit is reference-only and does not attest these local bytes."
+  ],
+  "review": {
+    "decision": "accepted_as_migration_reference_only",
+    "method": "read_only_structure_and_hash_audit",
+    "reviewer_role": "sol-u-strategic-audit"
+  },
+  "schema_version": "1.0.0",
+  "snapshot_digest": "76c0175c2ff1364f41f3489779b700e7822693c4bec7c27dda9a4287bb3ab186",
+  "snapshot_id": "legacy-capture-local-20260829",
+  "source_kind": "unversioned_legacy_local_snapshot",
+  "source_root_env": "MAPLE_LEGACY_ROOT",
+  "upstream_reference": {
+    "commit": "3e19173f8da5aab8405307bb9c6e3741dd3abd6b",
+    "relationship": "reference_only_not_provenance",
+    "repository": "https://github.com/kenyu910645/MapleStoryAutoLevelUp.git"
+  }
+}

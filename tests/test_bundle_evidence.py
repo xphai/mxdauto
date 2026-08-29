@@ -380,7 +380,240 @@ def test_ci_evidence_main_returns_failure_for_failed_packet(tmp_path: Path) -> N
     )
 
     assert result == 1
+
+
+def test_ci_collector_sanitizes_junit_paths_before_hashing(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    report_dir = repo_root / "evidence" / "ci-run"
+    report_dir.mkdir(parents=True)
+    junit = report_dir / "junit.xml"
+    junit.write_text(
+        '<testsuite tests="1" failures="0" errors="0" skipped="0">'
+        f'<testcase file="{repo_root / "tests" / "test_ok.py"}" /></testsuite>',
+        encoding="utf-8",
+    )
+    output = report_dir / "ci-evidence.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(repo_root),
+            "--junit",
+            str(junit),
+            "--sanitize-paths",
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--workflow-result",
+            "success",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    checks = {check["name"]: check for check in payload["checks"]}  # type: ignore[index]
+    sanitized = junit.read_text(encoding="utf-8")
+    assert str(repo_root) not in sanitized
+    assert checks["evidence-path-privacy"]["status"] == "passed"
+    assert checks["evidence-path-privacy"]["details"]["rewritten_files"] == [  # type: ignore[index]
+        "evidence/ci-run/junit.xml"
+    ]
+    assert checks["junit"]["details"]["path"] == "evidence/ci-run/junit.xml"  # type: ignore[index]
+    junit_artifact = next(
+        artifact
+        for artifact in payload["artifacts"]
+        if artifact["kind"] == "junit"  # type: ignore[index]
+    )
+    assert junit_artifact["sha256"] == sha256_file(junit)
+
+
+def test_ci_collector_scrubs_generic_json_and_marks_privacy_failure(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    report_dir = repo_root / "evidence" / "ci-run"
+    report_dir.mkdir(parents=True)
+    leaked = report_dir / "extra.json"
+    leaked.write_text(json.dumps({"runner": r"C:\Users\Runner\secret"}), encoding="utf-8")
+    output = report_dir / "ci-evidence.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(repo_root),
+            "--sanitize-paths",
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--workflow-result",
+            "success",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    checks = {check["name"]: check for check in payload["checks"]}  # type: ignore[index]
+    sanitized = leaked.read_text(encoding="utf-8")
+    assert "C:\\Users\\Runner\\secret" not in sanitized
+    assert "[absolute-path]" in sanitized
+    assert checks["evidence-path-privacy"]["status"] == "failed"
+    assert checks["evidence-path-privacy"]["details"]["rewritten_files"] == [  # type: ignore[index]
+        "evidence/ci-run/extra.json"
+    ]
+    assert "C:\\Users\\Runner\\secret" not in output.read_text(encoding="utf-8")
+
+
+def test_ci_collector_quarantines_scrub_failure_before_upload(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    report_dir = repo_root / "evidence" / "ci-run"
+    report_dir.mkdir(parents=True)
+    sentinel = report_dir / "sentinel.json"
+    sentinel.write_text('{"sentinel": true}', encoding="utf-8")
+    output = report_dir / "ci-evidence.json"
+    github_output = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(github_output))
+    original_sanitizer = collect_ci_evidence._sanitize_text_file
+
+    def fail_sentinel(path: Path, *, repo_root: Path, temp_root: Path | None = None) -> bool:
+        if path == sentinel:
+            raise OSError("sentinel scrub failure")
+        return original_sanitizer(path, repo_root=repo_root, temp_root=temp_root)
+
+    monkeypatch.setattr(collect_ci_evidence, "_sanitize_text_file", fail_sentinel)
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(repo_root),
+            "--sanitize-paths",
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--workflow-result",
+            "success",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    checks = {check["name"]: check for check in payload["checks"]}  # type: ignore[index]
+    privacy = checks["evidence-path-privacy"]
+    assert not sentinel.exists()
+    assert not any(path.name == sentinel.name for path in report_dir.rglob("*"))
+    assert privacy["status"] == "failed"
+    assert privacy["details"]["sanitizer_errors"] == ["evidence/ci-run/sentinel.json"]  # type: ignore[index]
+    assert privacy["details"]["quarantined_files"] == [  # type: ignore[index]
+        "evidence/ci-run/sentinel.json"
+    ]
+    assert privacy["details"]["quarantine_failures"] == []  # type: ignore[index]
+    assert "upload_ready=true" in github_output.read_text(encoding="utf-8")
+
+
+def test_ci_collector_blocks_upload_when_scrub_failure_cannot_be_isolated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    report_dir = repo_root / "evidence" / "ci-run"
+    report_dir.mkdir(parents=True)
+    sentinel = report_dir / "sentinel.json"
+    sentinel.write_text('{"sentinel": true}', encoding="utf-8")
+    output = report_dir / "ci-evidence.json"
+    github_output = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(github_output))
+
+    def fail_sentinel(path: Path, *, repo_root: Path, temp_root: Path | None = None) -> bool:
+        if path == sentinel:
+            raise OSError("sentinel scrub failure")
+        return False
+
+    monkeypatch.setattr(collect_ci_evidence, "_sanitize_text_file", fail_sentinel)
+    monkeypatch.setattr(collect_ci_evidence, "_remove_or_quarantine", lambda *args, **kwargs: False)
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(repo_root),
+            "--sanitize-paths",
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--workflow-result",
+            "success",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload = _load_json(output)
+    checks = {check["name"]: check for check in payload["checks"]}  # type: ignore[index]
+    privacy = checks["evidence-path-privacy"]
+    assert sentinel.exists()
+    assert privacy["details"]["quarantine_failures"] == [  # type: ignore[index]
+        "evidence/ci-run/sentinel.json"
+    ]
+    assert "upload_ready=false" in github_output.read_text(encoding="utf-8")
+
+
+def test_ci_collector_uses_relative_missing_artifact_path(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    output = repo_root / "ci-evidence.json"
+    args = collect_ci_evidence._parse_args(
+        [
+            "--output",
+            str(output),
+            "--repo-root",
+            str(repo_root),
+            "--artifact",
+            "dist/missing.whl",
+            "--sanitize-paths",
+            "--source-commit",
+            "a" * 40,
+            "--event",
+            "local",
+            "--timestamp",
+            "2026-08-29T00:00:00Z",
+            "--workflow-result",
+            "failure",
+        ]
+    )
+
+    collect_ci_evidence.collect_evidence(args)
+    payload_text = output.read_text(encoding="utf-8")
+    payload = _load_json(output)
+    build_check = next(check for check in payload["checks"] if check["name"] == "build-artifacts")  # type: ignore[index]
+    assert build_check["details"]["missing"] == ["dist/missing.whl"]  # type: ignore[index]
+    assert str(repo_root) not in payload_text
     assert _load_json(output)["status"] == "failed"
+
+
+def test_ci_always_collector_guards_missing_dist() -> None:
+    workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    collector_start = workflow.index("- name: Collect CI evidence metadata")
+    collector_end = workflow.index("- name: Upload JUnit and coverage", collector_start)
+    collector = workflow[collector_start:collector_end]
+    guard = "if (Test-Path -LiteralPath dist -PathType Container)"
+    enumeration = "Get-ChildItem -LiteralPath dist -File"
+    assert guard in collector
+    assert enumeration in collector
+    assert collector.index(guard) < collector.index(enumeration)
+    assert '"upload_ready=false"' in collector
+    assert workflow.count("steps.collect_ci_evidence.outputs.upload_ready == 'true'") >= 5
 
 
 def test_ci_evidence_missing_report_is_recorded_without_crashing(tmp_path: Path) -> None:

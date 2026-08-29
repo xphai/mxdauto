@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/frame-provenance-audit-report.schema.json",
+  "title": "Maple Automation Core Frame Provenance Audit Report",
+  "type": "object",
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact": {
+      "type": "object",
+      "required": ["artifact_id", "privacy_class", "sha256", "size"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/id"},
+        "privacy_class": {"enum": ["hash_only", "deidentified_public"]},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_id",
+    "report_type",
+    "verification_profile",
+    "generated_at",
+    "source_commit",
+    "tool_artifact_sha256",
+    "config_sha256",
+    "status",
+    "failures",
+    "limitations",
+    "artifacts",
+    "corpus",
+    "event_tape",
+    "cas_verification",
+    "input_audit",
+    "canonical_report_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "report_id": {"$ref": "#/$defs/id"},
+    "report_type": {"const": "frame_provenance_audit"},
+    "verification_profile": {"enum": ["b1_fixture", "b2_gate"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "source_commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "tool_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "config_sha256": {"$ref": "#/$defs/sha256"},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "failures": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "artifacts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/artifact"}},
+    "corpus": {
+      "type": "object",
+      "required": [
+        "corpus_digest",
+        "independent_fraction_ppm",
+        "sample_count",
+        "session_count",
+        "independent_session_count",
+        "source_count",
+        "unique_pixel_count",
+        "category_count",
+        "wrong_size_negative_count"
+      ],
+      "properties": {
+        "corpus_digest": {"$ref": "#/$defs/sha256"},
+        "independent_fraction_ppm": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "sample_count": {"type": "integer", "minimum": 1},
+        "session_count": {"type": "integer", "minimum": 1},
+        "independent_session_count": {"type": "integer", "minimum": 0},
+        "source_count": {"type": "integer", "minimum": 1},
+        "unique_pixel_count": {"type": "integer", "minimum": 1},
+        "category_count": {"type": "integer", "minimum": 1, "maximum": 6},
+        "wrong_size_negative_count": {"type": "integer", "minimum": 0},
+        "live_session_count": {"type": "integer", "minimum": 0},
+        "live_session_sample_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "event_tape": {
+      "type": "object",
+      "required": ["chain_valid", "event_count", "mismatch_count", "missing_count", "orphan_count", "tape_count"],
+      "properties": {
+        "chain_valid": {"type": "boolean"},
+        "event_count": {"type": "integer", "minimum": 0},
+        "mismatch_count": {"type": "integer", "minimum": 0},
+        "missing_count": {"type": "integer", "minimum": 0},
+        "orphan_count": {"type": "integer", "minimum": 0},
+        "tape_count": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "cas_verification": {
+      "type": "object",
+      "required": ["mode", "verified_object_count"],
+      "properties": {
+        "mode": {"enum": ["metadata_only", "full_cas"]},
+        "verified_object_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "input_audit": {
+      "type": "object",
+      "required": ["connected", "double_write_event_count", "input_owner", "real_input_call_count", "receiver_connect_count", "window_write_count"],
+      "properties": {
+        "connected": {"const": false},
+        "double_write_event_count": {"const": 0},
+        "input_owner": {"const": "legacy"},
+        "real_input_call_count": {"const": 0},
+        "receiver_connect_count": {"const": 0},
+        "window_write_count": {"const": 0}
+      },
+      "additionalProperties": false
+    },
+    "canonical_report_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "PASS"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "failures": {"maxItems": 0},
+          "event_tape": {
+            "properties": {
+              "chain_valid": {"const": true},
+              "mismatch_count": {"const": 0},
+              "missing_count": {"const": 0},
+              "orphan_count": {"const": 0}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"verification_profile": {"const": "b2_gate"}},
+        "required": ["verification_profile"]
+      },
+      "then": {
+        "properties": {
+          "corpus": {
+            "required": ["live_session_count", "live_session_sample_count"],
+            "properties": {
+              "sample_count": {"minimum": 300},
+              "unique_pixel_count": {"minimum": 300},
+              "session_count": {"minimum": 3},
+              "independent_session_count": {"minimum": 3},
+              "independent_fraction_ppm": {"minimum": 200000},
+              "category_count": {"const": 6},
+              "wrong_size_negative_count": {"minimum": 1},
+              "live_session_count": {"minimum": 1},
+              "live_session_sample_count": {"minimum": 100}
+            }
+          },
+          "cas_verification": {
+            "properties": {"mode": {"const": "full_cas"}}
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}
