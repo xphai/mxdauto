@@ -415,6 +415,45 @@ def test_git_and_artifact_helpers_fail_closed(
     ).resolve() == Path(stress.__file__).resolve()
 
 
+def test_default_repo_root_fails_closed_for_installed_wheel_layout(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    installed_source = (
+        tmp_path
+        / "venv"
+        / "Lib"
+        / "site-packages"
+        / "maple_automation_core"
+        / "capture"
+        / "stress.py"
+    )
+    installed_source.parent.mkdir(parents=True)
+    installed_source.write_text("# installed-wheel fixture\n", encoding="utf-8")
+    monkeypatch.setattr(stress, "__file__", str(installed_source))
+
+    with pytest.raises(CapturePressureError, match="pass repo_root explicitly"):
+        run_capture_pressure(
+            publish_take_operations=64,
+            lifecycle_races=8,
+            repetitions=3,
+            timeout_s=0.2,
+            generated_at="2026-08-29T00:00:00Z",
+        )
+
+    report = run_capture_pressure(
+        publish_take_operations=64,
+        lifecycle_races=8,
+        repetitions=3,
+        timeout_s=0.2,
+        repo_root=ROOT,
+        generated_at="2026-08-29T00:00:00Z",
+    )
+    assert report.status == "PASS"
+    with pytest.raises(CapturePressureError, match="pass repo_root explicitly"):
+        report.assert_valid()
+
+
 def test_report_wrapper_serializes_and_delegates_validation(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

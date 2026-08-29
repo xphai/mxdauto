@@ -2103,8 +2103,24 @@ def _artifact_hash(path: Path, fallback: bytes) -> str:
 
 
 def _default_repo_root() -> Path:
-    # stress.py lives below src/maple_automation_core/capture.
-    return Path(__file__).resolve().parents[3]
+    """Locate a source checkout without treating an installed package as one."""
+
+    source_path = Path(__file__).resolve()
+    source_locator = Path("src/maple_automation_core/capture/stress.py")
+    required_markers = (
+        Path("pyproject.toml"),
+        Path("schemas/capture-pressure-report.schema.json"),
+        Path("configs/requirements.lock"),
+    )
+    for candidate in source_path.parents:
+        if (candidate / source_locator).resolve() != source_path:
+            continue
+        if all((candidate / marker).is_file() for marker in required_markers):
+            return candidate
+    raise CapturePressureError(
+        "capture pressure default repo_root requires a source checkout; "
+        "pass repo_root explicitly for installed packages"
+    )
 
 
 @dataclass(frozen=True, slots=True)
