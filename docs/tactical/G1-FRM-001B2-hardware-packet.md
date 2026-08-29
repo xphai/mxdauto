@@ -338,7 +338,15 @@ measurement：
   下执行 full-root verification PASS；
 - 仓库 packet 共 318 个 metadata/hash-only/受限 artifacts（含 packet），不包含 6,220,800-byte raw Pixel 对象或原始视频。
 
-### 11.5 剩余关闭项
+### 11.5 Outer CI fail-closed 回归
+
+PR #11 首个 outer run
+[`33257717820`](https://github.com/xphai/mxdauto/actions/runs/33257717820) 在 Candidate conditional
+step fail-closed：该 step 位于项目安装前，verifier 导入 `maple_automation_core` 时缺少 checkout
+`src` bootstrap。失败 run 保留，不参与晋级；workflow 已在该 step 显式绑定 checkout `src`，并新增
+顺序回归测试，后续成功 run 才可作为 outer seal。
+
+### 11.6 剩余关闭项
 
 本节证明技术证据闭环，但不把 B2 标成 `Completed`。尚需：
 
