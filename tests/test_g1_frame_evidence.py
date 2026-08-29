@@ -335,3 +335,15 @@ def test_candidate_zero_input_contradiction_survives_resigning(tmp_path: Path) -
     packet["packet_digest"] = canonical_packet_digest(packet)
     errors = verify_g1_frame_candidate(packet, repo_root=root)
     assert any("zero-input" in error for error in errors)
+
+
+def test_ci_candidate_verifier_bootstraps_checkout_source() -> None:
+    workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    step_start = workflow.index("- name: Verify packaged G1 Frame Candidate when present")
+    step_end = workflow.index("- name: Verify G1 capture source snapshot", step_start)
+    step = workflow[step_start:step_end]
+    bootstrap = '$env:PYTHONPATH = (Resolve-Path -LiteralPath "src").Path'
+    verifier = "python tools/verify_g1_frame_candidate.py"
+    assert bootstrap in step
+    assert verifier in step
+    assert step.index(bootstrap) < step.index(verifier)

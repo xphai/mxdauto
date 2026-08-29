@@ -6,12 +6,12 @@
 | parent | `G1-FRM-001B` / `G1-FRM-001` |
 | requirement | `REQ-CAP-001`、`REQ-UI-001`、`REQ-SAFE-002`、`REQ-OBS-002`、`REQ-PRI-001`、`REQ-REL-001`、`REQ-REL-002` |
 | gate | G1 FrameSource 子门禁 |
-| decision | 已冻结并解锁；等待现场窗口执行 |
+| decision | 技术证据已 PASS；等待 protected packaging outer CI 与组织会签 |
 | implementation | 5.6 Luna max + QA/evidence + 现场负责人 |
-| status | `Queued` |
-| baseline | protected `main@3d2f74c21bfb475482a28172018a71740a991aae` |
-| required wheel | `maple_automation_core-0.1.0-py3-none-any.whl` / SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365` |
-| baseline CI | main run [`33248781581`](https://github.com/xphai/mxdauto/actions/runs/33248781581) / `success` |
+| status | `In Progress / Technical Evidence PASS / Countersign Pending` |
+| baseline | protected `main@37e57b9662fa3d061e840d4b9c86ab89efe24f2f` |
+| required wheel | `maple_automation_core-0.1.0-py3-none-any.whl` / SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f` |
+| baseline CI | main run [`33256230132`](https://github.com/xphai/mxdauto/actions/runs/33256230132) / attempt 1 / `success` |
 | ADR | ADR-002、ADR-004、ADR-007、ADR-010、ADR-011、ADR-012 |
 | unlocks | 完整 `G1-FRM-001` 审计；通过后才评审 `G1-OBS-002` |
 
@@ -293,3 +293,66 @@ capacity=1 外推到 DirectShow/driver/vendor；把设备枚举或历史日志�
 B2 完成后，`G1-FRM-001B` 才可完成；随后单独评审 `G1-FRM-001=Completed` 并解锁
 `G1-OBS-002`。G1 的 OBS/LOC/WST/Planner/Replay/Shadow 等后续工作仍未完成，因此整体 G1
 继续保持 `In Progress`，Core v2 真实输入继续为 0。
+
+## 11. 实际执行记录（packaging outer CI / 组织会签前）
+
+### 11.1 冻结身份
+
+- B1 source：`37e57b9662fa3d061e840d4b9c86ab89efe24f2f`；
+- baseline main CI：[`33256230132`](https://github.com/xphai/mxdauto/actions/runs/33256230132)，attempt 1，`success`；
+- exact wheel：131,432 bytes，SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f`；
+- dependency lock：SHA-256 `1aa30d122b50bb938545bcfc2f50e4d3ba789c473c30e3b6806a73cad38957a9`。
+
+### 11.2 Hardware PASS
+
+`vc003-live-20260829T140846Z` 在同一 session/counter epoch 上完成 30 秒 warmup + 300.000 秒连续
+measurement：
+
+| 指标 | 实际结果 | 判定 |
+|---|---:|---|
+| successful frames / rate | 8,999 / 29.996666 FPS | PASS |
+| admitted frames / rate | 4,499 / 14.996666 FPS | PASS |
+| max accepted age | 110 ms | PASS |
+| max inter-frame gap | 110 ms | PASS |
+| raw latest | depth=1；produced=9,897；delivered=4,950；superseded=4,947；pending=0；final drain=last produced | PASS |
+| cleanup | 0 residual threads/children；stop=0.094 s | PASS |
+| failures/input | 所有 failure counters=0；Core real input/receiver/window/double-write=0；owner=legacy | PASS |
+
+最终 hardware report digest 为 `99cebe1aabe46b185fb7667861702fa07eb0e082018ecfb910e8a13a0a3432b2`。
+
+### 11.3 Corpus、Replay 与审计
+
+- corpus digest：`e36863e24ea95295e8e6e9858283ab34706e463b6f675a6e7c856fa51b1e616b`；manifest SHA-256：`11bcb481e3c683a44ce41e4dcef9ee98ad3172eea8f434c30f1b4d36e0464b91`；
+- 4 independent sessions / 300 samples / 300 unique pixels / 6 categories / 100 wrong-size negatives；live session 贡献 100 samples；
+- primary review=300，independent review=60（20%）；当前 organizational human countersign=`pending`；
+- full CAS verified objects=300；4 Event Tapes / 300 events；orphan/mismatch/missing=0；
+- 3 次 deterministic replay 的 run digest 均为 `7bbf5758615f9456a88e93e8802c0e973f67bf05e3b72eb7a680e2b393ab9133`；
+- `b2_gate` provenance、privacy 与 zero-input audits 全部 PASS；raw videos、Pixel CAS 与 review contact sheet 保持 repository 外的 restricted storage。
+
+### 11.4 Candidate packet
+
+- packet：`evidence/g1-frame-candidate-20260829/g1-frame-candidate-packet.json`；
+- packet digest：`a23b60094330cdd57b81cb0426017b2bb318e6e07dd4ef7b1e5d08ffcdcb1ea1`；
+- lifecycle=`candidate`，overall G1 state=`In Progress`，`signoffs=[]`；
+- metadata-only verification PASS；在显式 hardware/corpus roots、private CAS、truth root 和 4 条 Event Tape
+  下执行 full-root verification PASS；
+- 仓库 packet 共 318 个 metadata/hash-only/受限 artifacts（含 packet），不包含 6,220,800-byte raw Pixel 对象或原始视频。
+
+### 11.5 Outer CI fail-closed 回归
+
+PR #11 首个 outer run
+[`33257717820`](https://github.com/xphai/mxdauto/actions/runs/33257717820) 在 Candidate conditional
+step fail-closed：该 step 位于项目安装前，verifier 导入 `maple_automation_core` 时缺少 checkout
+`src` bootstrap。失败 run 保留，不参与晋级；workflow 已在该 step 显式绑定 checkout `src`，并新增
+顺序回归测试，后续成功 run 才可作为 outer seal。
+
+### 11.6 剩余关闭项
+
+本节证明技术证据闭环，但不把 B2 标成 `Completed`。尚需：
+
+1. protected packaging PR 合并，并由 outer main CI 实际执行 conditional Candidate metadata verifier；
+2. 回填 packaging commit `P`、outer run ID/attempt/status；
+3. QA/evidence、技术、现场、privacy/release 与 Sol-U 的组织 countersign。
+
+上述关闭前，`G1-FRM-001B2`、完整 `G1-FRM-001` 与 G1 Gate 均保持 `In Progress`，Core v2
+真实输入保持 0。
