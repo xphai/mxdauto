@@ -3,7 +3,7 @@
 > **状态截止**：2026-08-29  
 > **战略负责人**：5.6Sol Ultra  
 > **战术包负责人**：5.6 Luna max  
-> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（`G1-FRM-001A`=`Completed`，`G1-FRM-001B1`=`In Progress`，`G1-FRM-001B2`=`Queued`）
+> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（`G1-FRM-001A`=`Completed`，`G1-FRM-001B1`=`Completed`，`G1-FRM-001B2`=`Queued`）
 
 ## 1. 用途与来源
 
@@ -34,7 +34,7 @@
 | ID | 需求 | 原始来源 | 目标 Gate | 退出所需证据 | 当前事实 | 状态 |
 |---|---|---|---|---|---|---|
 | REQ-ENV-001 | 双机 Windows 环境：控制端采集/决策，游戏端 receiver | `COLLECTION_ANALYSIS.md` §2/§4/§8 | G2、G3、G6 | 控制端 clean report、游戏端无 Python receiver clean report、租约/双写审计、双机安装矩阵 | Legacy 曾以 `10.66.0.1 → 10.66.0.2:27183` 联通；Core v2 receiver/HIL/clean 报告为空 | `CANDIDATE` |
-| REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | `G1-FRM-001A` 已通过 PR #3 合并收口：FrameSource/latest、250 ms freshness、gap/fault latch/reset、geometry/calibration hash；Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / Core v2 real input=0），main frame digest `1c4948afc636ffba45b1f4a769ec7ee3d6d5ea15f09b2b1f9596faa43f837a7d`。feature source `7cca4154a38e8bca29b917aa3c5abcc43a51391d`，merge `b30ddedb1f05945e68fb348b221cdfa123e83c59`；001B 已拆分为 B1 software foundation=`In Progress`、B2 hardware/packet=`Queued` | `PARTIAL-G1-FRM` |
+| REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | `G1-FRM-001A` 已通过 PR #3 合并收口；`G1-FRM-001B1` 已通过 PR #5、merge `3d2f74c21bfb475482a28172018a71740a991aae` 与 main run `33248781581` 完成软件基础，488 tests、94.02% coverage、36/36 evidence checks、Core v2 real input=0。B2 hardware/packet=`Queued`，须使用 canonical wheel SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365` | `PARTIAL-G1-FRM` |
 | REQ-UI-001 | 目标客户端模板隔离；桌面坐标经内容矩形转为 `1366×768` 归一化坐标 | `REQUIREMENTS_CONFIRMED.md` §1/§5 | G1、G5 | Profile/模板 manifest、geometry/calibration hash、窗口偏移 Replay、每 workflow UI fixture | 已合并的 `G1-FRM-001A` 固定 `1920×1080 → [277,167,1366,768] → 1296×700` 并生成 geometry/calibration identity；真实窗口偏移与 UI/rune workflow 仍待后续包 | `PARTIAL-G1-FRM` + `PARTIAL-DATA` |
 | REQ-CV-001 | YOLO monster 检测，ONNX 优先，GPU 推理并保留 CPU 回退，类别/阈值/ROI 可追溯 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G4 | Model Card、人工真值会话隔离 split、部署 ONNX P/R、PT/ONNX 差、GPU/CPU parity、负样本、Replay/Shadow | DEC-001 选择 `best_forest_v3-candidate`、`[mob]`、`640×640`；存在本人/技能误检诊断；Core v2 GPU/CPU 报告为空 | `CANDIDATE` |
 | REQ-CV-002 | 模型加载失败时抑制动作并记录原因 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G2 | 模型缺失/hash/class/input mismatch 故障 fixture；WorldState unknown；ActionSpec 数为 0；FaultEvent | Manifest schema/Action contract 已有；runtime/supervisor 尚未实现 | `MISSING` |
@@ -67,7 +67,7 @@
 |---|---|---|
 | G-1 | Pilot、匿名 Profile、输入所有权、原始范围映射 | **战略封存完成**：ADR-004、DEC-001 和本矩阵已形成 |
 | G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **PASS**：工程/失败链、branch protection、required `quality`、PR #1、Owner countersign 与 main post-merge run 已闭环 |
-| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：`G1-FRM-001A` 已 Completed；完整 `G1-FRM-001`、OBS/LOC/WST/Planner/corpus/Shadow 仍待实施 |
+| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：`G1-FRM-001A` 与 `G1-FRM-001B1` 已 Completed；001B2、完整 `G1-FRM-001`、OBS/LOC/WST/Planner/corpus/Shadow 仍待实施 |
 | G2 | INP-001/002/003、SAFE-001/002、NFR-001 的 simulator/HIL | 未开始 |
 | G3 | FUN-001 + 输入租约的单图有界现场 | 未开始；Core v2 现场 session 为 0 |
 | G4 | Pilot 打怪、HP/MP、安全、4 小时 Certified | 未开始 |
@@ -91,10 +91,10 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 
 | 工作包 | 已落地范围 | 本包后仍待完成 | 当前结论 |
 |---|---|---|---|
-| G1-FRM-001A | Frame admission、latest slot、DEC-001 geometry/calibration hash、freshness/fault matrix、session reset、三次 synthetic deterministic replay、G0 seal/current checkout CI 分轨；PR #3 已合并 | 001B1 software foundation 与 001B2 hardware/packet 缺口 | `Completed`，真实输入 0 |
-| G1-FRM-001 | 001A synthetic admission 已完成并绑定合并后的 source/CI 证据 | VC-003 read-only adapter、content-addressed raw pixels、真实 corpus/truth、并发压力、5 分钟硬件 smoke、新 G1 Candidate packet 与完整审计 | `In Progress`，真实输入 0 |
-| G1-FRM-001B1 | ADR-012 与战术包已冻结：Pixel V1/CAS、raw capacity=1、VC-003 adapter/fake backend、Legacy local snapshot provenance、corpus/truth 工具、Event Tape、stress、schemas/verifiers、Python 3.12 CI wheel | 实现、protected PR/main CI、source/wheel/evidence 绑定；本包不生成硬件 PASS | `In Progress`，真实输入 0 |
-| G1-FRM-001B2 | 战术包已冻结：精确 B1 wheel 的 VC-003 300 秒 smoke、3-session/300-frame ingestion corpus/truth、privacy/provenance 与 G1 Frame Candidate packet | 等待 B1 Completed；随后执行现场 Gate、packet outer verification 与会签 | `Queued`，真实输入 0 |
+| G1-FRM-001A | Frame admission、latest slot、DEC-001 geometry/calibration hash、freshness/fault matrix、session reset、三次 synthetic deterministic replay、G0 seal/current checkout CI 分轨；PR #3 已合并 | 001B1 已随后完成；当前仅保留 001B2 hardware/packet 缺口 | `Completed`，真实输入 0 |
+| G1-FRM-001 | 001A synthetic admission 与 001B1 software foundation 均已完成并绑定 protected-main source/CI 证据 | 真实 3-session/300-frame corpus/truth、5 分钟硬件 smoke、新 G1 Candidate packet 与完整审计 | `In Progress`，真实输入 0 |
+| G1-FRM-001B1 | Pixel V1/CAS、raw capacity=1、VC-003 adapter/fake backend、Legacy local snapshot provenance、corpus/truth 工具、Event Tape、stress、schemas/verifiers、Python 3.12 CI wheel；PR #5 protected squash merge 与 main CI 已通过 | 精确 wheel 已交给 B2；本包不生成硬件 PASS | `Completed`，真实输入 0 |
+| G1-FRM-001B2 | 战术包已冻结：精确 B1 wheel 的 VC-003 300 秒 smoke、3-session/300-frame ingestion corpus/truth、privacy/provenance 与 G1 Frame Candidate packet | B1 前置已满足；等待现场窗口，随后执行 Gate、packet outer verification 与会签 | `Queued`，真实输入 0 |
 
 ### G1-FRM-001A 合并证据
 
@@ -102,6 +102,14 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 - CI 绑定：PR run `33225384485`；main run `33225488599`。
 - 质量与报告：149 tests、91.38% coverage；Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / zero input）；main frame digest `1c4948afc636ffba45b1f4a769ec7ee3d6d5ea15f09b2b1f9596faa43f837a7d`；checkout smoke 20/20；5 artifact groups。
 - 该证据只关闭 `G1-FRM-001A`，不改变 G0 sealed packet 的既有 source/packet 事实；完整 `G1-FRM-001` 与 G1 Gate 继续 `In Progress`。
+
+### G1-FRM-001B1 合并证据
+
+- 实现 PR：[#5](https://github.com/xphai/mxdauto/pull/5)；feature source commit `c93f1de9878675722642e5aeba07cc54fbd71752`；protected-main merge commit `3d2f74c21bfb475482a28172018a71740a991aae`。
+- CI 绑定：PR run `33244563086`；main run [`33248781581`](https://github.com/xphai/mxdauto/actions/runs/33248781581)，结论 `success`。
+- 质量与审计：488 tests、0 failures/errors/skips；94.02% coverage（PixelStore 99.44%）；checkout smoke 23/23；36/36 evidence checks；privacy gate 与 zero-input audit 通过。
+- canonical main wheel：`maple_automation_core-0.1.0-py3-none-any.whl`，130,883 bytes，SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365`；sdist SHA-256 `9bbdac46eed57a7828259ff71def9d74e8a54e4c16d706e1d3447648b96c503a`。
+- 该证据只关闭 `G1-FRM-001B1` 并解锁 B2 现场执行；完整 `G1-FRM-001` 与 G1 Gate 继续 `In Progress`，Core v2 真实输入仍为 0。
 
 ## 7. 维护规则
 

@@ -6,10 +6,13 @@
 | parent | `G1-FRM-001B` / `G1-FRM-001` |
 | requirement | `REQ-CAP-001`、`REQ-UI-001`、`REQ-SAFE-002`、`REQ-OBS-002`、`REQ-PRI-001`、`REQ-REL-002` |
 | gate | G1 FrameSource 子门禁 |
-| decision | Sol-U 已批准执行 |
+| decision | Sol-U 已复核收口 |
 | implementation | 5.6 Luna max |
-| status | `In Progress` |
-| baseline | `main@c6d9bf5a406ce612a48e424d91686ca4fde144d0` |
+| status | `Completed` |
+| baseline | protected `main@3d2f74c21bfb475482a28172018a71740a991aae` |
+| implementation PR | [#5](https://github.com/xphai/mxdauto/pull/5) |
+| CI | PR run `33244563086`；main run [`33248781581`](https://github.com/xphai/mxdauto/actions/runs/33248781581) |
+| canonical wheel | `maple_automation_core-0.1.0-py3-none-any.whl` / SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365` |
 | ADR | ADR-002、ADR-004、ADR-007、ADR-010、ADR-011、ADR-012 |
 | successor | `G1-FRM-001B2` |
 
@@ -311,3 +314,12 @@ build hashes 与 CI metadata。B2 只接受 protected merge 后 main CI 产生�
 
 B1 完成后仅把 `G1-FRM-001B2` 从 `Queued` 推进到可执行；`G1-FRM-001`、`G1-OBS-002`
 和完整 G1 Gate 状态不变。
+
+## 10. 实际收口记录
+
+- feature source：`c93f1de9878675722642e5aeba07cc54fbd71752`；protected-main squash merge：`3d2f74c21bfb475482a28172018a71740a991aae`；
+- main post-merge CI `33248781581`：488 tests、0 failures/errors/skips、94.02% coverage（PixelStore 99.44%）、checkout smoke 23/23；
+- 机器证据：43 JSON 与 8 XML strict parse，36/36 evidence checks、privacy gate、zero-input audit 均通过；
+- wheel：130,883 bytes，SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365`；
+- sdist：200,155 bytes，SHA-256 `9bbdac46eed57a7828259ff71def9d74e8a54e4c16d706e1d3447648b96c503a`；
+- `G1-FRM-001B1=Completed`；B2 现场前置已解锁，但尚未形成 hardware PASS 或完整 G1 PASS。

@@ -6,10 +6,12 @@
 | parent | `G1-FRM-001B` / `G1-FRM-001` |
 | requirement | `REQ-CAP-001`、`REQ-UI-001`、`REQ-SAFE-002`、`REQ-OBS-002`、`REQ-PRI-001`、`REQ-REL-001`、`REQ-REL-002` |
 | gate | G1 FrameSource 子门禁 |
-| decision | 已冻结；等待 B1 完成后执行 |
+| decision | 已冻结并解锁；等待现场窗口执行 |
 | implementation | 5.6 Luna max + QA/evidence + 现场负责人 |
 | status | `Queued` |
-| baseline | `G1-FRM-001B1` protected-merge source commit 与 main-CI wheel |
+| baseline | protected `main@3d2f74c21bfb475482a28172018a71740a991aae` |
+| required wheel | `maple_automation_core-0.1.0-py3-none-any.whl` / SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365` |
+| baseline CI | main run [`33248781581`](https://github.com/xphai/mxdauto/actions/runs/33248781581) / `success` |
 | ADR | ADR-002、ADR-004、ADR-007、ADR-010、ADR-011、ADR-012 |
 | unlocks | 完整 `G1-FRM-001` 审计；通过后才评审 `G1-OBS-002` |
 
