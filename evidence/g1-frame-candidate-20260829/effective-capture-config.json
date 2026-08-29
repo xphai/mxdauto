@@ -1,0 +1,15 @@
+{
+  "backend": "dshow",
+  "clock_domain": "monotonic",
+  "device_index": 0,
+  "device_name": "VC-003 Video",
+  "fps": 30.0,
+  "height": 1080,
+  "pixel_format": "mjpg",
+  "poll_interval_s": 0.001,
+  "session_id": "vc003-live-20260829T140846Z",
+  "source_geometry": null,
+  "source_id": "capture-card-primary",
+  "transform_version": "capture-v1",
+  "width": 1920
+}

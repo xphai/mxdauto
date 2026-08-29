@@ -1,0 +1,340 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "b1-wheel",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/maple_automation_core-0.1.0-py3-none-any.whl"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "b1-wheel",
+      "sha256": "62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f",
+      "size_bytes": 131432
+    },
+    {
+      "artifact_id": "calibration",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/calibration.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "calibration",
+      "sha256": "379962db0397326bd021a1a0c361952dcad75ba9e23324d8926aa560ded3dff0",
+      "size_bytes": 392
+    },
+    {
+      "artifact_id": "capture-config",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/effective-capture-config.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "capture-config",
+      "sha256": "2795b42a0b3ba7bae4a632be7637da1a968b80ad9d73566a7da74211925bd8d8",
+      "size_bytes": 364
+    },
+    {
+      "artifact_id": "corpus_manifest",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/corpus/frame-corpus-manifest.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "corpus_manifest",
+      "sha256": "11bcb481e3c683a44ce41e4dcef9ee98ad3172eea8f434c30f1b4d36e0464b91",
+      "size_bytes": 195259
+    },
+    {
+      "artifact_id": "dependency-lock",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "configs/g1-frame-requirements.lock"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "dependency-lock",
+      "sha256": "1aa30d122b50bb938545bcfc2f50e4d3ba789c473c30e3b6806a73cad38957a9",
+      "size_bytes": 512
+    },
+    {
+      "artifact_id": "deterministic_replay",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/deterministic-replay-report.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "deterministic_replay",
+      "sha256": "3b2d76c666c222c904e099180ed9c74e75a48e000987732695a02d857063bb2a",
+      "size_bytes": 3085
+    },
+    {
+      "artifact_id": "event_tape",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/event-tape-index.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "event_tape",
+      "sha256": "244620029379430ac43a4b7a1cc2da03888011937abbf4c62e9b275609d6d8cc",
+      "size_bytes": 1083
+    },
+    {
+      "artifact_id": "frame_ledger",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/accepted-frame-ledger.jsonl"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "frame_ledger",
+      "sha256": "5628357d9d1889c76bc9c8c1f938ba331df56ca8f83f0a693453cf347ea3b269",
+      "size_bytes": 2820715
+    },
+    {
+      "artifact_id": "hardware_smoke",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/vc003-hardware-smoke-report-final.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "hardware_smoke",
+      "sha256": "8ad7a33f2753d1ffaeb26f0756fc6f7fb2ac04326e3e227757b086049ba4cbd4",
+      "size_bytes": 87404
+    },
+    {
+      "artifact_id": "pixel-contract-schema",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "schemas/frame-pixel-artifact.schema.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "pixel-contract-schema",
+      "sha256": "7c86bb116124e8501e196b2db659c87cd73e0e56fe73ae9bb9401605561bb22f",
+      "size_bytes": 4059
+    },
+    {
+      "artifact_id": "privacy_audit",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/privacy-audit-report.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "privacy_audit",
+      "sha256": "7b8ab8e1171006d051d6a92d60cf2634ae1e10200018562d3fa4232d9b3e3314",
+      "size_bytes": 1369
+    },
+    {
+      "artifact_id": "provenance_audit",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/frame-provenance-audit-report.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "provenance_audit",
+      "sha256": "d53d3c13f2e544ffe059f79f444467dbd87909a1b2be1f220989e775d4b3b9b6",
+      "size_bytes": 47377
+    },
+    {
+      "artifact_id": "source_provenance",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/capture-source-provenance.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "source_provenance",
+      "sha256": "b21f9f0bdb9e15ba389aa7de7152a9434e4ebbe7ac7d77ad67cc4e75a8a40898",
+      "size_bytes": 1498
+    },
+    {
+      "artifact_id": "truth_set",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/truth-set-index.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "truth_set",
+      "sha256": "2d6545186a1d121b2e10a12d7b7e76f37fae8576684b39e57d25f2aae224a68f",
+      "size_bytes": 41680
+    },
+    {
+      "artifact_id": "zero_input_audit",
+      "locator": {
+        "access_class": "restricted",
+        "kind": "local",
+        "path": "evidence/g1-frame-candidate-20260829/zero-input-audit-report.json"
+      },
+      "privacy_class": "restricted",
+      "restricted": true,
+      "retention_class": "persistent",
+      "role": "zero_input_audit",
+      "sha256": "284a3371742de5ce185f6ca5197be6a252d70819b7ba1c1ed3bd26cfc2ff8ed9",
+      "size_bytes": 555
+    }
+  ],
+  "b1_binding": {
+    "ci_run": {
+      "run_attempt": "1",
+      "run_id": "33256230132",
+      "status": "success",
+      "workflow": "core-v2-ci"
+    },
+    "dependency_lock_sha256": "1aa30d122b50bb938545bcfc2f50e4d3ba789c473c30e3b6806a73cad38957a9",
+    "source_commit": "37e57b9662fa3d061e840d4b9c86ab89efe24f2f",
+    "wheel": {
+      "locator": "evidence/g1-frame-candidate-20260829/maple_automation_core-0.1.0-py3-none-any.whl",
+      "name": "maple_automation_core-0.1.0-py3-none-any.whl",
+      "sha256": "62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f",
+      "size_bytes": 131432
+    }
+  },
+  "contracts": {
+    "calibration": {
+      "artifact_id": "calibration",
+      "path": "evidence/g1-frame-candidate-20260829/calibration.json",
+      "sha256": "379962db0397326bd021a1a0c361952dcad75ba9e23324d8926aa560ded3dff0"
+    },
+    "capture_config": {
+      "artifact_id": "capture-config",
+      "path": "evidence/g1-frame-candidate-20260829/effective-capture-config.json",
+      "sha256": "2795b42a0b3ba7bae4a632be7637da1a968b80ad9d73566a7da74211925bd8d8"
+    },
+    "pixel_contract": {
+      "digest_domain": "MAPLE_PIXEL_V1",
+      "raw_spec": {
+        "channels": 3,
+        "dtype": "uint8",
+        "height": 1080,
+        "length": 6220800,
+        "pixel_format": "BGR8",
+        "stride": 5760,
+        "width": 1920
+      },
+      "schema_path": "schemas/frame-pixel-artifact.schema.json",
+      "schema_sha256": "7c86bb116124e8501e196b2db659c87cd73e0e56fe73ae9bb9401605561bb22f",
+      "schema_version": "1.0.0"
+    }
+  },
+  "evidence": {
+    "corpus_manifest": {
+      "artifact_id": "corpus_manifest",
+      "role": "corpus_manifest",
+      "sha256": "11bcb481e3c683a44ce41e4dcef9ee98ad3172eea8f434c30f1b4d36e0464b91"
+    },
+    "deterministic_replay": {
+      "artifact_id": "deterministic_replay",
+      "role": "deterministic_replay",
+      "sha256": "3b2d76c666c222c904e099180ed9c74e75a48e000987732695a02d857063bb2a"
+    },
+    "event_tape": {
+      "artifact_id": "event_tape",
+      "role": "event_tape",
+      "sha256": "244620029379430ac43a4b7a1cc2da03888011937abbf4c62e9b275609d6d8cc"
+    },
+    "frame_ledger": {
+      "artifact_id": "frame_ledger",
+      "role": "frame_ledger",
+      "sha256": "5628357d9d1889c76bc9c8c1f938ba331df56ca8f83f0a693453cf347ea3b269"
+    },
+    "hardware_smoke": {
+      "artifact_id": "hardware_smoke",
+      "role": "hardware_smoke",
+      "sha256": "8ad7a33f2753d1ffaeb26f0756fc6f7fb2ac04326e3e227757b086049ba4cbd4"
+    },
+    "privacy_audit": {
+      "artifact_id": "privacy_audit",
+      "role": "privacy_audit",
+      "sha256": "7b8ab8e1171006d051d6a92d60cf2634ae1e10200018562d3fa4232d9b3e3314"
+    },
+    "provenance_audit": {
+      "artifact_id": "provenance_audit",
+      "role": "provenance_audit",
+      "sha256": "d53d3c13f2e544ffe059f79f444467dbd87909a1b2be1f220989e775d4b3b9b6"
+    },
+    "source_provenance": {
+      "artifact_id": "source_provenance",
+      "role": "source_provenance",
+      "sha256": "b21f9f0bdb9e15ba389aa7de7152a9434e4ebbe7ac7d77ad67cc4e75a8a40898"
+    },
+    "truth_set": {
+      "artifact_id": "truth_set",
+      "role": "truth_set",
+      "sha256": "2d6545186a1d121b2e10a12d7b7e76f37fae8576684b39e57d25f2aae224a68f"
+    },
+    "zero_input_audit": {
+      "artifact_id": "zero_input_audit",
+      "role": "zero_input_audit",
+      "sha256": "284a3371742de5ce185f6ca5197be6a252d70819b7ba1c1ed3bd26cfc2ff8ed9"
+    }
+  },
+  "g0_baseline": {
+    "bundle_id": "candidate-core-v2-20260829-shadow",
+    "bundle_ref": "bundles/candidate-core-v2-20260829-shadow/bundle.json",
+    "bundle_sha256": "7f52f1e3838c17d6a87032669b52e32d2ac153a455bd563dad360c400e88767e",
+    "immutable": true,
+    "packet_ref": "evidence/g0-candidate-core-v2-20260829/evidence-index.json",
+    "packet_sha256": "3edab63f9730015ef97650c982e704937026b09caca5a17842066f2ead606fe2",
+    "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452"
+  },
+  "generated_at": "2026-08-29T14:18:58Z",
+  "input_audit": {
+    "core_v2_real_input_call_count": 0,
+    "double_write_event_count": 0,
+    "input_owner": "legacy",
+    "real_input_call_count": 0,
+    "real_input_enabled": false,
+    "receiver_connect_count": 0,
+    "window_write_count": 0
+  },
+  "lifecycle": "candidate",
+  "limitations": [
+    "Technical Candidate packet; organizational release/QA/owner countersign remains pending.",
+    "Raw Pixel CAS and visual-review contact sheets remain external/private and are intentionally excluded from the repository packet."
+  ],
+  "overall_g1_state": "In Progress",
+  "packet_digest": "a23b60094330cdd57b81cb0426017b2bb318e6e07dd4ef7b1e5d08ffcdcb1ea1",
+  "packet_id": "g1-frame-candidate-20260829",
+  "packet_type": "g1_frame_candidate",
+  "schema_version": "1.0.0",
+  "scope": "G1-FRM",
+  "signoffs": []
+}

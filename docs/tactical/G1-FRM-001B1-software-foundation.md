@@ -9,10 +9,10 @@
 | decision | Sol-U 已复核收口 |
 | implementation | 5.6 Luna max |
 | status | `Completed` |
-| baseline | protected `main@3d2f74c21bfb475482a28172018a71740a991aae` |
-| implementation PR | [#5](https://github.com/xphai/mxdauto/pull/5) |
-| CI | PR run `33244563086`；main run [`33248781581`](https://github.com/xphai/mxdauto/actions/runs/33248781581) |
-| canonical wheel | `maple_automation_core-0.1.0-py3-none-any.whl` / SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365` |
+| baseline | protected `main@37e57b9662fa3d061e840d4b9c86ab89efe24f2f`（B2 canonical successor） |
+| implementation PR | 原始实现 [#5](https://github.com/xphai/mxdauto/pull/5)；B2 hardening [#7](https://github.com/xphai/mxdauto/pull/7)～[#10](https://github.com/xphai/mxdauto/pull/10) |
+| CI | 原始 main run `33248781581`；B2 canonical main run [`33256230132`](https://github.com/xphai/mxdauto/actions/runs/33256230132) |
+| canonical wheel | `maple_automation_core-0.1.0-py3-none-any.whl` / SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f` |
 | ADR | ADR-002、ADR-004、ADR-007、ADR-010、ADR-011、ADR-012 |
 | successor | `G1-FRM-001B2` |
 
@@ -323,3 +323,17 @@ B1 完成后仅把 `G1-FRM-001B2` 从 `Queued` 推进到可执行；`G1-FRM-001`
 - wheel：130,883 bytes，SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365`；
 - sdist：200,155 bytes，SHA-256 `9bbdac46eed57a7828259ff71def9d74e8a54e4c16d706e1d3447648b96c503a`；
 - `G1-FRM-001B1=Completed`；B2 现场前置已解锁，但尚未形成 hardware PASS 或完整 G1 PASS。
+
+## 11. B2 使用的 canonical successor 绑定
+
+原始 PR #5 的完成事实保留；现场前发现的 DirectShow negotiated-FPS、持续 admission 与 Candidate
+semantic binding 问题已通过 PR #7～#10 fail-closed 加固。因此 B2 不使用原始 `3d2f74c...` wheel，
+而使用以下 protected-main successor，且变更后已完整重跑 300 秒硬件证据：
+
+- source：`37e57b9662fa3d061e840d4b9c86ab89efe24f2f`；
+- main CI：[`33256230132`](https://github.com/xphai/mxdauto/actions/runs/33256230132)，attempt 1，`success`；
+- wheel：131,432 bytes，SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f`；
+- sdist：201,845 bytes，SHA-256 `a6c7264629eb9a989c32a0ebe01f51359b90ff5cc999f4731c1855451d856706`；
+- current checkout quality：493 tests；required `quality` 与 installed-wheel/pressure/evidence/build steps 全部成功。
+
+该 successor 不改变 `G1-FRM-001B1=Completed`，只更新 B2 的冻结可执行字节身份。
