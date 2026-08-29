@@ -131,6 +131,18 @@ def test_cas_put_get_is_immutable_and_records_separate_encoded_hash(tmp_path: Pa
     assert occurrence.session_id == "session-a"
     assert occurrence.source_sequence == 4
     assert store.put(_spec(), _pixels(), encoded_bytes=b"container-payload") == digest
+    assert (
+        store.put(
+            _spec(),
+            _pixels(),
+            expected_pixel_digest=digest,
+            session_id="expected-digest",
+            source_sequence=1,
+        )
+        == digest
+    )
+    with pytest.raises(PixelIntegrityError, match="expected_pixel_digest"):
+        store.put(_spec(), _pixels(), expected_pixel_digest="0" * 64)
 
 
 def test_cas_artifact_schema_and_roundtrip(tmp_path: Path) -> None:
@@ -731,7 +743,9 @@ def test_pixel_buffer_validation_supports_flat_and_packed_3d_views() -> None:
     spec = _spec()
     packed = np.arange(12, dtype=np.uint8).reshape(spec.shape)
     assert validate_pixels(spec, packed) == _pixels()
-    assert validate_pixels(spec, bytearray(_pixels())) == _pixels()
+    immutable = _pixels()
+    assert validate_pixels(spec, immutable) is immutable
+    assert validate_pixels(spec, bytearray(immutable)) == immutable
     assert verify_pixel_digest(pixel_digest(spec, _pixels()), spec, packed)
     assert not verify_pixel_digest("0" * 64, spec, packed)
     with pytest.raises(TypeError, match="PixelSpec"):

@@ -138,6 +138,10 @@ def test_hardware_schema_is_strict_and_report_digest_excludes_itself() -> None:
 
 
 def test_hardware_recomputes_rate_and_rejects_rounded_up_29_97() -> None:
+    reporting_noise = _hardware_report(PROJECT_ROOT, fps=30.00003)
+    reporting_noise["report_digest"] = canonical_report_digest(reporting_noise)
+    assert verify_hardware_smoke_report(reporting_noise) == []
+
     report = _hardware_report(PROJECT_ROOT, fps=29.97)
     report["source"] = dict(report["source"])  # type: ignore[arg-type]
     cast_source = report["source"]
@@ -150,8 +154,8 @@ def test_hardware_recomputes_rate_and_rejects_rounded_up_29_97() -> None:
 
     rate_report = _hardware_report(PROJECT_ROOT)
     metrics = dict(rate_report["metrics"])  # type: ignore[arg-type]
-    metrics["successful_frames"] = 8999
-    metrics["capture_rate_fps"] = 30.0
+    metrics["successful_frames"] = 8969
+    metrics["capture_rate_fps"] = 29.89
     rate_report["metrics"] = metrics
     rate_report["report_digest"] = canonical_report_digest(rate_report)
     assert any("capture rate" in error for error in verify_hardware_smoke_report(rate_report))

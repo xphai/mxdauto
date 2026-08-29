@@ -2185,6 +2185,7 @@ class VC003Source:
                 source_provenance_id=self._provenance.provenance_id,
                 session_id=sample.session_id or self._session_id,
                 source_sequence=sample.sequence,
+                expected_pixel_digest=sample.content_hash,
             )
             resolved = self._pixel_store.read(artifact.pixel_digest, sample.spec)
             if artifact.ref != sample.image_ref or resolved != sample.raw_bytes:
