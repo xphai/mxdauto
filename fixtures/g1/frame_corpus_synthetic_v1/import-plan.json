@@ -1,0 +1,162 @@
+{
+  "corpus_id": "g1-frame-corpus-synthetic-v1",
+  "created_at": "2026-08-29T00:00:00Z",
+  "limitations": [
+    "Synthetic and de-identified fixture; it proves tooling behavior rather than VC-003 hardware behavior."
+  ],
+  "samples": [
+    {
+      "adjudication_id": null,
+      "calibration_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "category": "static",
+      "expected_admission": "accepted",
+      "expected_status": "accepted",
+      "expected_reason_code": "accepted",
+      "independent_decision": "confirmed",
+      "independent_reviewer_id": "reviewer-independent",
+      "pixel_spec": {
+        "channels": 3,
+        "dtype": "uint8",
+        "height": 1,
+        "length": 9,
+        "pixel_format": "BGR8",
+        "stride": 9,
+        "width": 3
+      },
+      "primary_reviewer_id": "reviewer-primary",
+      "privacy_class": "restricted",
+      "raw_path": "sample-0.bgr",
+      "retention_class": "candidate",
+      "sample_id": "synthetic-sample-0",
+      "sequence": 0,
+      "session_id": "synthetic-session-0",
+      "source_locator": {
+        "kind": "frame_index",
+        "timing_truth": false,
+        "value": 0
+      },
+      "transform_version": "synthetic-v1",
+      "truth_id": "synthetic-truth-0",
+      "wrong_size_negative": false
+    },
+    {
+      "adjudication_id": null,
+      "calibration_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "category": "motion",
+      "expected_admission": "accepted",
+      "expected_status": "accepted",
+      "expected_reason_code": "accepted",
+      "independent_decision": null,
+      "independent_reviewer_id": null,
+      "pixel_spec": {
+        "channels": 3,
+        "dtype": "uint8",
+        "height": 1,
+        "length": 9,
+        "pixel_format": "BGR8",
+        "stride": 9,
+        "width": 3
+      },
+      "primary_reviewer_id": "reviewer-primary",
+      "privacy_class": "restricted",
+      "raw_path": "sample-1.bgr",
+      "retention_class": "candidate",
+      "sample_id": "synthetic-sample-1",
+      "sequence": 1,
+      "session_id": "synthetic-session-1",
+      "source_locator": {
+        "kind": "frame_index",
+        "timing_truth": false,
+        "value": 1
+      },
+      "transform_version": "synthetic-v1",
+      "truth_id": "synthetic-truth-1",
+      "wrong_size_negative": false
+    },
+    {
+      "adjudication_id": null,
+      "calibration_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "category": "wrong_size",
+      "expected_admission": "fatal",
+      "expected_status": "frame_size_changed",
+      "expected_reason_code": "frame_size_changed",
+      "independent_decision": null,
+      "independent_reviewer_id": null,
+      "pixel_spec": {
+        "channels": 3,
+        "dtype": "uint8",
+        "height": 1,
+        "length": 6,
+        "pixel_format": "BGR8",
+        "stride": 6,
+        "width": 2
+      },
+      "primary_reviewer_id": "reviewer-primary",
+      "privacy_class": "restricted",
+      "raw_path": "sample-2.bgr",
+      "retention_class": "candidate",
+      "sample_id": "synthetic-sample-2",
+      "sequence": 2,
+      "session_id": "synthetic-session-2",
+      "source_locator": {
+        "kind": "frame_index",
+        "timing_truth": false,
+        "value": 2
+      },
+      "transform_version": "synthetic-v1",
+      "truth_id": "synthetic-truth-2",
+      "wrong_size_negative": true
+    }
+  ],
+  "schema_version": "1.0.0",
+  "sessions": [
+    {
+      "independent": true,
+      "session_id": "synthetic-session-0",
+      "source_id": "synthetic-source-0",
+      "split": "train"
+    },
+    {
+      "independent": true,
+      "session_id": "synthetic-session-1",
+      "source_id": "synthetic-source-1",
+      "split": "validation"
+    },
+    {
+      "independent": true,
+      "session_id": "synthetic-session-2",
+      "source_id": "synthetic-source-2",
+      "split": "test"
+    }
+  ],
+  "source_commit": "c6d9bf5a406ce612a48e424d91686ca4fde144d0",
+  "sources": [
+    {
+      "expected_sha256": "0a33717fbc6fba8159ccdd6e2de1fb1cb7357528aab34b83e0bc102f89597afc",
+      "license_id": "synthetic-fixture",
+      "locator_kind": "raw_fixture",
+      "privacy_class": "deidentified_public",
+      "source_id": "synthetic-source-0",
+      "source_path": "source-0.bin",
+      "timing_truth": false
+    },
+    {
+      "expected_sha256": "2837f3cb32d73c7af7179385f8b1ccc4e76da8f819e5204e71836f42466cf6d2",
+      "license_id": "synthetic-fixture",
+      "locator_kind": "raw_fixture",
+      "privacy_class": "deidentified_public",
+      "source_id": "synthetic-source-1",
+      "source_path": "source-1.bin",
+      "timing_truth": false
+    },
+    {
+      "expected_sha256": "97cf640b87dc8073fc9958e32b154b993e287f95e7ef5e13c9c9b0204b45b2f5",
+      "license_id": "synthetic-fixture",
+      "locator_kind": "raw_fixture",
+      "privacy_class": "deidentified_public",
+      "source_id": "synthetic-source-2",
+      "source_path": "source-2.bin",
+      "timing_truth": false
+    }
+  ]
+}

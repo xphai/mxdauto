@@ -37,16 +37,38 @@ jobs:
           if ($sourceEpoch -notmatch '^\d+$') { throw "Invalid checkout commit epoch: $sourceEpoch" }
           "SOURCE_DATE_EPOCH=$sourceEpoch" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Install locked development dependencies
+      - name: Install locked development and G1 runtime dependencies
         id: install_dependencies
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check --no-cache-dir --upgrade pip
           python -m pip install --disable-pip-version-check --no-cache-dir --requirement configs/requirements.lock
+          python -m pip install --disable-pip-version-check --no-cache-dir --require-hashes --requirement configs/g1-frame-requirements.lock
 
       - name: Verify dependency lock
         id: verify_dependency_lock
         run: python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed
+
+      - name: Verify G1 capture dependency hash lock
+        id: verify_g1_dependency_lock
+        shell: pwsh
+        run: |
+          $g1LockCheck = @'
+          from pathlib import Path
+
+          from tools.run_g1_installed_smoke import (
+              _check_capture_dependencies,
+              _lock_smoke,
+              _parse_g1_lock,
+          )
+
+          lock = Path("configs/g1-frame-requirements.lock")
+          entries = _parse_g1_lock(lock)
+          _lock_smoke(Path("."), require_installed=True)
+          _check_capture_dependencies(require_exact=True)
+          print(f"G1 hash lock and installed pins verified: {lock.name} ({len(entries)} artifacts)")
+          '@
+          $g1LockCheck | python -
 
       - name: Ruff lint
         id: ruff_lint
@@ -66,6 +88,10 @@ jobs:
       - name: Verify sealed G0 Candidate packet
         id: verify_candidate_bundle
         run: python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0
+
+      - name: Verify G1 capture source snapshot
+        id: verify_capture_snapshot
+        run: python tools/verify_capture_source_snapshot.py --metadata-only
 
       - name: Mypy
         id: mypy
@@ -94,6 +120,31 @@ jobs:
         id: frame_admission
         run: python tools/run_frame_admission_replay.py --runs 3 --fixture fixtures/g1/frame_admission_v1.json --schema schemas/frame-admission-report.schema.json --report evidence/ci-run/frame-admission-report.json
 
+      - name: Raw latest deterministic and lifecycle pressure
+        id: capture_pressure
+        run: python tools/run_capture_pressure.py --publish-take-operations 100000 --lifecycle-races 1000 --runs 3 --require-minimums --source-commit $env:GITHUB_SHA --report evidence/ci-run/capture-pressure-report.json
+
+      - name: Frame corpus import and provenance audit
+        id: frame_provenance
+        shell: pwsh
+        run: |
+          $privateCas = Join-Path $env:RUNNER_TEMP "g1-frame-private-cas-$env:GITHUB_RUN_ID"
+          python tools/import_frame_corpus.py `
+            --plan fixtures/g1/frame_corpus_synthetic_v1/import-plan.json `
+            --output-root evidence/ci-run/frame-corpus `
+            --cas-root $privateCas `
+            --source-commit $env:GITHUB_SHA
+          python tools/audit_frame_provenance.py `
+            --manifest evidence/ci-run/frame-corpus/frame-corpus-manifest.json `
+            --truth-root evidence/ci-run/frame-corpus `
+            --cas-root $privateCas `
+            --event-tape fixtures/g1/frame_corpus_synthetic_v1/event-tape-0.jsonl `
+            --event-tape fixtures/g1/frame_corpus_synthetic_v1/event-tape-1.jsonl `
+            --event-tape fixtures/g1/frame_corpus_synthetic_v1/event-tape-2.jsonl `
+            --require-full-cas `
+            --generated-at $env:CI_STARTED_AT `
+            --report evidence/ci-run/frame-provenance-audit-report.json
+
       - name: Build wheel and sdist
         id: build
         shell: pwsh
@@ -101,43 +152,252 @@ jobs:
           python -m build --wheel --sdist --no-isolation
           Get-ChildItem dist/*.tar.gz | ForEach-Object { python tools/normalize_sdist.py --source-date-epoch $env:SOURCE_DATE_EPOCH $_.FullName }
 
+      - name: G1 clean Python 3.12 installed wheel smoke
+        id: g1_installed_smoke
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $repoRoot = (Get-Location).Path
+          $evidenceRoot = Join-Path $repoRoot "evidence/ci-run"
+          New-Item -ItemType Directory -Force -Path $evidenceRoot | Out-Null
+
+          $g1Venv = Join-Path $env:RUNNER_TEMP "g1-clean-py312-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          python -m venv --clear $g1Venv
+          $g1Python = Join-Path $g1Venv "Scripts/python.exe"
+          if (-not (Test-Path -LiteralPath $g1Python -PathType Leaf)) { throw "G1 Python 3.12 venv was not created" }
+          $g1PythonVersion = (& $g1Python -c "import platform; print(platform.python_version())").Trim()
+          if ($g1PythonVersion -notmatch '^3\.12\.') { throw "G1 venv is not Python 3.12: $g1PythonVersion" }
+
+          $g1Lock = Join-Path $repoRoot "configs/g1-frame-requirements.lock"
+          & $g1Python -m pip install --disable-pip-version-check --no-cache-dir --require-hashes --requirement $g1Lock
+          if ($LASTEXITCODE -ne 0) { throw "G1 hash-locked dependency installation failed" }
+
+          $wheels = @(Get-ChildItem -LiteralPath (Join-Path $repoRoot "dist") -Filter "*.whl" -File)
+          if ($wheels.Count -ne 1) { throw "expected exactly one wheel in dist" }
+          $wheel = $wheels[0]
+          $wheelSha256 = (Get-FileHash -LiteralPath $wheel.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $lockSha256 = (Get-FileHash -LiteralPath $g1Lock -Algorithm SHA256).Hash.ToLowerInvariant()
+          & $g1Python -m pip install --disable-pip-version-check --no-cache-dir --no-deps $wheel.FullName
+          if ($LASTEXITCODE -ne 0) { throw "G1 wheel installation failed" }
+
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+          Remove-Item Env:PYTHONHOME -ErrorAction SilentlyContinue
+          $env:PYTHONNOUSERSITE = "1"
+          $env:TEMP = $env:RUNNER_TEMP
+          $env:TMP = $env:RUNNER_TEMP
+          $smokeToolReport = Join-Path $evidenceRoot "g1-installed-smoke-tool-report.json"
+          Push-Location $env:RUNNER_TEMP
+          try {
+            & $g1Python (Join-Path $repoRoot "tools/run_g1_installed_smoke.py") `
+              --repo-root $repoRoot `
+              --require-installed `
+              --runtime-only `
+              --report $smokeToolReport
+            $smokeExit = $LASTEXITCODE
+          } finally {
+            Pop-Location
+          }
+          if ($smokeExit -ne 0) { throw "G1 installed wheel smoke failed" }
+
+          $smokeToolPayload = Get-Content -LiteralPath $smokeToolReport -Raw | ConvertFrom-Json
+          if ($smokeToolPayload.status -ne "PASS") { throw "G1 installed wheel smoke did not PASS" }
+          if ($smokeToolPayload.scope -ne "runtime-only" -or $smokeToolPayload.runtime_only -ne $true) { throw "G1 installed wheel smoke scope is not runtime-only" }
+          if ($smokeToolPayload.input_audit.input_owner -ne "legacy" -or
+              [int]$smokeToolPayload.input_audit.real_input_call_count -ne 0 -or
+              [int]$smokeToolPayload.input_audit.receiver_connect_count -ne 0 -or
+              [int]$smokeToolPayload.input_audit.window_write_count -ne 0) {
+            throw "G1 installed wheel smoke input audit is not zero-input"
+          }
+          $smokeText = Get-Content -LiteralPath $smokeToolReport -Raw
+          foreach ($forbiddenPath in @($repoRoot, $env:RUNNER_TEMP)) {
+            if ($smokeText.IndexOf($forbiddenPath, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+              throw "G1 installed smoke report contains an absolute path"
+            }
+          }
+
+          $smokeToolSha256 = (Get-FileHash -LiteralPath $smokeToolReport -Algorithm SHA256).Hash.ToLowerInvariant()
+          $smokeToolReportName = Split-Path -Leaf $smokeToolReport
+          $smokeReport = Join-Path $evidenceRoot "g1-installed-smoke-report.json"
+          $smokeEnvelope = [ordered]@{
+            schema_version = "1.0.0"
+            report_type = "g1-installed-wheel-smoke-ci-binding"
+            report_id = "g1-installed-wheel-smoke-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+            status = [string]$smokeToolPayload.status
+            source_commit = $env:GITHUB_SHA
+            ci_run_id = $env:GITHUB_RUN_ID
+            ci_run_attempt = $env:GITHUB_RUN_ATTEMPT
+            wheel_name = $wheel.Name
+            wheel_sha256 = $wheelSha256
+            dependency_lock_id = "g1-frame-requirements.lock"
+            dependency_lock_sha256 = $lockSha256
+            python_version = $g1PythonVersion
+            runner_os = $env:RUNNER_OS
+            scope = [string]$smokeToolPayload.scope
+            tool_report = [ordered]@{
+              name = $smokeToolReportName
+              sha256 = $smokeToolSha256
+              canonical_report_sha256 = [string]$smokeToolPayload.canonical_report_sha256
+            }
+            input_audit = $smokeToolPayload.input_audit
+          }
+          $smokeEnvelope | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $smokeReport -Encoding utf8
+
+          "G1_PYTHON=$g1Python" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "G1_WHEEL_NAME=$($wheel.Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "G1_WHEEL_SHA256=$wheelSha256" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "G1_LOCK_SHA256=$lockSha256" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: G1 installed raw-latest pressure smoke
+        id: g1_installed_pressure
+        if: ${{ steps.g1_installed_smoke.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $repoRoot = (Get-Location).Path
+          $evidenceRoot = Join-Path $repoRoot "evidence/ci-run"
+          $g1Python = $env:G1_PYTHON
+          if (-not (Test-Path -LiteralPath $g1Python -PathType Leaf)) { throw "G1 venv Python is missing" }
+          $env:TEMP = $env:RUNNER_TEMP
+          $env:TMP = $env:RUNNER_TEMP
+
+          $stressRoot = Join-Path $env:RUNNER_TEMP "g1-installed-pressure-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          New-Item -ItemType Directory -Force -Path (Join-Path $stressRoot "tools") | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $stressRoot "schemas") | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $stressRoot "configs") | Out-Null
+          Copy-Item -LiteralPath (Join-Path $repoRoot "tools/run_capture_pressure.py") -Destination (Join-Path $stressRoot "tools/run_capture_pressure.py")
+          Copy-Item -LiteralPath (Join-Path $repoRoot "schemas/capture-pressure-report.schema.json") -Destination (Join-Path $stressRoot "schemas/capture-pressure-report.schema.json")
+          # This isolated staging copy is the G1 lock; the checkout G0 lock is never read by this profile.
+          Copy-Item -LiteralPath (Join-Path $repoRoot "configs/g1-frame-requirements.lock") -Destination (Join-Path $stressRoot "configs/requirements.lock")
+
+          $pressureToolReport = Join-Path $evidenceRoot "g1-installed-pressure-tool-report.json"
+          Push-Location $env:RUNNER_TEMP
+          try {
+            & $g1Python (Join-Path $stressRoot "tools/run_capture_pressure.py") `
+              --require-installed `
+              --publish-take-operations 512 `
+              --lifecycle-races 16 `
+              --runs 3 `
+              --source-commit $env:GITHUB_SHA `
+              --report $pressureToolReport
+            $pressureExit = $LASTEXITCODE
+          } finally {
+            Pop-Location
+          }
+          if ($pressureExit -ne 0) { throw "G1 installed pressure smoke failed" }
+
+          $pressureToolPayload = Get-Content -LiteralPath $pressureToolReport -Raw | ConvertFrom-Json
+          if ($pressureToolPayload.status -ne "PASS") { throw "G1 installed pressure smoke did not PASS" }
+          if ($pressureToolPayload.input_audit.input_owner -ne "legacy" -or
+              [int]$pressureToolPayload.input_audit.real_input_call_count -ne 0 -or
+              [int]$pressureToolPayload.input_audit.receiver_connect_count -ne 0 -or
+              [int]$pressureToolPayload.input_audit.window_write_count -ne 0) {
+            throw "G1 installed pressure input audit is not zero-input"
+          }
+          $pressureText = Get-Content -LiteralPath $pressureToolReport -Raw
+          foreach ($forbiddenPath in @($repoRoot, $env:RUNNER_TEMP)) {
+            if ($pressureText.IndexOf($forbiddenPath, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+              throw "G1 installed pressure report contains an absolute path"
+            }
+          }
+          $pressureToolSha256 = (Get-FileHash -LiteralPath $pressureToolReport -Algorithm SHA256).Hash.ToLowerInvariant()
+          $pressureToolReportName = Split-Path -Leaf $pressureToolReport
+          $pressureReport = Join-Path $evidenceRoot "g1-installed-pressure-report.json"
+          $pressureEnvelope = [ordered]@{
+            schema_version = "1.0.0"
+            report_type = "g1-installed-pressure-ci-binding"
+            report_id = "g1-installed-pressure-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+            status = [string]$pressureToolPayload.status
+            source_commit = $env:GITHUB_SHA
+            ci_run_id = $env:GITHUB_RUN_ID
+            ci_run_attempt = $env:GITHUB_RUN_ATTEMPT
+            wheel_name = $env:G1_WHEEL_NAME
+            wheel_sha256 = $env:G1_WHEEL_SHA256
+            dependency_lock_id = "g1-frame-requirements.lock"
+            dependency_lock_sha256 = $env:G1_LOCK_SHA256
+            python_version = (& $g1Python -c "import platform; print(platform.python_version())").Trim()
+            runner_os = $env:RUNNER_OS
+            coverage = [string]$pressureToolPayload.requirements.coverage
+            tool_report = [ordered]@{
+              name = $pressureToolReportName
+              sha256 = $pressureToolSha256
+              report_digest = [string]$pressureToolPayload.report_digest
+              dependency_lock_binding = [string]$pressureToolPayload.environment.dependency_lock_sha256
+            }
+            input_audit = $pressureToolPayload.input_audit
+          }
+          $pressureEnvelope | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $pressureReport -Encoding utf8
+
       - name: Collect CI evidence metadata
         id: collect_ci_evidence
         if: always()
         shell: pwsh
         run: |
+          "upload_ready=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           $artifactArgs = @()
-          Get-ChildItem -LiteralPath dist -File | ForEach-Object {
-            $artifactArgs += "--artifact"
-            $artifactArgs += $_.FullName
+          if (Test-Path -LiteralPath dist -PathType Container) {
+            Get-ChildItem -LiteralPath dist -File | ForEach-Object {
+              $artifactArgs += "--artifact"
+              $artifactArgs += $_.FullName
+            }
           }
           $artifactArgs += "--artifact"
           $artifactArgs += "evidence/ci-run/checkout-smoke-report.json"
           $artifactArgs += "--artifact"
           $artifactArgs += "evidence/ci-run/frame-admission-report.json"
           $artifactArgs += "--artifact"
-          $artifactArgs += "evidence/ci-run/golden-replay-report.json"
+          $artifactArgs += "evidence/ci-run/capture-pressure-report.json"
           $artifactArgs += "--artifact"
-          $artifactArgs += "evidence/ci-run/golden-shadow-report.json"
+          $artifactArgs += "evidence/ci-run/frame-corpus/frame-corpus-manifest.json"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/frame-provenance-audit-report.json"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/clean-junit.xml"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/clean-coverage.xml"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "configs/g1-frame-requirements.lock"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/g1-installed-smoke-report.json"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/g1-installed-smoke-tool-report.json"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/g1-installed-pressure-report.json"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/g1-installed-pressure-tool-report.json"
           python tools/collect_ci_evidence.py `
             --output evidence/ci-run/ci-evidence.json `
             --repo-root . `
+            --sanitize-paths `
             --junit evidence/ci-run/junit.xml `
             --coverage evidence/ci-run/coverage.xml `
             --lock configs/requirements.lock `
-            --check-result "install-dependencies::${{ steps.install_dependencies.outcome }}::python -m pip install --disable-pip-version-check --no-cache-dir --requirement configs/requirements.lock" `
+            --fixture fixtures/golden/pilot_minimal_v1.json `
+            --expected-fixture-sha256 22dd58eeaee16cb72eea529f177aad86747e162e7d9e7458a284a0dad4e6eb34 `
+            --expected-fixture-replay-digest 767cad8215a420e0f01c36d434cc96530a74acc552f97c8685740a81de6baaed `
+            --expected-fixture-shadow-digest ac6f55d4cf3b57d494c951a8affafef73aa99eee3b49b3d76cff7c7dd46ee07b `
+            --fixture-evidence-report current-replay::evidence/ci-run/golden-replay-report.json `
+            --fixture-evidence-report current-shadow::evidence/ci-run/golden-shadow-report.json `
+            --fixture-evidence-report clean-replay::evidence/ci-run/clean-replay-report.json `
+            --fixture-evidence-report clean-shadow::evidence/ci-run/clean-shadow-report.json `
+            --check-result "install-dependencies::${{ steps.install_dependencies.outcome }}::install configs/requirements.lock and hash-locked configs/g1-frame-requirements.lock" `
             --check-result "verify-dependency-lock::${{ steps.verify_dependency_lock.outcome }}::python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed" `
+            --check-result "verify-g1-dependency-lock::${{ steps.verify_g1_dependency_lock.outcome }}::G1 hash lock parser and installed exact pins" `
             --check-result "ruff-lint::${{ steps.ruff_lint.outcome }}::python -m ruff check src tests tools" `
             --check-result "ruff-format::${{ steps.ruff_format.outcome }}::python -m ruff format --check src tests tools" `
             --check-result "validate-runtime-manifests::${{ steps.validate_runtime_manifests.outcome }}::python tools/validate_runtime_manifest.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json" `
             --check-result "candidate-bundle::${{ steps.verify_candidate_bundle.outcome }}::python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0" `
+            --check-result "capture-source-snapshot::${{ steps.verify_capture_snapshot.outcome }}::python tools/verify_capture_source_snapshot.py --metadata-only" `
             --check-result "mypy::${{ steps.mypy.outcome }}::python -m mypy" `
             --check-result "checkout-smoke::${{ steps.checkout_smoke.outcome }}::python tools/run_clean_smoke.py --mode checkout-regression --output evidence/ci-run/checkout-smoke-report.json" `
             --check-result "pytest::${{ steps.pytest.outcome }}::python -m pytest" `
             --check-result "golden-replay::${{ steps.golden_replay.outcome }}::python tools/run_golden_replay.py --runs 3 --report evidence/ci-run/golden-replay-report.json" `
             --check-result "shadow-audit::${{ steps.shadow_audit.outcome }}::python tools/run_shadow.py --report evidence/ci-run/golden-shadow-report.json" `
             --check-result "frame-admission::${{ steps.frame_admission.outcome }}::python tools/run_frame_admission_replay.py --runs 3 --fixture fixtures/g1/frame_admission_v1.json --schema schemas/frame-admission-report.schema.json --report evidence/ci-run/frame-admission-report.json" `
+            --check-result "capture-pressure::${{ steps.capture_pressure.outcome }}::python tools/run_capture_pressure.py --publish-take-operations 100000 --lifecycle-races 1000 --runs 3 --require-minimums" `
+            --check-result "frame-provenance::${{ steps.frame_provenance.outcome }}::python tools/import_frame_corpus.py; python tools/audit_frame_provenance.py --require-full-cas" `
             --check-result "build::${{ steps.build.outcome }}::python -m build --wheel --sdist --no-isolation; python tools/normalize_sdist.py dist/*.tar.gz" `
+            --check-result "g1-installed-smoke::${{ steps.g1_installed_smoke.outcome }}::python tools/run_g1_installed_smoke.py --require-installed --runtime-only --report evidence/ci-run/g1-installed-smoke-report.json" `
+            --check-result "g1-installed-pressure::${{ steps.g1_installed_pressure.outcome }}::python tools/run_capture_pressure.py --require-installed --publish-take-operations 512 --lifecycle-races 16 --runs 3 --source-commit GITHUB_SHA (G1 lock staging)" `
             --workflow-result "${{ job.status }}" `
             --event $env:GITHUB_EVENT_NAME `
             --workflow-name $env:GITHUB_WORKFLOW `
@@ -147,7 +407,7 @@ jobs:
             @artifactArgs
 
       - name: Upload JUnit and coverage
-        if: always()
+        if: ${{ always() && steps.collect_ci_evidence.outputs.upload_ready == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: quality-reports-${{ github.run_id }}
@@ -158,7 +418,7 @@ jobs:
           retention-days: 30
 
       - name: Upload build artifacts
-        if: always()
+        if: ${{ always() && steps.collect_ci_evidence.outputs.upload_ready == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: build-artifacts-${{ github.run_id }}
@@ -167,7 +427,7 @@ jobs:
           retention-days: 30
 
       - name: Upload CI evidence
-        if: always()
+        if: ${{ always() && steps.collect_ci_evidence.outputs.upload_ready == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: ci-evidence-${{ github.run_id }}
@@ -176,7 +436,7 @@ jobs:
           retention-days: 30
 
       - name: Upload checkout-regression evidence
-        if: always()
+        if: ${{ always() && steps.collect_ci_evidence.outputs.upload_ready == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: checkout-smoke-${{ github.run_id }}
@@ -192,7 +452,7 @@ jobs:
           retention-days: 30
 
       - name: Upload G1 frame-admission evidence
-        if: always()
+        if: ${{ always() && steps.collect_ci_evidence.outputs.upload_ready == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: g1-frame-admission-${{ github.run_id }}
@@ -200,5 +460,30 @@ jobs:
             evidence/ci-run/frame-admission-report.json
             fixtures/g1/frame_admission_v1.json
             schemas/frame-admission-report.schema.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload G1 FrameSource software evidence
+        if: ${{ always() && steps.collect_ci_evidence.outputs.upload_ready == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: g1-frame-source-b1-${{ github.run_id }}
+          path: |
+            configs/g1-frame-source-snapshot.json
+            schemas/capture-source-snapshot.schema.json
+            schemas/frame-pixel-artifact.schema.json
+            schemas/capture-source-provenance.schema.json
+            schemas/frame-truth.schema.json
+            schemas/frame-corpus-manifest.schema.json
+            schemas/frame-provenance-audit-report.schema.json
+            schemas/capture-pressure-report.schema.json
+            configs/g1-frame-requirements.lock
+            evidence/ci-run/capture-pressure-report.json
+            evidence/ci-run/frame-corpus/**
+            evidence/ci-run/frame-provenance-audit-report.json
+            evidence/ci-run/g1-installed-smoke-report.json
+            evidence/ci-run/g1-installed-smoke-tool-report.json
+            evidence/ci-run/g1-installed-pressure-report.json
+            evidence/ci-run/g1-installed-pressure-tool-report.json
           if-no-files-found: ignore
           retention-days: 30

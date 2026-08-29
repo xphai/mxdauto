@@ -185,7 +185,7 @@ rollback_release_id
 |---|---|---|---|
 | G-1 | 主线、范围、Pilot、所有权封存 | **Strategic PASS；文档已封存** | 允许在唯一主线执行 G0 战术包 |
 | G0 | Git/CI/契约/Bundle/最小证据流水线 | **PASS** | G1 Ready；真实输入仍为 0 |
-| G1 | 确定性 Replay、感知/WorldState、完整 Shadow | **进行中：G1-FRM-001（001A Completed；001B Queued）** | 允许构建执行内核；真实输入仍为 0 |
+| G1 | 确定性 Replay、感知/WorldState、完整 Shadow | **进行中：G1-FRM-001（001A Completed；001B1 In Progress；001B2 Queued）** | 允许构建执行内核；真实输入仍为 0 |
 | G2 | ActionController、Supervisor、receiver dry-run、故障安全 | **未开始** | 具备提交 Canary Gate 的资格；真实输入默认仍为 0 |
 | G3 | 单图、单档案、单 Bundle 的有界 Canary | **未开始** | 仅认证窗口内的 Core v2 独占输入权 |
 | G4 | 单图 Certified，5 次独立 4 小时会话 | **未开始** | Pilot 范围内的常态 Core v2 输入权 |
@@ -286,7 +286,7 @@ rollback_release_id
 
 | ID | 工作与输出 | 依赖 | 模型分工 | 当前状态 |
 |---|---|---|---|---|
-| G1-FRM-001 | `FrameSource` adapter、最新帧策略、内容区/ROI 校准、陈旧/断序/画幅变化检测 | G0 PASS | Sol-U 契约；Luna-M 实现 | **进行中**：001A 已 Completed（PR #3、source/merge/run 已绑定）；001B VC-003/corpus/stress/hardware/provenance 待实施 |
+| G1-FRM-001 | `FrameSource` adapter、最新帧策略、内容区/ROI 校准、陈旧/断序/画幅变化检测 | G0 PASS | Sol-U 契约；Luna-M 实现 | **进行中**：001A 已 Completed；001B 已拆为 001B1 software foundation=`In Progress`、001B2 hardware/packet=`Queued` |
 | G1-OBS-002 | 采集→标准化→检测 adapter；统一部署 ONNX、classes、input size、thresholds | G1-FRM、Pilot Bundle | Sol-U 晋级规则；Luna-M 实现 | 等待完整 G1-FRM-001 |
 | G1-LOC-003 | 玩家身份、地图/平台坐标、置信度和未知态；所有变换携带版本 | G1-OBS | Sol-U 不变量；Luna-M 实现 | 未开始 |
 | G1-WST-004 | 纯函数式 WorldState reducer、clock/randomness 注入、状态版本与 provenance | G1-OBS、LOC | Sol-U 契约；Luna-M 实现 | 未开始 |
@@ -304,6 +304,17 @@ rollback_release_id
 - 质量：149 tests、91.38% coverage；checkout smoke 20/20；5 artifact groups。
 - Frame Admission：`PASS`，3 runs / 15 scenarios / 32 events / Core v2 real input=0；main frame digest `1c4948afc636ffba45b1f4a769ec7ee3d6d5ea15f09b2b1f9596faa43f837a7d`。
 - G0 sealed packet 的 source/packet、manifest、报告和既有证据链保持原有事实；完整 `G1-FRM-001` 与 G1 Gate 仍为 `In Progress`。
+
+### G1-FRM-001B 拆分状态
+
+| 子包 | 冻结范围 | 当前状态 |
+|---|---|---|
+| `G1-FRM-001B1` | ADR-012 Pixel V1/CAS、Core-owned raw capacity=1、VC-003 read-only adapter + fake backend、source provenance、corpus/truth 工具、Event Tape 映射、并发 stress、schemas/verifiers 与 Python 3.12 CI wheel | `In Progress` |
+| `G1-FRM-001B2` | 精确 B1 wheel 的 VC-003 300 秒 smoke、真实 3-session/300-frame corpus/truth、privacy/provenance audit 与新 G1 Frame Candidate packet | `Queued`；依赖 B1 Completed |
+
+两包全程保持 `input_owner=legacy`、Core v2 真实输入为 0。B1 只关闭软件确定性基础；B2 只在
+真实 hardware evidence 与 packet 闭环后提交完整 `G1-FRM-001` 审计。DirectShow/driver/vendor
+queue depth 保持 `unknown`，G0 sealed packet 不变。
 
 ### 退出门禁
 
@@ -584,8 +595,9 @@ Fixture/Contract → Golden Replay → Shadow → bounded Canary → Certified
 
 1. **G0 收口（完成）**：protected main、required `quality`、PR #1、Owner countersign 和 post-merge run 已闭环。
 2. **Luna-M / G1-FRM-001A（已完成）**：PR #3 已合并，feature source `7cca4154a38e8bca29b917aa3c5abcc43a51391d` 以 merge `b30ddedb1f05945e68fb348b221cdfa123e83c59` 进入主线，并绑定 PR run `33225384485`、main run `33225488599`；Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / zero input），checkout smoke 20/20，5 artifact groups。
-3. **Sol-U / G1-FRM-001B 审计点**：冻结 raw corpus/truth、VC-003 read-only adapter、latest stress、5 分钟硬件 smoke、source provenance 与新 G1 Candidate packet；001B 通过前保持 `G1-FRM-001=In Progress`。
-4. **后续依赖链**：完整 G1-FRM-001 → G1-OBS-002 → G1-LOC-003 → G1-WST-004 → G1-RPL-006 → G1-SHD-007；全程保持 Core v2 真实输入为 0。
+3. **Luna-M / G1-FRM-001B1（进行中）**：实现 ADR-012 Pixel V1/CAS、raw latest、VC-003 read-only adapter、provenance/corpus 工具、stress、schemas/verifiers 与可绑定 CI wheel。
+4. **Luna-M + QA/现场 / G1-FRM-001B2（排队）**：使用精确 B1 wheel 执行 300 秒 VC-003 smoke，封存真实 corpus/truth、privacy/provenance 与新 G1 Frame Candidate packet。
+5. **后续依赖链**：完整 G1-FRM-001 → G1-OBS-002 → G1-LOC-003 → G1-WST-004 → G1-RPL-006 → G1-SHD-007；全程保持 Core v2 真实输入为 0。
 
 ---
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -16,8 +18,10 @@ from maple_automation_core.replay import (
     ReplayError,
     ReplayReport,
 )
+from tools.report_binding import canonical_report_digest
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "golden" / "pilot_minimal_v1.json"
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _raw_fixture() -> dict[str, object]:
@@ -81,6 +85,31 @@ def test_golden_replay_repeats_world_action_and_event_digests(tmp_path: Path) ->
     assert json.loads(report.to_json())["report_digest"]
     report_path = report.write_json(tmp_path / "evidence" / "replay.json")
     assert json.loads(report_path.read_text(encoding="utf-8"))["report_id"] == report.report_id
+
+
+def test_golden_replay_cli_digest_covers_fixture_file_sha256(tmp_path: Path) -> None:
+    report_path = tmp_path / "golden-replay.json"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "tools" / "run_golden_replay.py"),
+            "--runs",
+            "3",
+            "--report",
+            str(report_path),
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(completed.stdout)
+
+    assert payload == json.loads(report_path.read_text(encoding="utf-8"))
+    assert payload["report_digest"] == canonical_report_digest(payload)
+    tampered = dict(payload)
+    tampered["fixture_file_sha256"] = "0" * 64
+    assert tampered["report_digest"] != canonical_report_digest(tampered)
 
 
 def test_golden_replay_mapping_and_explicit_tape_are_reproducible(tmp_path: Path) -> None:

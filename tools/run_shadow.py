@@ -15,7 +15,12 @@ except ModuleNotFoundError:  # local source checkout invocation
     sys.path.insert(0, str(SRC))
     import maple_automation_core as _runtime_package
 
-from report_binding import bind_report_to_manifest, sha256_file, write_report  # noqa: E402
+from report_binding import (  # noqa: E402
+    bind_report_to_manifest,
+    canonical_report_digest,
+    sha256_file,
+    write_report,
+)
 
 from maple_automation_core.replay import ShadowRunner  # noqa: E402
 
@@ -60,6 +65,7 @@ def main(argv: list[str] | None = None) -> int:
     report = ShadowRunner(args.fixture).run()
     payload = report.to_dict()
     payload["fixture_file_sha256"] = sha256_file(args.fixture.resolve())
+    payload["report_digest"] = canonical_report_digest(payload)
     if args.manifest is not None:
         payload = bind_report_to_manifest(
             payload,

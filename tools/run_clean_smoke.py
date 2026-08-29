@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import platform
+import re
 import subprocess
 import sys
 import tempfile
@@ -35,6 +36,9 @@ except ImportError:  # pragma: no cover - exercised when invoked as a script
 
 SCHEMA_VERSION = "1.0.0"
 STEP_TIMEOUT_SECONDS = 900
+_ABSOLUTE_PATH = re.compile(
+    r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/][^\r\n\"'<>]+|\\\\[^\\/\s\"'<>]+[\\/][^\r\n\"'<>]+)"
+)
 
 
 class SmokeFailure(RuntimeError):
@@ -89,12 +93,67 @@ def _portable(root: Path, path: Path) -> str:
     return safe_relative_path(path.resolve().relative_to(root.resolve()).as_posix())
 
 
+def _replace_root(value: str, root: Path | None, replacement: str) -> str:
+    if root is None:
+        return value
+    resolved = str(root.resolve()).rstrip("\\/")
+    spellings = {resolved, resolved.replace("\\", "/")}
+    result = value
+    for spelling in sorted(spellings, key=len, reverse=True):
+        result = re.sub(re.escape(spelling), replacement, result, flags=re.IGNORECASE)
+    return result
+
+
+def _sanitize_text(
+    value: str,
+    *,
+    repo_root: Path | None = None,
+    temp_root: Path | None = None,
+) -> str:
+    """Replace runner paths with portable labels before evidence is persisted."""
+
+    result = _replace_root(value, repo_root, ".")
+    result = _replace_root(result, temp_root, "[temp]")
+    return _ABSOLUTE_PATH.sub("[absolute-path]", result)
+
+
+def _sanitize_command(
+    command: list[str], *, repo_root: Path | None = None, temp_root: Path | None = None
+) -> str:
+    return _sanitize_text(
+        subprocess.list2cmdline(command),
+        repo_root=repo_root,
+        temp_root=temp_root,
+    )
+
+
+def _sanitize_text_file(path: Path, *, repo_root: Path, temp_root: Path | None = None) -> None:
+    """Rewrite a text evidence file without changing its structural format."""
+
+    value = path.read_text(encoding="utf-8", errors="replace")
+    sanitized = _sanitize_text(value, repo_root=repo_root, temp_root=temp_root)
+    if sanitized != value:
+        path.write_text(sanitized, encoding="utf-8")
+
+
+def _absolute_path_findings(paths: list[Path]) -> dict[str, int]:
+    findings: dict[str, int] = {}
+    for path in paths:
+        if not path.is_file() or path.suffix.lower() not in {".json", ".jsonl", ".xml", ".txt"}:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            findings[path.name] = 1
+            continue
+        matches = list(_ABSOLUTE_PATH.finditer(text))
+        if matches:
+            findings[path.name] = len(matches)
+    return findings
+
+
 def _timestamp() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def _command_text(command: list[str]) -> str:
-    return subprocess.list2cmdline(command)
 
 
 def _run_step(
@@ -104,6 +163,8 @@ def _run_step(
     command: list[str],
     cwd: Path,
     env: dict[str, str],
+    repo_root: Path | None = None,
+    temp_root: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
     started = time.perf_counter()
     try:
@@ -122,7 +183,7 @@ def _run_step(
         duration = round(time.perf_counter() - started, 3)
         checks.append(
             {
-                "command": _command_text(command),
+                "command": _sanitize_command(command, repo_root=repo_root, temp_root=temp_root),
                 "details": {"timeout_seconds": STEP_TIMEOUT_SECONDS},
                 "duration_seconds": duration,
                 "name": name,
@@ -133,12 +194,16 @@ def _run_step(
     duration = round(time.perf_counter() - started, 3)
     details: dict[str, Any] = {
         "exit_code": completed.returncode,
-        "stdout_tail": completed.stdout[-4000:],
-        "stderr_tail": completed.stderr[-4000:],
+        "stdout_tail": _sanitize_text(
+            completed.stdout[-4000:], repo_root=repo_root, temp_root=temp_root
+        ),
+        "stderr_tail": _sanitize_text(
+            completed.stderr[-4000:], repo_root=repo_root, temp_root=temp_root
+        ),
     }
     checks.append(
         {
-            "command": _command_text(command),
+            "command": _sanitize_command(command, repo_root=repo_root, temp_root=temp_root),
             "details": details,
             "duration_seconds": duration,
             "name": name,
@@ -203,6 +268,26 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     artifacts: list[dict[str, Any]] = []
     error: str | None = None
     output_dir = output.parent
+    junit_path = output_dir / "clean-junit.xml"
+    coverage_path = output_dir / "clean-coverage.xml"
+    replay_path = output_dir / "clean-replay-report.json"
+    shadow_path = output_dir / "clean-shadow-report.json"
+    frame_admission_path = output_dir / "clean-frame-admission-report.json"
+    xml_errors: list[str] = []
+
+    def sanitize_xml_evidence(temp_root: Path | None = None) -> None:
+        for xml_path in (junit_path, coverage_path):
+            if not xml_path.is_file():
+                continue
+            try:
+                _sanitize_text_file(
+                    xml_path,
+                    repo_root=repo_root,
+                    temp_root=temp_root,
+                )
+            except OSError:
+                if xml_path.name not in xml_errors:
+                    xml_errors.append(xml_path.name)
 
     # This check runs before the report directory is created, proving the checkout
     # itself is clean.  Generated evidence is written only after this point.
@@ -336,11 +421,6 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             venv_dir = temp_root / "venv"
             artifact_dir = output_dir / "artifacts"
             artifact_dir.mkdir(parents=True, exist_ok=True)
-            junit_path = output_dir / "clean-junit.xml"
-            coverage_path = output_dir / "clean-coverage.xml"
-            replay_path = output_dir / "clean-replay-report.json"
-            shadow_path = output_dir / "clean-shadow-report.json"
-            frame_admission_path = output_dir / "clean-frame-admission-report.json"
 
             _run_step(
                 checks=checks,
@@ -348,13 +428,15 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 command=[sys.executable, "-m", "venv", str(venv_dir)],
                 cwd=temp_root,
                 env=env,
+                repo_root=repo_root,
+                temp_root=temp_root,
             )
             venv_python = (
                 venv_dir / "Scripts" / "python.exe"
                 if os.name == "nt"
                 else venv_dir / "bin" / "python"
             )
-            commands: tuple[tuple[str, list[str], Path], ...] = (
+            commands: list[tuple[str, list[str], Path]] = [
                 (
                     "cacheless-lock-install",
                     [
@@ -368,91 +450,123 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                     ],
                     temp_root,
                 ),
-                (
-                    "dependency-lock-audit",
-                    [
-                        str(venv_python),
-                        str(repo_root / "tools" / "verify_dependency_lock.py"),
-                        "--lock",
-                        str(repo_root / "configs" / "requirements.lock"),
-                        "--check-installed",
-                    ],
-                    repo_root,
-                ),
-                (
-                    "ruff-lint",
-                    [str(venv_python), "-m", "ruff", "check", "src", "tests", "tools"],
-                    repo_root,
-                ),
-                (
-                    "ruff-format",
-                    [
-                        str(venv_python),
-                        "-m",
-                        "ruff",
-                        "format",
-                        "--check",
-                        "src",
-                        "tests",
-                        "tools",
-                    ],
-                    repo_root,
-                ),
-                ("mypy", [str(venv_python), "-m", "mypy"], repo_root),
-                (
-                    "candidate-manifest-schema",
-                    [
-                        str(venv_python),
-                        str(repo_root / "tools" / "validate_runtime_manifest.py"),
-                        "--schema",
-                        str(repo_root / "schemas" / "runtime-manifest.schema.json"),
-                        "--manifest",
-                        str(manifest_path),
-                    ],
-                    repo_root,
-                ),
-                (
-                    "candidate-bundle-metadata",
-                    [
-                        str(venv_python),
-                        str(repo_root / "tools" / "verify_bundle.py"),
-                        "--bundle-dir",
-                        str(bundle_dir),
-                        "--metadata-only",
-                    ],
-                    repo_root,
-                ),
-                (
-                    "pytest-coverage",
-                    [
-                        str(venv_python),
-                        "-m",
-                        "pytest",
-                        f"--junitxml={junit_path}",
-                        "--cov=maple_automation_core",
-                        "--cov-report=term-missing",
-                        f"--cov-report=xml:{coverage_path}",
-                        "--cov-fail-under=90",
-                    ],
-                    repo_root,
-                ),
-                (
-                    "wheel-sdist-build",
-                    [
-                        str(venv_python),
-                        "-m",
-                        "build",
-                        "--wheel",
-                        "--sdist",
-                        "--no-isolation",
-                        "--outdir",
-                        str(artifact_dir),
-                    ],
-                    repo_root,
-                ),
+            ]
+            # The sealed G0 reproduction intentionally remains on its historical
+            # development lock.  G1 runtime dependencies are installed only by
+            # the current-checkout regression, where the new lock is under test.
+            if mode == "checkout-regression":
+                commands.append(
+                    (
+                        "g1-runtime-lock-install",
+                        [
+                            str(venv_python),
+                            "-m",
+                            "pip",
+                            "install",
+                            "--no-cache-dir",
+                            "--require-hashes",
+                            "--requirement",
+                            str(repo_root / "configs" / "g1-frame-requirements.lock"),
+                        ],
+                        temp_root,
+                    )
+                )
+            commands.extend(
+                [
+                    (
+                        "dependency-lock-audit",
+                        [
+                            str(venv_python),
+                            str(repo_root / "tools" / "verify_dependency_lock.py"),
+                            "--lock",
+                            str(repo_root / "configs" / "requirements.lock"),
+                            "--check-installed",
+                        ],
+                        repo_root,
+                    ),
+                    (
+                        "ruff-lint",
+                        [str(venv_python), "-m", "ruff", "check", "src", "tests", "tools"],
+                        repo_root,
+                    ),
+                    (
+                        "ruff-format",
+                        [
+                            str(venv_python),
+                            "-m",
+                            "ruff",
+                            "format",
+                            "--check",
+                            "src",
+                            "tests",
+                            "tools",
+                        ],
+                        repo_root,
+                    ),
+                    ("mypy", [str(venv_python), "-m", "mypy"], repo_root),
+                    (
+                        "candidate-manifest-schema",
+                        [
+                            str(venv_python),
+                            str(repo_root / "tools" / "validate_runtime_manifest.py"),
+                            "--schema",
+                            str(repo_root / "schemas" / "runtime-manifest.schema.json"),
+                            "--manifest",
+                            str(manifest_path),
+                        ],
+                        repo_root,
+                    ),
+                    (
+                        "candidate-bundle-metadata",
+                        [
+                            str(venv_python),
+                            str(repo_root / "tools" / "verify_bundle.py"),
+                            "--bundle-dir",
+                            str(bundle_dir),
+                            "--metadata-only",
+                        ],
+                        repo_root,
+                    ),
+                    (
+                        "pytest-coverage",
+                        [
+                            str(venv_python),
+                            "-m",
+                            "pytest",
+                            f"--junitxml={junit_path}",
+                            "--cov=maple_automation_core",
+                            "--cov-report=term-missing",
+                            f"--cov-report=xml:{coverage_path}",
+                            "--cov-fail-under=90",
+                        ],
+                        repo_root,
+                    ),
+                    (
+                        "wheel-sdist-build",
+                        [
+                            str(venv_python),
+                            "-m",
+                            "build",
+                            "--wheel",
+                            "--sdist",
+                            "--no-isolation",
+                            "--outdir",
+                            str(artifact_dir),
+                        ],
+                        repo_root,
+                    ),
+                ]
             )
             for name, command, cwd in commands:
-                _run_step(checks=checks, name=name, command=command, cwd=cwd, env=env)
+                _run_step(
+                    checks=checks,
+                    name=name,
+                    command=command,
+                    cwd=cwd,
+                    env=env,
+                    repo_root=repo_root,
+                    temp_root=temp_root,
+                )
 
             wheels = sorted(artifact_dir.glob("*.whl"))
             sdists = sorted(artifact_dir.glob("*.tar.gz"))
@@ -472,6 +586,8 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 ],
                 cwd=temp_root,
                 env=env,
+                repo_root=repo_root,
+                temp_root=temp_root,
             )
             _run_step(
                 checks=checks,
@@ -488,7 +604,26 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 ],
                 cwd=temp_root,
                 env=env,
+                repo_root=repo_root,
+                temp_root=temp_root,
             )
+            if mode == "checkout-regression":
+                _run_step(
+                    checks=checks,
+                    name="g1-installed-runtime-smoke",
+                    command=[
+                        str(venv_python),
+                        str(repo_root / "tools" / "run_g1_installed_smoke.py"),
+                        "--repo-root",
+                        str(repo_root),
+                        "--require-installed",
+                        "--runtime-only",
+                    ],
+                    cwd=temp_root,
+                    env=env,
+                    repo_root=repo_root,
+                    temp_root=temp_root,
+                )
             _run_step(
                 checks=checks,
                 name="installed-wheel-import",
@@ -504,6 +639,8 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 ],
                 cwd=temp_root,
                 env=env,
+                repo_root=repo_root,
+                temp_root=temp_root,
             )
             replay_command = [
                 str(venv_python),
@@ -532,6 +669,8 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 command=replay_command,
                 cwd=temp_root,
                 env=env,
+                repo_root=repo_root,
+                temp_root=temp_root,
             )
             _run_step(
                 checks=checks,
@@ -539,6 +678,8 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                 command=shadow_command,
                 cwd=temp_root,
                 env=env,
+                repo_root=repo_root,
+                temp_root=temp_root,
             )
             if mode == "checkout-regression":
                 _run_step(
@@ -561,6 +702,8 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
                     ],
                     cwd=temp_root,
                     env=env,
+                    repo_root=repo_root,
+                    temp_root=temp_root,
                 )
             shadow = read_json(shadow_path)
             input_audit = shadow.get("input_audit", {})
@@ -591,6 +734,11 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             if not rollback_ok:
                 raise SmokeFailure("rollback ownership audit failed")
 
+            # Sanitize before taking artifact metadata.  The uploaded artifact
+            # hash must describe the exact bytes that the collector receives.
+            sanitize_xml_evidence(temp_root)
+            if xml_errors:
+                raise SmokeFailure("could not sanitize CI XML evidence")
             report_artifacts = [
                 (junit_path, "junit", "clean-junit"),
                 (coverage_path, "coverage", "clean-coverage"),
@@ -615,6 +763,33 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     except (OSError, SmokeFailure, ValueError) as exc:
         error = str(exc)
 
+    # Also sanitize partial reports after a failed step so always-run CI
+    # collection never uploads runner paths from a failure artifact.
+    sanitize_xml_evidence()
+    privacy_paths = [junit_path, coverage_path, replay_path, shadow_path]
+    if mode == "checkout-regression":
+        privacy_paths.append(frame_admission_path)
+    findings = _absolute_path_findings(privacy_paths)
+    expected_paths_missing = error is None and any(not path.is_file() for path in privacy_paths)
+    privacy_status = "passed"
+    if error is not None and not any(path.is_file() for path in privacy_paths):
+        privacy_status = "skipped"
+    elif xml_errors or findings or expected_paths_missing:
+        privacy_status = "failed"
+    checks.append(
+        {
+            "command": "sanitize and scan CI evidence, coverage and JUnit paths",
+            "details": {
+                "absolute_path_files": sorted(findings),
+                "files_checked": sum(path.is_file() for path in privacy_paths),
+                "sanitization_errors": xml_errors,
+            },
+            "duration_seconds": 0.0,
+            "name": "evidence-path-privacy",
+            "status": privacy_status,
+        }
+    )
+
     completed_at = _timestamp()
     status = (
         "passed"
@@ -625,6 +800,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
     report_release_id = (
         release_id if mode == "g0-seal" else f"checkout-regression-{checkout_commit[:12]}"
     )
+    report_error = _sanitize_text(error, repo_root=repo_root) if error is not None else None
     payload: dict[str, Any] = {
         "artifacts": artifacts,
         "bundle_id": report_release_id,
@@ -656,7 +832,7 @@ def run_clean_smoke(args: argparse.Namespace) -> tuple[Path, bool]:
             "lineage_policy": mode,
             "baseline_bundle_id": release_id,
             "baseline_manifest_source_commit": source_commit,
-            "error": error,
+            "error": report_error,
             "os_build": platform.version(),
             "platform": platform.platform(),
             "pip_cache": "disabled",

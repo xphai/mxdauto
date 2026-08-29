@@ -19,6 +19,19 @@ from .frame_admission import (
     canonical_digest,
     verify_frame_admission_report,
 )
+from .frame_corpus import (
+    FRAME_CORPUS_SCHEMA_VERSION,
+    TRUTH_SCOPE,
+    FrameCorpusError,
+    append_admission_to_event_tape,
+    load_strict_json,
+    verify_corpus_file,
+    verify_corpus_manifest,
+    verify_truth_record,
+)
+from .frame_corpus import (
+    canonical_digest as canonical_corpus_digest,
+)
 from .golden import (
     GOLDEN_FIXTURE_VERSION,
     REPLAY_REPORT_VERSION,
@@ -46,11 +59,13 @@ __all__ = [
     "FRAME_ADMISSION_REQUIRED_COVERAGE",
     "FRAME_ADMISSION_REQUIRED_STATUSES",
     "FRAME_ADMISSION_SCHEMA_VERSION",
+    "FRAME_CORPUS_SCHEMA_VERSION",
     "GENESIS_HASH",
     "GOLDEN_FIXTURE_VERSION",
     "REPLAY_REPORT_VERSION",
     "REPLAY_SCHEMA_VERSION",
     "SHADOW_REPORT_VERSION",
+    "TRUTH_SCOPE",
     "DryRunInputSink",
     "DryRunReceipt",
     "EventRecord",
@@ -62,6 +77,7 @@ __all__ = [
     "FrameAdmissionReport",
     "FrameAdmissionRun",
     "FrameAdmissionRunner",
+    "FrameCorpusError",
     "GoldenAction",
     "GoldenFixture",
     "GoldenFrame",
@@ -74,6 +90,12 @@ __all__ = [
     "ShadowError",
     "ShadowReport",
     "ShadowRunner",
+    "append_admission_to_event_tape",
+    "canonical_corpus_digest",
     "canonical_digest",
+    "load_strict_json",
+    "verify_corpus_file",
+    "verify_corpus_manifest",
     "verify_frame_admission_report",
+    "verify_truth_record",
 ]

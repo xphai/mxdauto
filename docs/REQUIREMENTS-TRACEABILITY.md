@@ -3,7 +3,7 @@
 > **状态截止**：2026-08-29  
 > **战略负责人**：5.6Sol Ultra  
 > **战术包负责人**：5.6 Luna max  
-> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（`G1-FRM-001A`=`Completed`，完整 `G1-FRM-001` 仍在进行）
+> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（`G1-FRM-001A`=`Completed`，`G1-FRM-001B1`=`In Progress`，`G1-FRM-001B2`=`Queued`）
 
 ## 1. 用途与来源
 
@@ -34,7 +34,7 @@
 | ID | 需求 | 原始来源 | 目标 Gate | 退出所需证据 | 当前事实 | 状态 |
 |---|---|---|---|---|---|---|
 | REQ-ENV-001 | 双机 Windows 环境：控制端采集/决策，游戏端 receiver | `COLLECTION_ANALYSIS.md` §2/§4/§8 | G2、G3、G6 | 控制端 clean report、游戏端无 Python receiver clean report、租约/双写审计、双机安装矩阵 | Legacy 曾以 `10.66.0.1 → 10.66.0.2:27183` 联通；Core v2 receiver/HIL/clean 报告为空 | `CANDIDATE` |
-| REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | `G1-FRM-001A` 已通过 PR #3 合并收口：FrameSource/latest、250 ms freshness、gap/fault latch/reset、geometry/calibration hash；Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / Core v2 real input=0），main frame digest `1c4948afc636ffba45b1f4a769ec7ee3d6d5ea15f09b2b1f9596faa43f837a7d`。feature source `7cca4154a38e8bca29b917aa3c5abcc43a51391d`，merge `b30ddedb1f05945e68fb348b221cdfa123e83c59`；VC-003 read-only adapter、raw corpus、stress/硬件 smoke 待 001B | `PARTIAL-G1-FRM` |
+| REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | `G1-FRM-001A` 已通过 PR #3 合并收口：FrameSource/latest、250 ms freshness、gap/fault latch/reset、geometry/calibration hash；Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / Core v2 real input=0），main frame digest `1c4948afc636ffba45b1f4a769ec7ee3d6d5ea15f09b2b1f9596faa43f837a7d`。feature source `7cca4154a38e8bca29b917aa3c5abcc43a51391d`，merge `b30ddedb1f05945e68fb348b221cdfa123e83c59`；001B 已拆分为 B1 software foundation=`In Progress`、B2 hardware/packet=`Queued` | `PARTIAL-G1-FRM` |
 | REQ-UI-001 | 目标客户端模板隔离；桌面坐标经内容矩形转为 `1366×768` 归一化坐标 | `REQUIREMENTS_CONFIRMED.md` §1/§5 | G1、G5 | Profile/模板 manifest、geometry/calibration hash、窗口偏移 Replay、每 workflow UI fixture | 已合并的 `G1-FRM-001A` 固定 `1920×1080 → [277,167,1366,768] → 1296×700` 并生成 geometry/calibration identity；真实窗口偏移与 UI/rune workflow 仍待后续包 | `PARTIAL-G1-FRM` + `PARTIAL-DATA` |
 | REQ-CV-001 | YOLO monster 检测，ONNX 优先，GPU 推理并保留 CPU 回退，类别/阈值/ROI 可追溯 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G4 | Model Card、人工真值会话隔离 split、部署 ONNX P/R、PT/ONNX 差、GPU/CPU parity、负样本、Replay/Shadow | DEC-001 选择 `best_forest_v3-candidate`、`[mob]`、`640×640`；存在本人/技能误检诊断；Core v2 GPU/CPU 报告为空 | `CANDIDATE` |
 | REQ-CV-002 | 模型加载失败时抑制动作并记录原因 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G2 | 模型缺失/hash/class/input mismatch 故障 fixture；WorldState unknown；ActionSpec 数为 0；FaultEvent | Manifest schema/Action contract 已有；runtime/supervisor 尚未实现 | `MISSING` |
@@ -91,9 +91,10 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 
 | 工作包 | 已落地范围 | 本包后仍待完成 | 当前结论 |
 |---|---|---|---|
-| G1-FRM-001A | Frame admission、latest slot、DEC-001 geometry/calibration hash、freshness/fault matrix、session reset、三次 synthetic deterministic replay、G0 seal/current checkout CI 分轨；PR #3 已合并 | 001B 的硬件、pixel/corpus、stress、provenance 缺口 | `Completed`，真实输入 0 |
+| G1-FRM-001A | Frame admission、latest slot、DEC-001 geometry/calibration hash、freshness/fault matrix、session reset、三次 synthetic deterministic replay、G0 seal/current checkout CI 分轨；PR #3 已合并 | 001B1 software foundation 与 001B2 hardware/packet 缺口 | `Completed`，真实输入 0 |
 | G1-FRM-001 | 001A synthetic admission 已完成并绑定合并后的 source/CI 证据 | VC-003 read-only adapter、content-addressed raw pixels、真实 corpus/truth、并发压力、5 分钟硬件 smoke、新 G1 Candidate packet 与完整审计 | `In Progress`，真实输入 0 |
-| G1-FRM-001B | 待签发 | 补齐上述硬件、corpus、stress、provenance 后才可提交完整 `G1-FRM-001` 审计 | `Queued` |
+| G1-FRM-001B1 | ADR-012 与战术包已冻结：Pixel V1/CAS、raw capacity=1、VC-003 adapter/fake backend、Legacy local snapshot provenance、corpus/truth 工具、Event Tape、stress、schemas/verifiers、Python 3.12 CI wheel | 实现、protected PR/main CI、source/wheel/evidence 绑定；本包不生成硬件 PASS | `In Progress`，真实输入 0 |
+| G1-FRM-001B2 | 战术包已冻结：精确 B1 wheel 的 VC-003 300 秒 smoke、3-session/300-frame ingestion corpus/truth、privacy/provenance 与 G1 Frame Candidate packet | 等待 B1 Completed；随后执行现场 Gate、packet outer verification 与会签 | `Queued`，真实输入 0 |
 
 ### G1-FRM-001A 合并证据
 

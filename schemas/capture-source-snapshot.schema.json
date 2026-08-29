@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/capture-source-snapshot.schema.json",
+  "title": "Capture Source Snapshot",
+  "type": "object",
+  "$defs": {
+    "gitCommit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]{2,127}$"
+    },
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*:)(?!\\\\)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*(?:^|/)[^/]*[. ](?:/|$)).+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "source_kind",
+    "source_root_env",
+    "generated_at",
+    "upstream_reference",
+    "entries",
+    "input_audit",
+    "review",
+    "limitations",
+    "snapshot_digest"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "snapshot_id": {
+      "$ref": "#/$defs/id"
+    },
+    "source_kind": {
+      "const": "unversioned_legacy_local_snapshot"
+    },
+    "source_root_env": {
+      "const": "MAPLE_LEGACY_ROOT"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "upstream_reference": {
+      "type": "object",
+      "required": ["repository", "commit", "relationship"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^https://github\\.com/.+\\.git$"
+        },
+        "commit": {
+          "$ref": "#/$defs/gitCommit"
+        },
+        "relationship": {
+          "const": "reference_only_not_provenance"
+        }
+      },
+      "additionalProperties": false
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "relative_path",
+          "role",
+          "migration_use",
+          "last_write_utc",
+          "sha256",
+          "size_bytes"
+        ],
+        "properties": {
+          "relative_path": {
+            "$ref": "#/$defs/portablePath"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "legacy-capture-adapter-reference",
+              "legacy-frame-contract-reference",
+              "legacy-geometry-reference",
+              "legacy-capture-profile-reference"
+            ]
+          },
+          "migration_use": {
+            "type": "string",
+            "enum": [
+              "clean_room_semantic_reference_only",
+              "configuration_reference_only"
+            ]
+          },
+          "last_write_utc": {
+            "$ref": "#/$defs/timestamp"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "input_audit": {
+      "type": "object",
+      "required": ["input_owner", "real_input_call_count"],
+      "properties": {
+        "input_owner": {
+          "const": "legacy"
+        },
+        "real_input_call_count": {
+          "const": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "required": ["reviewer_role", "method", "decision"],
+      "properties": {
+        "reviewer_role": {
+          "const": "sol-u-strategic-audit"
+        },
+        "method": {
+          "const": "read_only_structure_and_hash_audit"
+        },
+        "decision": {
+          "const": "accepted_as_migration_reference_only"
+        }
+      },
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "snapshot_digest": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "additionalProperties": false
+}

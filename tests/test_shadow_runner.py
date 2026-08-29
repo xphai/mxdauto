@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -14,8 +16,10 @@ from maple_automation_core.replay import (
     ShadowReport,
     ShadowRunner,
 )
+from tools.report_binding import canonical_report_digest
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "golden" / "pilot_minimal_v1.json"
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _fixture() -> GoldenFixture:
@@ -99,6 +103,29 @@ def test_shadow_runner_report_separates_plans_from_legacy_and_proves_zero_calls(
     written = json.loads(report_path.read_text(encoding="utf-8"))
     assert written["report_id"] == report.report_id
     assert written["report_digest"] == report.to_dict()["report_digest"]
+
+
+def test_shadow_cli_digest_covers_fixture_file_sha256(tmp_path: Path) -> None:
+    report_path = tmp_path / "shadow.json"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "tools" / "run_shadow.py"),
+            "--report",
+            str(report_path),
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(completed.stdout)
+
+    assert payload == json.loads(report_path.read_text(encoding="utf-8"))
+    assert payload["report_digest"] == canonical_report_digest(payload)
+    tampered = dict(payload)
+    tampered["fixture_file_sha256"] = "0" * 64
+    assert tampered["report_digest"] != canonical_report_digest(tampered)
 
 
 def test_legacy_observed_action_roundtrip_and_validation() -> None:
