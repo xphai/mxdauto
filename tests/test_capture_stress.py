@@ -407,7 +407,12 @@ def test_git_and_artifact_helpers_fail_closed(
     assert stress._artifact_hash(tmp_path / "missing.bin", b"fallback") == stress._sha256_bytes(
         b"fallback"
     )
-    assert stress._default_repo_root().name == "maple-automation-core"
+    repo_root = stress._default_repo_root()
+    assert repo_root == ROOT
+    assert (repo_root / "pyproject.toml").is_file()
+    assert (
+        repo_root / "src" / "maple_automation_core" / "capture" / "stress.py"
+    ).resolve() == Path(stress.__file__).resolve()
 
 
 def test_report_wrapper_serializes_and_delegates_validation(
