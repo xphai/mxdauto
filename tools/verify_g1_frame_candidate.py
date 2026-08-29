@@ -21,6 +21,7 @@ import re
 import stat
 import sys
 from collections.abc import Mapping, Sequence
+from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, cast
@@ -71,6 +72,7 @@ ZERO_INPUT_FIELDS = {
     "mouse_call_count",
 }
 ZERO_INPUT_BOOLEAN_FIELDS = {"connected", "receiver_connected", "window_write"}
+NEGOTIATED_FPS_TOLERANCE = Decimal("0.001")
 
 
 class CandidatePacketVerificationError(ValueError):
@@ -79,6 +81,29 @@ class CandidatePacketVerificationError(ValueError):
 
 def _same_digest(left: object, right: object) -> bool:
     return isinstance(left, str) and isinstance(right, str) and left.lower() == right.lower()
+
+
+def _capture_formats_match(requested: Mapping[str, Any], negotiated: Mapping[str, Any]) -> bool:
+    """Compare frozen formats while allowing only documented FPS reporting noise."""
+
+    if set(requested) != set(negotiated) or "fps" not in requested:
+        return False
+    if any(requested[key] != negotiated[key] for key in requested if key != "fps"):
+        return False
+    requested_fps = requested["fps"]
+    negotiated_fps = negotiated["fps"]
+    if (
+        isinstance(requested_fps, bool)
+        or isinstance(negotiated_fps, bool)
+        or not isinstance(requested_fps, int | float)
+        or not isinstance(negotiated_fps, int | float)
+    ):
+        return False
+    try:
+        difference = abs(Decimal(str(requested_fps)) - Decimal(str(negotiated_fps)))
+    except InvalidOperation:
+        return False
+    return difference <= NEGOTIATED_FPS_TOLERANCE
 
 
 def canonical_packet_digest(payload: Mapping[str, Any]) -> str:
@@ -1005,8 +1030,15 @@ def _verify_cross_links(
                 errors.append("full B2 source provenance requires a measured device fingerprint")
             requested = _mapping(provenance.get("requested"))
             negotiated = _mapping(provenance.get("negotiated"))
-            if requested is None or negotiated is None or dict(requested) != dict(negotiated):
-                errors.append("full B2 requested and negotiated source formats must match exactly")
+            if (
+                requested is None
+                or negotiated is None
+                or not _capture_formats_match(requested, negotiated)
+            ):
+                errors.append(
+                    "full B2 requested and negotiated source formats must match "
+                    "with at most +/-0.001 FPS reporting noise"
+                )
 
         _verify_full_b2_cross_links(
             packet,

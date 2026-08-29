@@ -8,7 +8,7 @@ from jsonschema import Draft202012Validator
 
 from tools.build_g1_frame_candidate import build_candidate_packet, canonical_packet_digest
 from tools.bundle_common import sha256_file
-from tools.verify_g1_frame_candidate import verify_g1_frame_candidate
+from tools.verify_g1_frame_candidate import _capture_formats_match, verify_g1_frame_candidate
 from tools.verify_hardware_smoke_report import (
     ZERO_FAILURE_FIELDS,
     canonical_report_digest,
@@ -159,6 +159,26 @@ def test_hardware_recomputes_rate_and_rejects_rounded_up_29_97() -> None:
     rate_report["metrics"] = metrics
     rate_report["report_digest"] = canonical_report_digest(rate_report)
     assert any("capture rate" in error for error in verify_hardware_smoke_report(rate_report))
+
+
+def test_candidate_capture_format_cross_link_allows_only_sub_millihertz_fps_noise() -> None:
+    requested = {
+        "backend": "dshow",
+        "channels": 3,
+        "dtype": "uint8",
+        "fourcc": "MJPG",
+        "fps": 30.0,
+        "height": 1080,
+        "length": 6_220_800,
+        "pixel_format": "BGR8",
+        "stride": 5760,
+        "width": 1920,
+    }
+    negotiated = {**requested, "fps": 30.00003000003}
+
+    assert _capture_formats_match(requested, negotiated)
+    assert not _capture_formats_match(requested, {**negotiated, "fps": 29.97})
+    assert not _capture_formats_match(requested, {**negotiated, "fourcc": "YUY2"})
 
 
 def _candidate_tree(tmp_path: Path) -> tuple[Path, dict[str, object]]:
