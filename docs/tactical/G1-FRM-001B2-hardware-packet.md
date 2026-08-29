@@ -6,9 +6,9 @@
 | parent | `G1-FRM-001B` / `G1-FRM-001` |
 | requirement | `REQ-CAP-001`、`REQ-UI-001`、`REQ-SAFE-002`、`REQ-OBS-002`、`REQ-PRI-001`、`REQ-REL-001`、`REQ-REL-002` |
 | gate | G1 FrameSource 子门禁 |
-| decision | 技术证据已 PASS；等待 protected packaging outer CI 与组织会签 |
+| decision | 技术证据与 protected packaging outer CI 已 PASS；等待组织会签 |
 | implementation | 5.6 Luna max + QA/evidence + 现场负责人 |
-| status | `In Progress / Technical Evidence PASS / Countersign Pending` |
+| status | `In Progress / Technical + Outer CI PASS / Countersign Pending` |
 | baseline | protected `main@37e57b9662fa3d061e840d4b9c86ab89efe24f2f` |
 | required wheel | `maple_automation_core-0.1.0-py3-none-any.whl` / SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f` |
 | baseline CI | main run [`33256230132`](https://github.com/xphai/mxdauto/actions/runs/33256230132) / attempt 1 / `success` |
@@ -294,7 +294,7 @@ B2 完成后，`G1-FRM-001B` 才可完成；随后单独评审 `G1-FRM-001=Compl
 `G1-OBS-002`。G1 的 OBS/LOC/WST/Planner/Replay/Shadow 等后续工作仍未完成，因此整体 G1
 继续保持 `In Progress`，Core v2 真实输入继续为 0。
 
-## 11. 实际执行记录（packaging outer CI / 组织会签前）
+## 11. 实际执行记录（组织会签前）
 
 ### 11.1 冻结身份
 
@@ -348,11 +348,14 @@ step fail-closed：该 step 位于项目安装前，verifier 导入 `maple_autom
 
 ### 11.6 剩余关闭项
 
-本节证明技术证据闭环，但不把 B2 标成 `Completed`。尚需：
+本节证明技术与 SCM/CI outer seal 已闭环：
 
-1. protected packaging PR 合并，并由 outer main CI 实际执行 conditional Candidate metadata verifier；
-2. 回填 packaging commit `P`、outer run ID/attempt/status；
-3. QA/evidence、技术、现场、privacy/release 与 Sol-U 的组织 countersign。
+- packaging PR：[#11](https://github.com/xphai/mxdauto/pull/11)；PR run
+  [`33258100541`](https://github.com/xphai/mxdauto/actions/runs/33258100541) `success`；
+- packaging commit `P`：`72c3ad081db33d083fdcd5a5e0f62e73f886c233`；
+- outer main run：[`33258468278`](https://github.com/xphai/mxdauto/actions/runs/33258468278)，attempt 1，
+  `success`；conditional Candidate metadata verifier 实际执行并通过。
 
-上述关闭前，`G1-FRM-001B2`、完整 `G1-FRM-001` 与 G1 Gate 均保持 `In Progress`，Core v2
-真实输入保持 0。
+B2 仍不标成 `Completed`：QA/evidence、技术、现场、privacy/release 与 Sol-U 的组织 countersign 尚待
+登记，packet 仍保持 `signoffs=[]`。会签前，`G1-FRM-001B2`、完整 `G1-FRM-001` 与 G1 Gate 均保持
+`In Progress`，Core v2 真实输入保持 0。
