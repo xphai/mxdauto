@@ -350,8 +350,12 @@ def test_reset_discards_an_inflight_cas_sample_without_returning_old_session(
         assert reset_stop_entered.wait(1.0)
         assert resetter.is_alive()
         release_cas.set()
-        reader.join(timeout=2.0)
-        resetter.join(timeout=2.0)
+        # Coverage instrumentation on hosted Windows runners can make the
+        # post-release CAS verification materially slower than local runs.
+        # This join only observes test completion; the product stop deadline
+        # remains independently asserted at two seconds.
+        reader.join(timeout=5.0)
+        resetter.join(timeout=5.0)
         assert not reader.is_alive()
         assert not resetter.is_alive()
         assert reset_errors == []
@@ -625,7 +629,10 @@ def test_controller_stop_drains_without_rebinding_logical_consumer(
     consumed: list[VC003RawFrame | None] = []
     consumer = threading.Thread(target=lambda: consumed.append(source.read()))
     consumer.start()
-    consumer.join(timeout=1.0)
+    # Allow slow coverage-instrumented Windows filesystems to finish the CAS
+    # write/read transaction without changing the source's two-second stop
+    # contract.
+    consumer.join(timeout=5.0)
     assert not consumer.is_alive()
     assert consumed[0] is not None
     assert consumed[0].sequence == 1
