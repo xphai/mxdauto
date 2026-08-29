@@ -1,6 +1,6 @@
 # Maple Automation Core
 
-> **当前阶段（2026-08-29）**：G0 工程基线建设中，Core v2 处于 **Shadow / dry-run 准备阶段**。当前仓库已交付领域契约、Event Tape、Manifest schema/校验工具和静态 CI；后续 Shadow runner 的输出限定为状态、计划和对照证据，不调用真实 `InputSink`、键盘、receiver 或游戏窗口。Legacy 保持唯一真实输入下发权。当前阶段尚未进入 Canary、Certified 或 Core v2 输入接管。
+> **当前阶段（2026-08-29）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。当前有界战术包为 `G1-FRM-001A`：实现纯 Python `FrameSource` admission、单槽 latest-frame、geometry/calibration identity、freshness/fault latch 和三次确定性 synthetic replay。完整 `G1-FRM-001` 仍需 VC-003 read-only adapter、真实 corpus、压力与硬件 smoke 后收口；Core v2 真实输入调用保持为 0，Legacy 保持唯一真实输入下发权。
 
 ## 1. Core v2 目标与治理边界
 
@@ -27,7 +27,7 @@
 
 ---
 
-## 2. G-1 / G0 治理基线交付目标
+## 2. G-1 / G0 基线与当前 G1 战术包
 
 ### G-1（主线确认）
 - 确认 Core v2 唯一主线：`F:\mxd\product\maple-automation-core`
@@ -39,22 +39,28 @@
 - 建立路线图-测试-录像-会话追踪矩阵。
 
 ### G0（工程基线）
-- 已纳入仓库的基线：`runtime-manifest.schema.json`、Manifest 校验工具、Frame/WorldState/Action/Event Tape 契约及 GitHub Actions 静态质量门禁。
-- 当前执行中：将 commit、Runtime Bundle、测试报告和回放报告绑定为可追溯证据。
-- G0 退出前需完成以下四项并留下报告：
+- 已通过并封存：`runtime-manifest.schema.json`、Manifest/Bundle 校验、领域契约、Event Tape、依赖锁和受保护 GitHub Actions `quality` 门禁。
+- sealed G0 Candidate、commit、测试、Replay、Shadow、clean smoke 与 CI evidence 已形成不可变证据链。
+- G0 已完成以下四项并留下报告：
   - 单元/契约测试自检
   - 固定黄金录像回放一致性检查
   - Core v2 Shadow 对比评估
   - 干净机 smoke 自检
 - `schemas/runtime-manifest.example.json` 是 schema 验证 fixture，不是现场认证 Bundle。
 
-> 以上为本阶段最小放行门槛；四项报告、Bundle 证据和输入所有权审计齐全后，才可提交 G1 评审。
+### G1-FRM-001A（进行中）
+
+- 固定采集契约：`1920×1080` source、`[277,167,1366,768]` content rect、`1296×700` working size、`250 ms` 最大帧龄。
+- 显式处理 accepted/no-frame/stale/gap，以及重复、断序、时钟回退、画幅、source/session/clock/backend 故障。
+- fatal fault 持续锁存，只有显式 session reset 清除；stale/no-frame 保持可恢复。
+- G0 seal 校验与当前 checkout regression 分开运行，当前 wheel/report 绑定实际 `HEAD`，不重写 G0 packet。
+- 本子包完成后仍不产生 G1 PASS，也不提前启动 `G1-OBS-002`。
 
 ### 当前阶段的输入边界
 
 | 范围 | 当前规则 |
 |---|---|
-| Core v2 | Shadow/dry-run；可生成 `ActionSpec`、模拟 `ActionHandle`/`ActionResult` 并写入 Event Tape |
+| Core v2 | G1 offline/dry-run；可接纳帧、生成状态/计划、写入 Event Tape；真实输入调用为 0 |
 | Legacy | 唯一真实输入下发者；继续承载现场输入 |
 | 接管 | 当前阶段未启用；需独立 Stage Gate 批准，CI 绿灯不自动授予接管权 |
 
@@ -69,6 +75,7 @@
   - `F:\mxd\product\maple-automation-core\docs\adr\ADR-006-action-lifecycle.md`
   - `F:\mxd\product\maple-automation-core\docs\adr\ADR-007-atomic-runtime-bundle.md`
   - `F:\mxd\product\maple-automation-core\docs\adr\ADR-010-ci-evidence-contract.md`
+  - `F:\mxd\product\maple-automation-core\docs\adr\ADR-011-frame-admission-contract.md`
 - 发布清单：
   - `F:\mxd\product\maple-automation-core\schemas\runtime-manifest.schema.json`
 - 执行规程：
@@ -103,20 +110,23 @@
 - **对照测试**：Legacy Shadow 结果与 Core v2 决策链对比。
 - **异常测试**：陈旧帧、断流、ACK 失效、模型加载失败。
 
-### 当前 G0 本地门禁
+### 当前本地门禁
 
 在 `F:\mxd\product\maple-automation-core` 根目录执行：
 
 ```powershell
-python -m pip install -e ".[dev]"
+python -m pip install --requirement configs/requirements.lock
+python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed
 python -m ruff check src tests tools
 python -m ruff format --check src tests tools
 python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest schemas/runtime-manifest.example.json
+python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0
 python -m mypy
 python -m pytest --cov=maple_automation_core --cov-report=term-missing --cov-report=xml --cov-fail-under=90
+python tools/run_frame_admission_replay.py --runs 3 --fixture fixtures/g1/frame_admission_v1.json --schema schemas/frame-admission-report.schema.json --report evidence/ci-run/frame-admission-report.json
 ```
 
-上述命令与 `F:\mxd\product\maple-automation-core\.github\workflows\ci.yml` 的当前基线一致。当前 CI 会上传 `coverage-xml`；黄金回放、Shadow 和干净机报告仍需作为 G1 前置证据接入，不以静态 CI 结果代替。
+上述命令与 `F:\mxd\product\maple-automation-core\.github\workflows\ci.yml` 的主体门禁一致。CI 还在干净 checkout 上执行 `run_clean_smoke.py --mode checkout-regression`，并分别上传 checkout regression 与 G1 frame-admission 证据；静态 `--strict-g0` 校验继续只读取 sealed G0 packet。
 
 ---
 
@@ -139,7 +149,8 @@ ADR/战术包
 → 黄金回放
 → Core v2 Shadow 对照
 → 干净机 smoke
-→ G1 评审
+→ G1-FRM-001A frame admission
+→ G1-FRM-001B hardware/corpus evidence
 ```
 
-当前实施先完成契约、证据和 Shadow 对照，再讨论真实输入接管；任何任务都应从 `docs/templates/tactical-package.md` 开始。
+当前按 `G1-FRM-001A → G1-FRM-001B → G1-OBS-002` 的依赖顺序实施；任何任务都应从 `docs/templates/tactical-package.md` 开始。

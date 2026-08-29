@@ -1,0 +1,620 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "g1-frame-admission-v1",
+  "description": "Deterministic metadata-only FrameSource admission and latest-slot pilot.",
+  "config": {
+    "session_id": "g1-session-001",
+    "source_id": "capture-card-primary",
+    "clock_domain": "monotonic",
+    "transform_version": "dec-001-v1",
+    "source_geometry": {
+      "source_size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "content_rect": {
+        "x": 277,
+        "y": 167,
+        "width": 1366,
+        "height": 768
+      },
+      "working_size": {
+        "width": 1296,
+        "height": 700
+      }
+    },
+    "max_age_ns": 250000000
+  },
+  "scenarios": [
+    {
+      "scenario_id": "accepted-at-boundary",
+      "coverage_tags": [
+        "accepted_boundary"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 1250000000,
+          "frame": {
+            "frame_id": 0,
+            "captured_at_ns": 1000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000001",
+            "image_ref": "fixture://g1/frame/0",
+            "image_metadata": {
+              "fixture": "g1",
+              "case": "accepted-boundary"
+            }
+          },
+          "expect_status": "accepted",
+          "expect_fault_latched": false,
+          "expect_plan_suppressed": false,
+          "expect_frame_id": 0,
+          "expect_gap_detected": false,
+          "expect_superseded_count": 0
+        }
+      ]
+    },
+    {
+      "scenario_id": "no-frame-stale-recovery",
+      "coverage_tags": [
+        "stale_recovery"
+      ],
+      "operations": [
+        {
+          "type": "no_frame",
+          "now_ns": 900000000,
+          "expect_status": "no_frame",
+          "expect_fault_latched": false,
+          "expect_plan_suppressed": true
+        },
+        {
+          "type": "ingest",
+          "now_ns": 1250000001,
+          "frame": {
+            "frame_id": 1,
+            "captured_at_ns": 1000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000002",
+            "image_ref": "fixture://g1/frame/1-stale"
+          },
+          "expect_status": "stale",
+          "expect_fault_latched": false,
+          "expect_plan_suppressed": true,
+          "expect_frame_id": 1
+        },
+        {
+          "type": "ingest",
+          "now_ns": 1250000001,
+          "frame": {
+            "frame_id": 1,
+            "captured_at_ns": 1250000001,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000003",
+            "image_ref": "fixture://g1/frame/1-fresh"
+          },
+          "expect_status": "accepted",
+          "expect_fault_latched": false,
+          "expect_plan_suppressed": false,
+          "expect_frame_id": 1
+        }
+      ]
+    },
+    {
+      "scenario_id": "gap-is-accepted",
+      "coverage_tags": [
+        "gap_accepted"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 2000000000,
+          "frame": {
+            "frame_id": 2,
+            "captured_at_ns": 2000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000004",
+            "image_ref": "fixture://g1/frame/2"
+          },
+          "expect_status": "accepted",
+          "expect_frame_id": 2
+        },
+        {
+          "type": "ingest",
+          "now_ns": 2000000001,
+          "frame": {
+            "frame_id": 5,
+            "captured_at_ns": 2000000001,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000005",
+            "image_ref": "fixture://g1/frame/5"
+          },
+          "expect_status": "accepted",
+          "expect_fault_latched": false,
+          "expect_plan_suppressed": false,
+          "expect_frame_id": 5,
+          "expect_gap_detected": true,
+          "expect_missing_frame_count": 2
+        }
+      ]
+    },
+    {
+      "scenario_id": "duplicate-latch",
+      "coverage_tags": [
+        "fatal_latch_duplicate"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 3000000000,
+          "frame": {
+            "frame_id": 10,
+            "captured_at_ns": 3000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000006",
+            "image_ref": "fixture://g1/frame/10"
+          },
+          "expect_status": "accepted",
+          "expect_frame_id": 10
+        },
+        {
+          "type": "ingest",
+          "now_ns": 3000000001,
+          "frame": {
+            "frame_id": 10,
+            "captured_at_ns": 3000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000007",
+            "image_ref": "fixture://g1/frame/10-duplicate"
+          },
+          "expect_status": "duplicate",
+          "expect_fault_latched": true,
+          "expect_plan_suppressed": true,
+          "expect_frame_id": 10
+        },
+        {
+          "type": "ingest",
+          "now_ns": 3000000002,
+          "frame": {
+            "frame_id": 11,
+            "captured_at_ns": 3000000002,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000008",
+            "image_ref": "fixture://g1/frame/11-after-latch"
+          },
+          "expect_status": "duplicate",
+          "expect_fault_latched": true,
+          "expect_frame_id": 10
+        }
+      ]
+    },
+    {
+      "scenario_id": "out-of-order-latch",
+      "coverage_tags": [
+        "fatal_latch_out_of_order"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 4000000000,
+          "frame": {
+            "frame_id": 20,
+            "captured_at_ns": 4000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000009",
+            "image_ref": "fixture://g1/frame/20"
+          },
+          "expect_status": "accepted"
+        },
+        {
+          "type": "ingest",
+          "now_ns": 4000000001,
+          "frame": {
+            "frame_id": 19,
+            "captured_at_ns": 4000000001,
+            "content_hash": "000000000000000000000000000000000000000000000000000000000000000a",
+            "image_ref": "fixture://g1/frame/19-out-of-order"
+          },
+          "expect_status": "out_of_order",
+          "expect_fault_latched": true,
+          "expect_frame_id": 19
+        },
+        {
+          "type": "ingest",
+          "now_ns": 4000000002,
+          "frame": {
+            "frame_id": 21,
+            "captured_at_ns": 4000000002,
+            "content_hash": "000000000000000000000000000000000000000000000000000000000000000b",
+            "image_ref": "fixture://g1/frame/21-after-latch"
+          },
+          "expect_status": "out_of_order",
+          "expect_fault_latched": true,
+          "expect_frame_id": 19
+        }
+      ]
+    },
+    {
+      "scenario_id": "timestamp-regression-latch",
+      "coverage_tags": [
+        "fatal_latch_timestamp_regression"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 5000000000,
+          "frame": {
+            "frame_id": 30,
+            "captured_at_ns": 5000000000,
+            "content_hash": "000000000000000000000000000000000000000000000000000000000000000c",
+            "image_ref": "fixture://g1/frame/30"
+          },
+          "expect_status": "accepted"
+        },
+        {
+          "type": "ingest",
+          "now_ns": 5000000001,
+          "frame": {
+            "frame_id": 31,
+            "captured_at_ns": 4999999999,
+            "content_hash": "000000000000000000000000000000000000000000000000000000000000000d",
+            "image_ref": "fixture://g1/frame/31-time-regression"
+          },
+          "expect_status": "timestamp_regression",
+          "expect_fault_latched": true,
+          "expect_frame_id": 31
+        },
+        {
+          "type": "ingest",
+          "now_ns": 5000000002,
+          "frame": {
+            "frame_id": 32,
+            "captured_at_ns": 5000000002,
+            "content_hash": "000000000000000000000000000000000000000000000000000000000000000e",
+            "image_ref": "fixture://g1/frame/32-after-latch"
+          },
+          "expect_status": "timestamp_regression",
+          "expect_fault_latched": true,
+          "expect_frame_id": 31
+        }
+      ]
+    },
+    {
+      "scenario_id": "future-timestamp-latch",
+      "coverage_tags": [
+        "fatal_latch_timestamp_regression"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 5100000000,
+          "frame": {
+            "frame_id": 0,
+            "captured_at_ns": 5100000001,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000020",
+            "image_ref": "fixture://g1/frame/future-timestamp"
+          },
+          "expect_status": "timestamp_regression",
+          "expect_fault_latched": true,
+          "expect_plan_suppressed": true,
+          "expect_frame_id": 0
+        },
+        {
+          "type": "ingest",
+          "now_ns": 5100000002,
+          "frame": {
+            "frame_id": 1,
+            "captured_at_ns": 5100000002,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000021",
+            "image_ref": "fixture://g1/frame/after-future-latch"
+          },
+          "expect_status": "timestamp_regression",
+          "expect_fault_latched": true,
+          "expect_frame_id": 0
+        }
+      ]
+    },
+    {
+      "scenario_id": "receive-clock-rollback-latch",
+      "coverage_tags": [
+        "fatal_latch_timestamp_regression"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 5300000000,
+          "frame": {
+            "frame_id": 0,
+            "captured_at_ns": 5200000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000022",
+            "image_ref": "fixture://g1/frame/before-receive-clock-rollback"
+          },
+          "expect_status": "accepted",
+          "expect_fault_latched": false,
+          "expect_frame_id": 0
+        },
+        {
+          "type": "ingest",
+          "now_ns": 5299999999,
+          "frame": {
+            "frame_id": 1,
+            "captured_at_ns": 5201000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000023",
+            "image_ref": "fixture://g1/frame/receive-clock-rollback"
+          },
+          "expect_status": "timestamp_regression",
+          "expect_fault_latched": true,
+          "expect_plan_suppressed": true,
+          "expect_frame_id": 1
+        }
+      ]
+    },
+    {
+      "scenario_id": "frame-size-latch",
+      "coverage_tags": [
+        "fatal_latch_frame_size"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 6000000000,
+          "frame": {
+            "frame_id": 0,
+            "captured_at_ns": 6000000000,
+            "content_hash": "000000000000000000000000000000000000000000000000000000000000000f",
+            "image_ref": "fixture://g1/frame/size-change",
+            "source_size": {
+              "width": 1280,
+              "height": 720
+            },
+            "source_geometry": {
+              "source_size": {
+                "width": 1280,
+                "height": 720
+              },
+              "content_rect": {
+                "x": 0,
+                "y": 0,
+                "width": 1280,
+                "height": 720
+              },
+              "working_size": {
+                "width": 1296,
+                "height": 700
+              }
+            }
+          },
+          "expect_status": "frame_size_changed",
+          "expect_fault_latched": true,
+          "expect_plan_suppressed": true,
+          "expect_frame_id": 0
+        }
+      ]
+    },
+    {
+      "scenario_id": "identity-mismatch-latches",
+      "coverage_tags": [
+        "fatal_latch_identity"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 7000000000,
+          "frame": {
+            "frame_id": 0,
+            "captured_at_ns": 7000000000,
+            "source_id": "capture-card-secondary",
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000010",
+            "image_ref": "fixture://g1/frame/source-mismatch"
+          },
+          "expect_status": "source_mismatch",
+          "expect_fault_latched": true,
+          "expect_frame_id": 0
+        },
+        {
+          "type": "ingest",
+          "now_ns": 7000000001,
+          "frame": {
+            "frame_id": 1,
+            "captured_at_ns": 7000000001,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000011",
+            "image_ref": "fixture://g1/frame/session-after-latch"
+          },
+          "expect_status": "source_mismatch",
+          "expect_fault_latched": true,
+          "expect_frame_id": 0
+        }
+      ]
+    },
+    {
+      "scenario_id": "session-mismatch-latch",
+      "coverage_tags": [],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 8000000000,
+          "frame": {
+            "frame_id": 0,
+            "captured_at_ns": 8000000000,
+            "session_id": "g1-session-other",
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000012",
+            "image_ref": "fixture://g1/frame/session-mismatch"
+          },
+          "expect_status": "session_mismatch",
+          "expect_fault_latched": true,
+          "expect_frame_id": 0
+        }
+      ]
+    },
+    {
+      "scenario_id": "clock-domain-mismatch-latch",
+      "coverage_tags": [],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 9000000000,
+          "frame": {
+            "frame_id": 0,
+            "captured_at_ns": 9000000000,
+            "clock_domain": "wall-clock",
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000013",
+            "image_ref": "fixture://g1/frame/clock-mismatch"
+          },
+          "expect_status": "clock_domain_mismatch",
+          "expect_fault_latched": true,
+          "expect_frame_id": 0
+        }
+      ]
+    },
+    {
+      "scenario_id": "source-exception-latch",
+      "coverage_tags": [
+        "fatal_latch_source_error"
+      ],
+      "operations": [
+        {
+          "type": "source_error",
+          "now_ns": 10000000000,
+          "exception_type": "RuntimeError",
+          "expect_status": "source_error",
+          "expect_fault_latched": true,
+          "expect_plan_suppressed": true
+        },
+        {
+          "type": "poll",
+          "now_ns": 10000000001,
+          "expect_status": "source_error",
+          "expect_fault_latched": true
+        }
+      ]
+    },
+    {
+      "scenario_id": "latest-overwrite-expire-reset",
+      "coverage_tags": [
+        "latest_overwrite",
+        "latest_fresh_expire",
+        "reset_recovery"
+      ],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 11000000000,
+          "frame": {
+            "frame_id": 40,
+            "captured_at_ns": 11000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000014",
+            "image_ref": "fixture://g1/frame/40"
+          },
+          "expect_status": "accepted",
+          "expect_superseded_count": 0
+        },
+        {
+          "type": "read_latest",
+          "now_ns": 11000000000,
+          "expect_latest_frame_id": 40,
+          "expect_latest_present": true,
+          "expect_buffer_superseded_count": 0
+        },
+        {
+          "type": "ingest",
+          "now_ns": 11000000000,
+          "frame": {
+            "frame_id": 41,
+            "captured_at_ns": 11000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000015",
+            "image_ref": "fixture://g1/frame/41"
+          },
+          "expect_status": "accepted",
+          "expect_superseded_count": 1,
+          "expect_buffer_superseded_count": 1
+        },
+        {
+          "type": "read_latest",
+          "now_ns": 11000000000,
+          "expect_latest_frame_id": 41,
+          "expect_latest_present": true,
+          "expect_buffer_superseded_count": 1
+        },
+        {
+          "type": "read_latest",
+          "now_ns": 11250000001,
+          "expect_latest_frame_id": null,
+          "expect_latest_present": false,
+          "expect_buffer_superseded_count": 1
+        },
+        {
+          "type": "reset_session",
+          "session_id": "g1-session-reset",
+          "now_ns": 11250000001,
+          "expect_latest_frame_id": null,
+          "expect_latest_present": false,
+          "expect_buffer_superseded_count": 1,
+          "expect_session_id": "g1-session-reset"
+        },
+        {
+          "type": "ingest",
+          "now_ns": 12000000000,
+          "frame": {
+            "frame_id": 0,
+            "session_id": "g1-session-reset",
+            "captured_at_ns": 12000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000016",
+            "image_ref": "fixture://g1/frame/reset-0"
+          },
+          "expect_status": "accepted",
+          "expect_frame_id": 0,
+          "expect_superseded_count": 1
+        },
+        {
+          "type": "read_latest",
+          "now_ns": 12000000000,
+          "expect_latest_frame_id": 0,
+          "expect_latest_present": true,
+          "expect_buffer_superseded_count": 1,
+          "expect_session_id": "g1-session-reset"
+        }
+      ]
+    },
+    {
+      "scenario_id": "fatal-reset-recovery",
+      "coverage_tags": [],
+      "operations": [
+        {
+          "type": "ingest",
+          "now_ns": 13000000000,
+          "frame": {
+            "frame_id": 50,
+            "captured_at_ns": 13000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000017",
+            "image_ref": "fixture://g1/frame/50"
+          },
+          "expect_status": "accepted"
+        },
+        {
+          "type": "ingest",
+          "now_ns": 13000000001,
+          "frame": {
+            "frame_id": 50,
+            "captured_at_ns": 13000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000018",
+            "image_ref": "fixture://g1/frame/50-duplicate"
+          },
+          "expect_status": "duplicate",
+          "expect_fault_latched": true
+        },
+        {
+          "type": "reset_session",
+          "session_id": "g1-session-recovered",
+          "now_ns": 13000000001,
+          "expect_latest_frame_id": null,
+          "expect_latest_present": false,
+          "expect_session_id": "g1-session-recovered"
+        },
+        {
+          "type": "ingest",
+          "now_ns": 14000000000,
+          "frame": {
+            "frame_id": 0,
+            "session_id": "g1-session-recovered",
+            "captured_at_ns": 14000000000,
+            "content_hash": "0000000000000000000000000000000000000000000000000000000000000019",
+            "image_ref": "fixture://g1/frame/recovered-0"
+          },
+          "expect_status": "accepted",
+          "expect_fault_latched": false
+        }
+      ]
+    }
+  ]
+}

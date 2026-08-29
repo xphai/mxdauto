@@ -3,7 +3,7 @@
 > **状态截止**：2026-08-29  
 > **战略负责人**：5.6Sol Ultra  
 > **战术包负责人**：5.6 Luna max  
-> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1 Ready（未开始）
+> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（当前 `G1-FRM-001A`）
 
 ## 1. 用途与来源
 
@@ -24,6 +24,7 @@
 | `DONE-L0/L1` | 设计或本地实现存在；只支持该等级结论 |
 | `CANDIDATE` | 有 Legacy/离线资产可迁移，尚未通过 Core v2 对应 Gate |
 | `PARTIAL-DATA` | 具备部分图片/视频，完整状态或失败样本仍缺 |
+| `PARTIAL-G1-FRM` | G1 frame admission synthetic 子包已实现或在绑定，完整硬件/corpus Gate 证据仍有缺项 |
 | `MISSING` | Core v2 实现、固定输入或报告尚未形成 |
 | `DEFERRED-G5/G6` | 已进入路线图，当前阶段保持关闭 |
 | `CERTIFIED` | 需要对应 Gate、固定 Bundle 和签字；当前矩阵没有任何功能处于此状态 |
@@ -33,8 +34,8 @@
 | ID | 需求 | 原始来源 | 目标 Gate | 退出所需证据 | 当前事实 | 状态 |
 |---|---|---|---|---|---|---|
 | REQ-ENV-001 | 双机 Windows 环境：控制端采集/决策，游戏端 receiver | `COLLECTION_ANALYSIS.md` §2/§4/§8 | G2、G3、G6 | 控制端 clean report、游戏端无 Python receiver clean report、租约/双写审计、双机安装矩阵 | Legacy 曾以 `10.66.0.1 → 10.66.0.2:27183` 联通；Core v2 receiver/HIL/clean 报告为空 | `CANDIDATE` |
-| REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | Legacy 30.09 秒采集 1246 帧、41.41 FPS、读取失败 0；Core v2 只有 FramePacket/geometry 契约 | `CANDIDATE` + `DONE-L1 contract` |
-| REQ-UI-001 | 目标客户端模板隔离；桌面坐标经内容矩形转为 `1366×768` 归一化坐标 | `REQUIREMENTS_CONFIRMED.md` §1/§5 | G1、G5 | Profile/模板 manifest、geometry/calibration hash、窗口偏移 Replay、每 workflow UI fixture | Core v2 有 SourceGeometry/坐标契约；目标 Profile 的 UI/rune 资产与 workflow 证据仍不完整 | `DONE-L1 contract` + `PARTIAL-DATA` |
+| REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | `G1-FRM-001A` 已实现 FrameSource/latest、250 ms freshness、gap/fault latch/reset、geometry/calibration hash 与三次 synthetic replay；VC-003 read-only adapter、raw corpus、stress/硬件 smoke 待 001B | `PARTIAL-G1-FRM` |
+| REQ-UI-001 | 目标客户端模板隔离；桌面坐标经内容矩形转为 `1366×768` 归一化坐标 | `REQUIREMENTS_CONFIRMED.md` §1/§5 | G1、G5 | Profile/模板 manifest、geometry/calibration hash、窗口偏移 Replay、每 workflow UI fixture | `G1-FRM-001A` 固定 `1920×1080 → [277,167,1366,768] → 1296×700` 并生成 geometry/calibration identity；真实窗口偏移与 UI/rune workflow 仍待后续包 | `PARTIAL-G1-FRM` + `PARTIAL-DATA` |
 | REQ-CV-001 | YOLO monster 检测，ONNX 优先，GPU 推理并保留 CPU 回退，类别/阈值/ROI 可追溯 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G4 | Model Card、人工真值会话隔离 split、部署 ONNX P/R、PT/ONNX 差、GPU/CPU parity、负样本、Replay/Shadow | DEC-001 选择 `best_forest_v3-candidate`、`[mob]`、`640×640`；存在本人/技能误检诊断；Core v2 GPU/CPU 报告为空 | `CANDIDATE` |
 | REQ-CV-002 | 模型加载失败时抑制动作并记录原因 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G2 | 模型缺失/hash/class/input mismatch 故障 fixture；WorldState unknown；ActionSpec 数为 0；FaultEvent | Manifest schema/Action contract 已有；runtime/supervisor 尚未实现 | `MISSING` |
 | REQ-LOC-001 | 本人位置、地图/平台坐标和时序一致性 | 原始自动打怪需求；`COLLECTION_ANALYSIS.md` §6 | G1、G4 | 人工 truth、坐标变换版本、4 个定位边界回归、100 圈、身份切换 0 | Core v2 有坐标/WorldState 契约；Legacy cache 最近可见 4 个投影失败节点，后续完整报告为空 | `DONE-L1 contract` / runtime `MISSING` |
@@ -66,7 +67,7 @@
 |---|---|---|
 | G-1 | Pilot、匿名 Profile、输入所有权、原始范围映射 | **战略封存完成**：ADR-004、DEC-001 和本矩阵已形成 |
 | G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **PASS**：工程/失败链、branch protection、required `quality`、PR #1、Owner countersign 与 main post-merge run 已闭环 |
-| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | Ready；未开始 |
+| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：当前仅 `G1-FRM-001A`；完整 FRM、OBS/LOC/WST/Planner/corpus/Shadow 仍待实施 |
 | G2 | INP-001/002/003、SAFE-001/002、NFR-001 的 simulator/HIL | 未开始 |
 | G3 | FUN-001 + 输入租约的单图有界现场 | 未开始；Core v2 现场 session 为 0 |
 | G4 | Pilot 打怪、HP/MP、安全、4 小时 Certified | 未开始 |
@@ -86,7 +87,14 @@
 
 G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时必须回填实际 `evidence_id`、commit、Bundle、artifact hash 和评审结论；Markdown 中的计划 ID不替代实际报告。
 
-## 6. 维护规则
+## 6. 当前 G1 工作索引
+
+| 工作包 | 已落地范围 | 本包后仍待完成 | 当前结论 |
+|---|---|---|---|
+| G1-FRM-001A | Frame admission、latest slot、DEC-001 geometry/calibration hash、freshness/fault matrix、session reset、三次 synthetic deterministic replay、G0 seal/current checkout CI 分轨 | VC-003 read-only adapter、content-addressed raw pixels、真实 corpus/truth、并发压力、5 分钟硬件 smoke、合并后 source/CI 证据绑定 | `In Progress`，真实输入 0 |
+| G1-FRM-001B | 待签发 | 补齐上述硬件、corpus、stress、provenance 后才可提交完整 `G1-FRM-001` 审计 | `Queued` |
+
+## 7. 维护规则
 
 1. Luna-M 每个战术包引用至少一个 `REQ-*` 和一个 Gate；
 2. 新需求由 Sol-U 分配 ID、范围、Gate 和证据等级后进入实现；

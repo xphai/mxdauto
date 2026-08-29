@@ -4,6 +4,21 @@ from .event_tape import (
     EventRecord,
     EventTape,
 )
+from .frame_admission import (
+    FRAME_ADMISSION_REPORT_TYPE,
+    FRAME_ADMISSION_REQUIRED_COVERAGE,
+    FRAME_ADMISSION_REQUIRED_STATUSES,
+    FRAME_ADMISSION_SCHEMA_VERSION,
+    FrameAdmissionDeterminismError,
+    FrameAdmissionFixture,
+    FrameAdmissionReplayError,
+    FrameAdmissionReplayRunner,
+    FrameAdmissionReport,
+    FrameAdmissionRun,
+    FrameAdmissionRunner,
+    canonical_digest,
+    verify_frame_admission_report,
+)
 from .golden import (
     GOLDEN_FIXTURE_VERSION,
     REPLAY_REPORT_VERSION,
@@ -27,6 +42,10 @@ from .shadow import (
 )
 
 __all__ = [
+    "FRAME_ADMISSION_REPORT_TYPE",
+    "FRAME_ADMISSION_REQUIRED_COVERAGE",
+    "FRAME_ADMISSION_REQUIRED_STATUSES",
+    "FRAME_ADMISSION_SCHEMA_VERSION",
     "GENESIS_HASH",
     "GOLDEN_FIXTURE_VERSION",
     "REPLAY_REPORT_VERSION",
@@ -36,6 +55,13 @@ __all__ = [
     "DryRunReceipt",
     "EventRecord",
     "EventTape",
+    "FrameAdmissionDeterminismError",
+    "FrameAdmissionFixture",
+    "FrameAdmissionReplayError",
+    "FrameAdmissionReplayRunner",
+    "FrameAdmissionReport",
+    "FrameAdmissionRun",
+    "FrameAdmissionRunner",
     "GoldenAction",
     "GoldenFixture",
     "GoldenFrame",
@@ -48,4 +74,6 @@ __all__ = [
     "ShadowError",
     "ShadowReport",
     "ShadowRunner",
+    "canonical_digest",
+    "verify_frame_admission_report",
 ]

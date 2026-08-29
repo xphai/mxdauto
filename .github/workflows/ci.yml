@@ -32,9 +32,9 @@ jobs:
         shell: pwsh
         run: |
           "CI_STARTED_AT=$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'))" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $candidateSource = (Get-Content bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json | ConvertFrom-Json).source_commit
-          $sourceEpoch = (git show -s --format=%ct $candidateSource).Trim()
-          if ($sourceEpoch -notmatch '^\d+$') { throw "Invalid source commit epoch: $sourceEpoch" }
+          $checkoutSource = (git rev-parse HEAD).Trim()
+          $sourceEpoch = (git show -s --format=%ct $checkoutSource).Trim()
+          if ($sourceEpoch -notmatch '^\d+$') { throw "Invalid checkout commit epoch: $sourceEpoch" }
           "SOURCE_DATE_EPOCH=$sourceEpoch" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install locked development dependencies
@@ -63,7 +63,7 @@ jobs:
           python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest schemas/runtime-manifest.example.json
           python tools/validate_runtime_manifest.py --schema schemas/runtime-manifest.schema.json --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json
 
-      - name: Verify committed Candidate bundle metadata
+      - name: Verify sealed G0 Candidate packet
         id: verify_candidate_bundle
         run: python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0
 
@@ -71,9 +71,9 @@ jobs:
         id: mypy
         run: python -m mypy
 
-      - name: Cacheless Windows clean smoke
-        id: clean_smoke
-        run: python tools/run_clean_smoke.py --output evidence/ci-run/clean-smoke-report.json
+      - name: Cacheless Windows checkout regression
+        id: checkout_smoke
+        run: python tools/run_clean_smoke.py --mode checkout-regression --output evidence/ci-run/checkout-smoke-report.json
 
       - name: Pytest
         id: pytest
@@ -82,13 +82,17 @@ jobs:
           New-Item -ItemType Directory -Force evidence/ci-run | Out-Null
           python -m pytest --junitxml=evidence/ci-run/junit.xml --cov=maple_automation_core --cov-report=term-missing --cov-report=xml:evidence/ci-run/coverage.xml --cov-fail-under=90
 
-      - name: Golden Replay
+      - name: Current checkout Golden Replay
         id: golden_replay
-        run: python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json
+        run: python tools/run_golden_replay.py --runs 3 --report evidence/ci-run/golden-replay-report.json
 
-      - name: Shadow zero-input audit
+      - name: Current checkout Shadow zero-input audit
         id: shadow_audit
-        run: python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json
+        run: python tools/run_shadow.py --report evidence/ci-run/golden-shadow-report.json
+
+      - name: Frame admission deterministic replay
+        id: frame_admission
+        run: python tools/run_frame_admission_replay.py --runs 3 --fixture fixtures/g1/frame_admission_v1.json --schema schemas/frame-admission-report.schema.json --report evidence/ci-run/frame-admission-report.json
 
       - name: Build wheel and sdist
         id: build
@@ -107,20 +111,20 @@ jobs:
             $artifactArgs += "--artifact"
             $artifactArgs += $_.FullName
           }
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/checkout-smoke-report.json"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/frame-admission-report.json"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/golden-replay-report.json"
+          $artifactArgs += "--artifact"
+          $artifactArgs += "evidence/ci-run/golden-shadow-report.json"
           python tools/collect_ci_evidence.py `
             --output evidence/ci-run/ci-evidence.json `
             --repo-root . `
             --junit evidence/ci-run/junit.xml `
             --coverage evidence/ci-run/coverage.xml `
             --lock configs/requirements.lock `
-            --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json `
-            --asset-index bundles/candidate-core-v2-20260829-shadow/asset-index.json `
-            --evidence-index evidence/g0-candidate-core-v2-20260829/evidence-index.json `
-            --bundle bundles/candidate-core-v2-20260829-shadow/bundle.json `
-            --evidence-report evidence/ci-run/golden-replay-report.json `
-            --evidence-report evidence/ci-run/golden-shadow-report.json `
-            --evidence-report evidence/ci-run/clean-smoke-report.json `
-            --fixture fixtures/golden/pilot_minimal_v1.json `
             --check-result "install-dependencies::${{ steps.install_dependencies.outcome }}::python -m pip install --disable-pip-version-check --no-cache-dir --requirement configs/requirements.lock" `
             --check-result "verify-dependency-lock::${{ steps.verify_dependency_lock.outcome }}::python tools/verify_dependency_lock.py --lock configs/requirements.lock --check-installed" `
             --check-result "ruff-lint::${{ steps.ruff_lint.outcome }}::python -m ruff check src tests tools" `
@@ -128,14 +132,13 @@ jobs:
             --check-result "validate-runtime-manifests::${{ steps.validate_runtime_manifests.outcome }}::python tools/validate_runtime_manifest.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json" `
             --check-result "candidate-bundle::${{ steps.verify_candidate_bundle.outcome }}::python tools/verify_bundle.py --bundle-dir bundles/candidate-core-v2-20260829-shadow --metadata-only --strict-g0" `
             --check-result "mypy::${{ steps.mypy.outcome }}::python -m mypy" `
-            --check-result "clean-smoke::${{ steps.clean_smoke.outcome }}::python tools/run_clean_smoke.py --output evidence/ci-run/clean-smoke-report.json" `
+            --check-result "checkout-smoke::${{ steps.checkout_smoke.outcome }}::python tools/run_clean_smoke.py --mode checkout-regression --output evidence/ci-run/checkout-smoke-report.json" `
             --check-result "pytest::${{ steps.pytest.outcome }}::python -m pytest" `
-            --check-result "golden-replay::${{ steps.golden_replay.outcome }}::python tools/run_golden_replay.py --runs 3 --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-replay-report.json" `
-            --check-result "shadow-audit::${{ steps.shadow_audit.outcome }}::python tools/run_shadow.py --manifest bundles/candidate-core-v2-20260829-shadow/runtime-manifest.json --report evidence/ci-run/golden-shadow-report.json" `
+            --check-result "golden-replay::${{ steps.golden_replay.outcome }}::python tools/run_golden_replay.py --runs 3 --report evidence/ci-run/golden-replay-report.json" `
+            --check-result "shadow-audit::${{ steps.shadow_audit.outcome }}::python tools/run_shadow.py --report evidence/ci-run/golden-shadow-report.json" `
+            --check-result "frame-admission::${{ steps.frame_admission.outcome }}::python tools/run_frame_admission_replay.py --runs 3 --fixture fixtures/g1/frame_admission_v1.json --schema schemas/frame-admission-report.schema.json --report evidence/ci-run/frame-admission-report.json" `
             --check-result "build::${{ steps.build.outcome }}::python -m build --wheel --sdist --no-isolation; python tools/normalize_sdist.py dist/*.tar.gz" `
             --workflow-result "${{ job.status }}" `
-            --bundle-id candidate-core-v2-20260829-shadow `
-            --release-id candidate-core-v2-20260829-shadow `
             --event $env:GITHUB_EVENT_NAME `
             --workflow-name $env:GITHUB_WORKFLOW `
             --run-id $env:GITHUB_RUN_ID `
@@ -167,22 +170,35 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: g0-ci-evidence-${{ github.run_id }}
+          name: ci-evidence-${{ github.run_id }}
           path: evidence/ci-run/
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Upload clean-smoke evidence
+      - name: Upload checkout-regression evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: g0-clean-smoke-${{ github.run_id }}
+          name: checkout-smoke-${{ github.run_id }}
           path: |
-            evidence/ci-run/clean-smoke-report.json
+            evidence/ci-run/checkout-smoke-report.json
             evidence/ci-run/clean-junit.xml
             evidence/ci-run/clean-coverage.xml
             evidence/ci-run/clean-replay-report.json
             evidence/ci-run/clean-shadow-report.json
+            evidence/ci-run/clean-frame-admission-report.json
             evidence/ci-run/artifacts/*
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload G1 frame-admission evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: g1-frame-admission-${{ github.run_id }}
+          path: |
+            evidence/ci-run/frame-admission-report.json
+            fixtures/g1/frame_admission_v1.json
+            schemas/frame-admission-report.schema.json
           if-no-files-found: ignore
           retention-days: 30
