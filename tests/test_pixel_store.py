@@ -376,6 +376,35 @@ def test_derivation_is_complete_acyclic_and_parent_must_exist(tmp_path: Path) ->
         )
 
 
+def test_parentless_live_put_skips_unchanged_graph_rescan(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = PixelStore(tmp_path / "cas")
+    spec = _spec()
+    calls = 0
+    original = store._verify_derivation_dag
+
+    def verify_graph() -> None:
+        nonlocal calls
+        calls += 1
+        original()
+
+    monkeypatch.setattr(store, "_verify_derivation_dag", verify_graph)
+    parent = store.put_artifact(spec, _pixels(), source_sequence=1)
+    assert calls == 0
+
+    store.put_artifact(
+        spec,
+        bytes(reversed(_pixels())),
+        source_sequence=2,
+        parent_pixel_digest=parent.pixel_digest,
+        transform_version="transform-v1",
+        calibration_sha256="1" * 64,
+    )
+    assert calls == 1
+
+
 def test_concurrent_derivation_append_cannot_create_two_node_cycle(tmp_path: Path) -> None:
     store = PixelStore(tmp_path / "cas")
     spec = _spec()
