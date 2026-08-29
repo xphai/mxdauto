@@ -15,6 +15,11 @@
 | ADR | ADR-002、ADR-004、ADR-007、ADR-010、ADR-011、ADR-012 |
 | unlocks | 完整 `G1-FRM-001` 审计；通过后才评审 `G1-OBS-002` |
 
+完整 FrameSource 审计框架见
+[`docs/gates/G1-FRM-001-GATE-CHARTER.md`](../gates/G1-FRM-001-GATE-CHARTER.md)；六类真实组织会签
+统一登记于 [GitHub Issue #13](https://github.com/xphai/mxdauto/issues/13)。Issue 创建不等价于批准，
+在六个精确角色均给出最终决定前，本包继续保持 `Countersign Pending`。
+
 ## 1. 目标
 
 本包在真实 `VC-003 Video` 上运行 B1 的精确软件产物，形成一次有范围、可审计、read-only 的
