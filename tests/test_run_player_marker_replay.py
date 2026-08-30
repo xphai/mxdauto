@@ -26,6 +26,8 @@ def _args_without_commit() -> list[str]:
         "cas",
         "--event-tape",
         "events.jsonl",
+        "--event-tape-index",
+        "event-tape-index.json",
         "--accepted-ledger",
         "ledger.jsonl",
         "--calibration",
@@ -41,9 +43,7 @@ def test_replay_commit_is_required_and_zero_timing_is_fixed() -> None:
     with pytest.raises(SystemExit):
         cli._parse_args(_args_without_commit())
 
-    args = cli._parse_args(
-        [*_args_without_commit(), "--replay-source-commit", "a" * 40]
-    )
+    args = cli._parse_args([*_args_without_commit(), "--replay-source-commit", "a" * 40])
     assert args.as_of_offset_ns == 0
     assert args.generation == 0
 

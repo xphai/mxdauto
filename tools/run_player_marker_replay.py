@@ -195,9 +195,7 @@ def _zero(value: str) -> int:
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--manifest", required=True, type=Path, help="Verified corpus manifest."
-    )
+    parser.add_argument("--manifest", required=True, type=Path, help="Verified corpus manifest.")
     parser.add_argument(
         "--truth-root", required=True, type=Path, help="Private truth-artifact root."
     )
@@ -223,6 +221,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--event-tapes-root",
         type=Path,
         help="Directory from which all *.jsonl Event Tapes are loaded.",
+    )
+    parser.add_argument(
+        "--event-tape-index",
+        required=True,
+        type=Path,
+        help="Canonical index binding the exact Event Tape artifacts.",
     )
     parser.add_argument(
         "--accepted-ledger",
@@ -319,11 +323,7 @@ def _summary(payload: Mapping[str, Any]) -> dict[str, Any]:
     samples = runs[0].get("samples") if isinstance(runs[0], Mapping) else None
     if not isinstance(samples, list):
         raise ValueError("replay report has no samples")
-    counts = Counter(
-        str(sample.get("status"))
-        for sample in samples
-        if isinstance(sample, Mapping)
-    )
+    counts = Counter(str(sample.get("status")) for sample in samples if isinstance(sample, Mapping))
     return {
         "detected": counts.get("detected", 0),
         "fault": counts.get("fault", 0),
@@ -346,6 +346,7 @@ def _verify_report(
     replay_source_commit: str,
     as_of_offset_ns: int,
     extractor_artifact_digest: str,
+    event_tape_index_artifact_digest: str,
     accepted_ledger_digest: str,
     calibration_artifact_digest: str,
     zero_input_audit_artifact_digest: str,
@@ -384,6 +385,7 @@ def _verify_report(
             "expected_verification_profile": "b2_gate",
             "expected_extractor_artifact_digest": extractor_artifact_digest,
             "expected_event_tape_digest": report.get("event_tape_digest"),
+            "expected_event_tape_index_artifact_digest": (event_tape_index_artifact_digest),
             "expected_accepted_ledger_digest": accepted_ledger_digest,
             "expected_calibration_artifact_digest": calibration_artifact_digest,
             "expected_zero_input_audit_artifact_digest": zero_input_audit_artifact_digest,
@@ -392,12 +394,13 @@ def _verify_report(
     )
     parameters = inspect.signature(verify_player_marker_replay_report).parameters
     accepts_var_kwargs = any(
-        parameter.kind is inspect.Parameter.VAR_KEYWORD
-        for parameter in parameters.values()
+        parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters.values()
     )
-    kwargs = expected if accepts_var_kwargs else {
-        name: value for name, value in expected.items() if name in parameters
-    }
+    kwargs = (
+        expected
+        if accepts_var_kwargs
+        else {name: value for name, value in expected.items() if name in parameters}
+    )
     verify_player_marker_replay_report(payload, **kwargs)
 
 
@@ -411,6 +414,7 @@ def main(argv: list[str] | None = None) -> int:
     calibration = _require_file(args.calibration, "calibration")
     zero_input_audit = _require_file(args.zero_input_audit, "zero-input audit")
     marker_config_path = _require_file(args.marker_config, "marker config")
+    event_tape_index = _require_file(args.event_tape_index, "Event Tape index")
     marker_source = _marker_source_path(args.marker_source)
     event_root = (
         _require_directory(args.event_tapes_root, "Event Tape root")
@@ -426,6 +430,7 @@ def main(argv: list[str] | None = None) -> int:
         zero_input_audit,
         marker_config_path,
         marker_source,
+        event_tape_index,
         *event_tapes,
     }
     report_path = None if args.report is None else args.report.expanduser().resolve()
@@ -435,6 +440,7 @@ def main(argv: list[str] | None = None) -> int:
     marker_data = _read_mapping(marker_config_path, "marker config")
     marker_config = MinimapMarkerConfig.from_dict(marker_data)
     extractor_artifact_digest = _sha256_file(marker_source)
+    event_tape_index_artifact_digest = _sha256_file(event_tape_index)
     accepted_ledger_digest = _sha256_file(accepted_ledger)
     calibration_artifact_digest = _sha256_file(calibration)
     zero_input_audit_sha256 = _sha256_file(zero_input_audit)
@@ -449,6 +455,7 @@ def main(argv: list[str] | None = None) -> int:
         truth_root=truth_root,
         cas_root=cas_root,
         event_tapes=event_tapes,
+        event_tape_index=event_tape_index,
         extractor=extractor,
         replay_source_commit=args.replay_source_commit,
         config=marker_config.to_dict(),
@@ -472,6 +479,7 @@ def main(argv: list[str] | None = None) -> int:
         replay_source_commit=args.replay_source_commit,
         as_of_offset_ns=args.as_of_offset_ns,
         extractor_artifact_digest=extractor_artifact_digest,
+        event_tape_index_artifact_digest=event_tape_index_artifact_digest,
         accepted_ledger_digest=accepted_ledger_digest,
         calibration_artifact_digest=calibration_artifact_digest,
         zero_input_audit_artifact_digest=zero_input_audit_sha256,
