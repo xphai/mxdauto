@@ -57,6 +57,7 @@ def test_three_runs_are_deterministic_and_report_is_strict(tmp_path: Path) -> No
     assert len({item["result_digest"] for item in report["runs"]}) == 1
     assert report["runtime"]["requested_provider"] == "CPUExecutionProvider"
     assert report["runtime"]["actual_provider"] == "CPUExecutionProvider"
+    assert report["runtime"]["provider_inventory"] == ["CPUExecutionProvider"]
     assert report["input_audit"] == {
         "input_owner": "legacy",
         "real_input_enabled": False,
@@ -142,6 +143,28 @@ def test_invalid_backend_metadata_fails_closed(tmp_path: Path) -> None:
     assert report["status"] == "FAIL"
     assert "runtime:input_dtype_invalid" in report["failures"]
     validate_report(report)
+
+
+def test_provider_inventory_fallback_fails_closed(tmp_path: Path) -> None:
+    fixture = make_fixture(tmp_path)
+    assert fixture.backend is not None
+    fixture.backend.providers = ("CPUExecutionProvider", "FakeExecutionProvider")
+
+    report = _run(fixture, tmp_path)
+
+    assert report["status"] == "FAIL"
+    assert "provider:inventory_does_not_match_requested" in report["failures"]
+    validate_report(report)
+
+    forged = _run(make_fixture(tmp_path / "forged"), tmp_path / "forged")
+    forged["runtime"]["provider_inventory"].append("FakeExecutionProvider")
+    unsigned = dict(forged)
+    unsigned.pop("report_digest")
+    forged["report_digest"] = hashlib.sha256(
+        json.dumps(unsigned, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    with pytest.raises(ObservationSmokeError, match="provider inventory permits fallback"):
+        validate_report(forged)
 
 
 def test_asset_declaration_must_match_model_binding(tmp_path: Path) -> None:

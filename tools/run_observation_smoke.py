@@ -1080,6 +1080,8 @@ def validate_report(
     if report["status"] == "PASS":
         if runtime["requested_provider"] != runtime["actual_provider"]:
             raise ObservationSmokeError("runtime provider identity mismatch")
+        if runtime["provider_inventory"] != [runtime["requested_provider"]]:
+            raise ObservationSmokeError("runtime provider inventory permits fallback")
         if runtime["input"] != expected_input or runtime["output"] != expected_output:
             raise ObservationSmokeError("runtime tensor contract does not match model binding")
         if any(run["actual_provider"] != runtime["actual_provider"] for run in runs):
@@ -1133,6 +1135,8 @@ def _make_report(
         actual_provider = "unavailable"
     if actual_provider != requested_provider:
         failures.append("provider:actual_does_not_match_requested")
+    if provider_values != (requested_provider,):
+        failures.append("provider:inventory_does_not_match_requested")
     if len({run["actual_provider"] for run in runs}) != 1:
         failures.append("provider:run_drift")
     expected_input = [1, 3, fixture.binding.input_size.height, fixture.binding.input_size.width]
@@ -1187,6 +1191,7 @@ def _make_report(
             "wheel_size_bytes": ORT_WHEEL_SIZE_BYTES,
             "requested_provider": requested_provider,
             "actual_provider": actual_provider,
+            "provider_inventory": list(provider_values),
             "input": input_metadata,
             "output": output_metadata,
         },

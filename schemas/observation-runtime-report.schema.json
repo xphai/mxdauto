@@ -410,6 +410,7 @@
         "wheel_size_bytes",
         "requested_provider",
         "actual_provider",
+        "provider_inventory",
         "input",
         "output"
       ],
@@ -435,6 +436,15 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        "provider_inventory": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          }
         },
         "input": {
           "$ref": "#/$defs/tensorMetadata"
