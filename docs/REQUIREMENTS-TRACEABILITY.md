@@ -1,9 +1,9 @@
 # Core v2 需求—Gate—证据追踪矩阵
 
-> **状态截止**：2026-08-29  
+> **状态截止**：2026-08-30
 > **战略负责人**：5.6Sol Ultra  
 > **战术包负责人**：5.6 Luna max  
-> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（`G1-FRM-001A`=`Completed`，`G1-FRM-001B1`=`Completed`，`G1-FRM-001B2`=`In Progress / Technical + Outer CI PASS / Countersign Pending`）
+> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（`G1-FRM-001B2`=`Completed`，完整 `G1-FRM-001`=`Completed`，`G1-OBS-002`=`Unlocked / implementation not started`）
 
 ## 1. 用途与来源
 
@@ -34,7 +34,7 @@
 | ID | 需求 | 原始来源 | 目标 Gate | 退出所需证据 | 当前事实 | 状态 |
 |---|---|---|---|---|---|---|
 | REQ-ENV-001 | 双机 Windows 环境：控制端采集/决策，游戏端 receiver | `COLLECTION_ANALYSIS.md` §2/§4/§8 | G2、G3、G6 | 控制端 clean report、游戏端无 Python receiver clean report、租约/双写审计、双机安装矩阵 | Legacy 曾以 `10.66.0.1 → 10.66.0.2:27183` 联通；Core v2 receiver/HIL/clean 报告为空 | `CANDIDATE` |
-| REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | B2 canonical source `37e57b9662fa3d061e840d4b9c86ab89efe24f2f`、main run `33256230132`、wheel `62b3b2f3...b273f`；300 秒 hardware PASS（8,999 capture / 4,499 admitted，29.996666 / 14.996666 FPS），300 unique corpus、full CAS/provenance/privacy/zero-input 与 Candidate local/full verifier PASS。packaging PR #11 / commit `72c3ad0...` / outer run `33258468278` 已通过；组织会签待完成 | `PARTIAL-G1-FRM` |
+| REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | B2 canonical source `37e57b9662fa3d061e840d4b9c86ab89efe24f2f`、wheel `62b3b2f3...b273f`；300 秒 hardware PASS（8,999 capture / 4,499 admitted，29.996666 / 14.996666 FPS），300 unique corpus、full CAS/provenance/privacy/zero-input 与 Candidate verifier PASS。Issue #13 六角色批准；PR #15 / merge `fe29a4c...` / PR run `33283195258` / main outer run `33283646596` 已绑定，完整 FrameSource 已完成；G3/G4 现场要求仍待后续 Gate | `PARTIAL-G1-FRM` |
 | REQ-UI-001 | 目标客户端模板隔离；桌面坐标经内容矩形转为 `1366×768` 归一化坐标 | `REQUIREMENTS_CONFIRMED.md` §1/§5 | G1、G5 | Profile/模板 manifest、geometry/calibration hash、窗口偏移 Replay、每 workflow UI fixture | 已合并的 `G1-FRM-001A` 固定 `1920×1080 → [277,167,1366,768] → 1296×700` 并生成 geometry/calibration identity；真实窗口偏移与 UI/rune workflow 仍待后续包 | `PARTIAL-G1-FRM` + `PARTIAL-DATA` |
 | REQ-CV-001 | YOLO monster 检测，ONNX 优先，GPU 推理并保留 CPU 回退，类别/阈值/ROI 可追溯 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G4 | Model Card、人工真值会话隔离 split、部署 ONNX P/R、PT/ONNX 差、GPU/CPU parity、负样本、Replay/Shadow | DEC-001 选择 `best_forest_v3-candidate`、`[mob]`、`640×640`；存在本人/技能误检诊断；Core v2 GPU/CPU 报告为空 | `CANDIDATE` |
 | REQ-CV-002 | 模型加载失败时抑制动作并记录原因 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G2 | 模型缺失/hash/class/input mismatch 故障 fixture；WorldState unknown；ActionSpec 数为 0；FaultEvent | Manifest schema/Action contract 已有；runtime/supervisor 尚未实现 | `MISSING` |
@@ -57,7 +57,7 @@
 | REQ-OBS-002 | 截图、录像、日志和故障诊断 | `REQUIREMENTS_CONFIRMED.md` §2 | G0→G6 | Event Tape、artifact hash、session video、fault report、retention/privacy index | sealed packet 有 evidence index、JUnit/coverage、Replay/Shadow/clean/build/CI hash；两次 failed run 的原始材料、artifact digest、根因与修复谱系已进入统一 failure index；现场视频仍缺 | `DONE-G0-minimal` / G1+ `MISSING` |
 | REQ-NFR-001 | 处理 `≥15 FPS`、端到端 P95 `<100ms` | `COLLECTION_ANALYSIS.md` §7 | G2、G3、G4 | HIL/field latency trace、帧新鲜度、P95/P99、读帧失败率 | Legacy 推理/网络有局部性能记录；Core v2 HIL/field 为空 | `CANDIDATE` |
 | REQ-NFR-002 | 连续 4 小时稳定验收 | `COLLECTION_ANALYSIS.md` §7 | G4 | 固定 Certified Bundle，5 个独立 `EAOH≥4h` session，重启/异常/双写 0 | Core v2 field session 为 0；Legacy 4.69 小时日志含 29 次终止、331 stuck、1,011 登录等待 | `MISSING` |
-| REQ-PRI-001 | 账号、角色名、二维码等去标识化 | `MEDIA_REVIEW.md` §1；ADR-007/ROADMAP | G0、G1、G6 | `subject_id`、脱敏审计、fixture manifest、访问/保留策略 | DEC-001 使用匿名 Profile；G0 synthetic fixture 记录 complete de-identification、internal usage/license；真实 G1 素材仍需入库审计 | `DONE-G0-minimal` / G1+ `PARTIAL-DATA` |
+| REQ-PRI-001 | 账号、角色名、二维码等去标识化 | `MEDIA_REVIEW.md` §1；ADR-007/ROADMAP | G0、G1、G6 | `subject_id`、脱敏审计、fixture manifest、访问/保留策略 | DEC-001 使用匿名 Profile；G0 synthetic fixture 记录 complete de-identification；G1 FrameSource 真实素材已通过 restricted/public、去标识与公开扫描会签；G6 长期数据治理仍待完成 | `DONE-G0/G1` / G6 `PARTIAL-DATA` |
 | REQ-REL-001 | 配置、模型、地图、路线、receiver 与证据原子绑定 | ADR-007；由旧资产漂移派生 | G0、G6 | 实际 Runtime Bundle、逐文件 hash、签名、rollback release | Candidate release 已绑定 source `7da29f4...`、Manifest `c3382e8...2007`、10 个资产条目和 evidence graph；strict metadata/full-external 均通过；尚非签名/Certified release | `DONE-G0-candidate` |
 | REQ-REL-002 | 受控 Git/CI 与干净机可复现 | ADR-010；由交付要求派生 | G0、G6 | remote、protected branch、CI run/JUnit/coverage、dependency lock、clean reports | run `33204844985` 的 passed metadata 已纳入 sealed packet `04c794c...`，successor run `33205169227` 又复验最终 packet：109 tests、94.61%、27 checks；main `protected=true`，PR #1 required `quality`、protected merge、Owner countersign 与 main post-merge run 已完成 | `DONE-G0-governance` |
 
@@ -67,7 +67,7 @@
 |---|---|---|
 | G-1 | Pilot、匿名 Profile、输入所有权、原始范围映射 | **战略封存完成**：ADR-004、DEC-001 和本矩阵已形成 |
 | G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **PASS**：工程/失败链、branch protection、required `quality`、PR #1、Owner countersign 与 main post-merge run 已闭环 |
-| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：`G1-FRM-001A` 与 `G1-FRM-001B1` 已 Completed；001B2 technical evidence 与 outer CI PASS，组织会签待完成；完整 `G1-FRM-001`、OBS/LOC/WST/Planner/完整 Shadow 仍待实施 |
+| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：`G1-FRM-001B2` 与完整 `G1-FRM-001` 已 Completed，`G1-OBS-002` 已解锁但尚未实施；OBS/LOC/WST/Planner/完整 Shadow 仍待完成 |
 | G2 | INP-001/002/003、SAFE-001/002、NFR-001 的 simulator/HIL | 未开始 |
 | G3 | FUN-001 + 输入租约的单图有界现场 | 未开始；Core v2 现场 session 为 0 |
 | G4 | Pilot 打怪、HP/MP、安全、4 小时 Certified | 未开始 |
@@ -91,22 +91,23 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 
 | 工作包 | 已落地范围 | 本包后仍待完成 | 当前结论 |
 |---|---|---|---|
-| G1-FRM-001A | Frame admission、latest slot、DEC-001 geometry/calibration hash、freshness/fault matrix、session reset、三次 synthetic deterministic replay、G0 seal/current checkout CI 分轨；PR #3 已合并 | 001B1 已随后完成；001B2 技术证据已形成 | `Completed`，真实输入 0 |
-| G1-FRM-001 | 001A synthetic admission、001B1 software foundation 以及 001B2 hardware/corpus/Candidate technical evidence 已完成本地严格验证 | 001B2 packaging PR #11 / commit `72c3ad0...` / outer run `33258468278` 已完成；当前等待组织会签，随后执行完整 `G1-FRM-001` Gate 审计 | `In Progress`，真实输入 0 |
+| G1-FRM-001A | Frame admission、latest slot、DEC-001 geometry/calibration hash、freshness/fault matrix、session reset、三次 synthetic deterministic replay、G0 seal/current checkout CI 分轨；PR #3 已合并 | 001B1、001B2 与完整 FrameSource 审计已随后完成 | `Completed`，真实输入 0 |
+| G1-FRM-001 | 001A synthetic admission、001B1 software foundation、001B2 hardware/corpus/Candidate、Issue #13 六角色会签与 Gate Charter 已闭环 | PR #15 / merge `fe29a4c...` / PR run `33283195258` / main outer run `33283646596` 已绑定；下一包为 `G1-OBS-002` | `Completed`，真实输入 0 |
 | G1-FRM-001B1 | Pixel V1/CAS、raw capacity=1、VC-003 adapter/fake backend、Legacy local snapshot provenance、corpus/truth 工具、Event Tape、stress、schemas/verifiers、Python 3.12 CI wheel；PR #5 原始实现，PR #7～#10 hardening | B2 使用 source `37e57b9...` 的精确 wheel；本包本身不产生 hardware PASS | `Completed`，真实输入 0 |
-| G1-FRM-001B2 | source `37e57b9...` 的 300 秒 VC-003 smoke、4-session/300-sample corpus、3-run replay、4 Event Tapes、CAS/provenance/privacy/zero-input 与 G1 Frame Candidate packet | packaging PR #11 / P=`72c3ad0...` / outer run `33258468278` 已完成；QA/技术/现场/privacy/release/Sol-U 组织会签待完成 | `In Progress / Technical + Outer CI PASS`，真实输入 0 |
+| G1-FRM-001B2 | source `37e57b9...` 的 300 秒 VC-003 smoke、4-session/300-sample corpus、3-run replay、4 Event Tapes、CAS/provenance/privacy/zero-input 与会签版 G1 Frame Candidate packet | packaging PR #11 / P=`72c3ad0...` / outer run `33258468278`；Issue #13 六角色批准；PR #15 / merge `fe29a4c...` / main outer run `33283646596` success；`ci-evidence` digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c` | `Completed`，真实输入 0 |
 
-`G1-FRM-001` 的完整审计矩阵已建立于
-[`docs/gates/G1-FRM-001-GATE-CHARTER.md`](gates/G1-FRM-001-GATE-CHARTER.md)，组织会签入口为
-[GitHub Issue #13](https://github.com/xphai/mxdauto/issues/13)。该入口只固化真实审阅流程，不改变
-`signoffs=[]` 与 `Countersign Pending` 的当前事实。
+`G1-FRM-001` 的完整审计矩阵见
+[`docs/gates/G1-FRM-001-GATE-CHARTER.md`](gates/G1-FRM-001-GATE-CHARTER.md)。组织会签入口
+[GitHub Issue #13](https://github.com/xphai/mxdauto/issues/13) 已记录 reviewer=`owner-xphai` 对六个
+精确角色的独立 `approved` 决定；会签版 Candidate 的 `packet_digest` 为
+`4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。
 
 ### G1-FRM-001A 合并证据
 
 - 实现 PR：[#3](https://github.com/xphai/mxdauto/pull/3)；feature source commit `7cca4154a38e8bca29b917aa3c5abcc43a51391d`；merge commit `b30ddedb1f05945e68fb348b221cdfa123e83c59`。
 - CI 绑定：PR run `33225384485`；main run `33225488599`。
 - 质量与报告：149 tests、91.38% coverage；Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / zero input）；main frame digest `1c4948afc636ffba45b1f4a769ec7ee3d6d5ea15f09b2b1f9596faa43f837a7d`；checkout smoke 20/20；5 artifact groups。
-- 该证据只关闭 `G1-FRM-001A`，不改变 G0 sealed packet 的既有 source/packet 事实；完整 `G1-FRM-001` 与 G1 Gate 继续 `In Progress`。
+- 该证据在当时只关闭 `G1-FRM-001A`，不改变 G0 sealed packet 的既有 source/packet 事实；后续 B1/B2 与完整 FrameSource 审计现已完成。
 
 ### G1-FRM-001B1 合并证据
 
@@ -114,17 +115,18 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 - CI 绑定：PR run `33244563086`；main run [`33248781581`](https://github.com/xphai/mxdauto/actions/runs/33248781581)，结论 `success`。
 - 质量与审计：488 tests、0 failures/errors/skips；94.02% coverage（PixelStore 99.44%）；checkout smoke 23/23；36/36 evidence checks；privacy gate 与 zero-input audit 通过。
 - canonical main wheel：`maple_automation_core-0.1.0-py3-none-any.whl`，130,883 bytes，SHA-256 `2c05ab058abfe863165e80e0b635a7608536144147723f7d660e1f6c9ba0e365`；sdist SHA-256 `9bbdac46eed57a7828259ff71def9d74e8a54e4c16d706e1d3447648b96c503a`。
-- 该证据只关闭 `G1-FRM-001B1` 并解锁 B2 现场执行；完整 `G1-FRM-001` 与 G1 Gate 继续 `In Progress`，Core v2 真实输入仍为 0。
+- 该证据在当时只关闭 `G1-FRM-001B1` 并解锁 B2 现场执行；后续 B2 与完整 FrameSource 审计现已完成，Core v2 真实输入仍为 0。
 
 
-### G1-FRM-001B2 技术证据（组织会签前）
+### G1-FRM-001B2 技术证据与组织会签收口
 
 - B1 source：`37e57b9662fa3d061e840d4b9c86ab89efe24f2f`；main CI [`33256230132`](https://github.com/xphai/mxdauto/actions/runs/33256230132) success；wheel 131,432 bytes / SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f`。
 - hardware smoke：300.000 秒连续窗口；8,999 successful / 4,499 admitted；29.996666 / 14.996666 FPS；max accepted age=110 ms，max gap=110 ms，raw slot max depth=1，stop=0.094 s，全部 failure counters=0。
 - corpus/audit：4 sessions、300 samples/300 unique pixels、6 categories、100 wrong-size negatives、60 independent reviews；300 CAS objects 全量重算；4 tapes/300 events，无 orphan/mismatch/missing；3 次 replay digest 相同。
-- Candidate：`evidence/g1-frame-candidate-20260829/g1-frame-candidate-packet.json`，packet digest `a23b60094330cdd57b81cb0426017b2bb318e6e07dd4ef7b1e5d08ffcdcb1ea1`；metadata-only 与受控 full-root verification 均 PASS。
+- Candidate：`evidence/g1-frame-candidate-20260829/g1-frame-candidate-packet.json`，会签版 packet digest `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`；metadata-only、clean-checkout 与受控 full-root verification 均 PASS。
 - Outer seal：PR [#11](https://github.com/xphai/mxdauto/pull/11)；PR run [`33258100541`](https://github.com/xphai/mxdauto/actions/runs/33258100541) success；P=`72c3ad081db33d083fdcd5a5e0f62e73f886c233`；outer main run [`33258468278`](https://github.com/xphai/mxdauto/actions/runs/33258468278) success，Candidate conditional verifier 实际执行并通过。
-- 边界：raw Pixel CAS/视觉 review sheet 保持私有；`signoffs=[]`，privacy report 的 organizational human countersign=`pending`；B2 和完整 G1-FRM 在组织会签前保持 In Progress。
+- 会签/SCM：Issue #13 六角色均由 `owner-xphai` 批准；PR [#15](https://github.com/xphai/mxdauto/pull/15) / PR run [`33283195258`](https://github.com/xphai/mxdauto/actions/runs/33283195258) success / merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38` / main outer run [`33283646596`](https://github.com/xphai/mxdauto/actions/runs/33283646596) attempt 1 success / `ci-evidence` digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。
+- 边界：raw Pixel CAS/视觉 review sheet 保持私有；overall G1 仍 `In Progress`，`G1-OBS-002` 仅解锁且尚未实现，`input_owner=legacy`，Core v2 真实输入为 0。
 
 ## 7. 维护规则
 

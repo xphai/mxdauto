@@ -6,19 +6,20 @@
 | parent | `G1-FRM-001B` / `G1-FRM-001` |
 | requirement | `REQ-CAP-001`、`REQ-UI-001`、`REQ-SAFE-002`、`REQ-OBS-002`、`REQ-PRI-001`、`REQ-REL-001`、`REQ-REL-002` |
 | gate | G1 FrameSource 子门禁 |
-| decision | 技术证据与 protected packaging outer CI 已 PASS；等待组织会签 |
+| decision | 技术证据、组织会签、会签版 protected PR 与 outer CI 全部 PASS |
 | implementation | 5.6 Luna max + QA/evidence + 现场负责人 |
-| status | `In Progress / Technical + Outer CI PASS / Countersign Pending` |
+| status | `Completed / Technical + Organizational Countersign + Outer CI PASS` |
 | baseline | protected `main@37e57b9662fa3d061e840d4b9c86ab89efe24f2f` |
 | required wheel | `maple_automation_core-0.1.0-py3-none-any.whl` / SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f` |
 | baseline CI | main run [`33256230132`](https://github.com/xphai/mxdauto/actions/runs/33256230132) / attempt 1 / `success` |
 | ADR | ADR-002、ADR-004、ADR-007、ADR-010、ADR-011、ADR-012 |
-| unlocks | 完整 `G1-FRM-001` 审计；通过后才评审 `G1-OBS-002` |
+| unlocks | `G1-FRM-001=Completed`；`G1-OBS-002=Unlocked`（implementation not started） |
 
 完整 FrameSource 审计框架见
 [`docs/gates/G1-FRM-001-GATE-CHARTER.md`](../gates/G1-FRM-001-GATE-CHARTER.md)；六类真实组织会签
-统一登记于 [GitHub Issue #13](https://github.com/xphai/mxdauto/issues/13)。Issue 创建不等价于批准，
-在六个精确角色均给出最终决定前，本包继续保持 `Countersign Pending`。
+已统一登记于 [GitHub Issue #13](https://github.com/xphai/mxdauto/issues/13)，并以 reviewer
+`owner-xphai` 的六个独立 `approved` 条目写入 Candidate。会签版 evidence-only PR #15、required
+`quality` 与 protected merge 已完成。
 
 ## 1. 目标
 
@@ -299,7 +300,7 @@ B2 完成后，`G1-FRM-001B` 才可完成；随后单独评审 `G1-FRM-001=Compl
 `G1-OBS-002`。G1 的 OBS/LOC/WST/Planner/Replay/Shadow 等后续工作仍未完成，因此整体 G1
 继续保持 `In Progress`，Core v2 真实输入继续为 0。
 
-## 11. 实际执行记录（组织会签前）
+## 11. 实际执行与组织会签收口记录
 
 ### 11.1 冻结身份
 
@@ -329,7 +330,7 @@ measurement：
 
 - corpus digest：`e36863e24ea95295e8e6e9858283ab34706e463b6f675a6e7c856fa51b1e616b`；manifest SHA-256：`11bcb481e3c683a44ce41e4dcef9ee98ad3172eea8f434c30f1b4d36e0464b91`；
 - 4 independent sessions / 300 samples / 300 unique pixels / 6 categories / 100 wrong-size negatives；live session 贡献 100 samples；
-- primary review=300，independent review=60（20%）；当前 organizational human countersign=`pending`；
+- primary review=300，independent review=60（20%）；organizational human countersign=`approved`，reviewer=`owner-xphai`；
 - full CAS verified objects=300；4 Event Tapes / 300 events；orphan/mismatch/missing=0；
 - 3 次 deterministic replay 的 run digest 均为 `7bbf5758615f9456a88e93e8802c0e973f67bf05e3b72eb7a680e2b393ab9133`；
 - `b2_gate` provenance、privacy 与 zero-input audits 全部 PASS；raw videos、Pixel CAS 与 review contact sheet 保持 repository 外的 restricted storage。
@@ -337,8 +338,9 @@ measurement：
 ### 11.4 Candidate packet
 
 - packet：`evidence/g1-frame-candidate-20260829/g1-frame-candidate-packet.json`；
-- packet digest：`a23b60094330cdd57b81cb0426017b2bb318e6e07dd4ef7b1e5d08ffcdcb1ea1`；
-- lifecycle=`candidate`，overall G1 state=`In Progress`，`signoffs=[]`；
+- packet digest：`4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`；
+- privacy report digest：`fcecc2aa5c1879fd32aad9f9274da0685d1f57e7e4358fff2254d0a6d5ab7141`；privacy artifact SHA-256：`1cd232f10406a9357cce8d7be1416c5f26bace81d141fbbc5f0354306b295f25`；
+- lifecycle=`candidate`，overall G1 state=`In Progress`；六项 signoff 均为 `approved`（`qa_evidence`、`technical`、`field`、`privacy`、`release`、`sol_u`）；
 - metadata-only verification PASS；在显式 hardware/corpus roots、private CAS、truth root 和 4 条 Event Tape
   下执行 full-root verification PASS；
 - 仓库 packet 共 318 个 metadata/hash-only/受限 artifacts（含 packet），不包含 6,220,800-byte raw Pixel 对象或原始视频。
@@ -351,16 +353,24 @@ step fail-closed：该 step 位于项目安装前，verifier 导入 `maple_autom
 `src` bootstrap。失败 run 保留，不参与晋级；workflow 已在该 step 显式绑定 checkout `src`，并新增
 顺序回归测试，后续成功 run 才可作为 outer seal。
 
-### 11.6 剩余关闭项
+### 11.6 组织会签与最终关闭记录
 
-本节证明技术与 SCM/CI outer seal 已闭环：
+本节证明技术、组织与 SCM/CI outer seal 已闭环：
 
 - packaging PR：[#11](https://github.com/xphai/mxdauto/pull/11)；PR run
   [`33258100541`](https://github.com/xphai/mxdauto/actions/runs/33258100541) `success`；
 - packaging commit `P`：`72c3ad081db33d083fdcd5a5e0f62e73f886c233`；
 - outer main run：[`33258468278`](https://github.com/xphai/mxdauto/actions/runs/33258468278)，attempt 1，
   `success`；conditional Candidate metadata verifier 实际执行并通过。
+- 组织会签：[Issue #13](https://github.com/xphai/mxdauto/issues/13)，reviewer=`owner-xphai`；
+  `qa_evidence`、`technical`、`field`、`privacy`、`release`、`sol_u` 全部 `approved`；
+- 会签版 evidence-only PR：[#15](https://github.com/xphai/mxdauto/pull/15)；head
+  `67b9848077b381a514d7504a91eab05a22baffb7`；PR run
+  [`33283195258`](https://github.com/xphai/mxdauto/actions/runs/33283195258) `success`；
+- protected squash merge：`fe29a4ce5a8a98c49c85382f083d8429bfee2c38`；合并后 main outer run
+  [`33283646596`](https://github.com/xphai/mxdauto/actions/runs/33283646596)，attempt 1，`success`；
+  `ci-evidence` artifact digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。
 
-B2 仍不标成 `Completed`：QA/evidence、技术、现场、privacy/release 与 Sol-U 的组织 countersign 尚待
-登记，packet 仍保持 `signoffs=[]`。会签前，`G1-FRM-001B2`、完整 `G1-FRM-001` 与 G1 Gate 均保持
-`In Progress`，Core v2 真实输入保持 0。
+最终状态：`G1-FRM-001B2=Completed`、`G1-FRM-001=Completed`、`G1-OBS-002=Unlocked`。
+整体 G1 仍为 `In Progress`；Candidate 仍为 `candidate`，`input_owner=legacy`，Core v2 真实输入与
+double-write 均为 0。OBS/LOC/WST/Planner/Replay/Shadow 等后续工作不因本包完成而自动通过。
