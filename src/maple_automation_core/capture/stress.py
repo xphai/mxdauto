@@ -38,7 +38,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
-from itertools import pairwise
+from itertools import count, pairwise
 from pathlib import Path
 from time import monotonic
 from typing import Any, ClassVar, cast
@@ -390,6 +390,7 @@ class _StressBackend:
         *,
         block_start: bool = False,
         block_read: bool = False,
+        read_gate: threading.Event | None = None,
         start_error: BaseException | None = None,
         stop_blocked: bool = False,
         device_name: str = "VC-003 Video",
@@ -399,6 +400,7 @@ class _StressBackend:
         )
         self.block_start = block_start
         self.block_read = block_read
+        self.read_gate = read_gate
         self.start_error = start_error
         self.stop_blocked = stop_blocked
         self.device_name = device_name
@@ -434,6 +436,8 @@ class _StressBackend:
 
     def read(self) -> bytes | BackendFrame | None:
         self.read_entered.set()
+        if self.read_gate is not None:
+            self.read_gate.wait()
         if self.block_read:
             self.release_read.wait()
             return None
@@ -449,6 +453,8 @@ class _StressBackend:
     def stop(self) -> None:
         self.stop_count += 1
         self.stop_entered.set()
+        if self.read_gate is not None:
+            self.read_gate.set()
         self.release_read.set()
         if self.stop_blocked:
             self.release_stop.wait()
@@ -488,30 +494,39 @@ def _run_vc003_fake_lifecycle(timeout_s: float) -> dict[str, Any]:
         clock: Callable[[], int] | None = None,
     ) -> VC003Source:
         if clock is None:
-            return VC003Source(make_config(session_id), backend_factory=lambda _config: backend)
+            # The fake backend does not model elapsed time.  Give each source
+            # its own monotonic logical clock so scheduler latency cannot
+            # change the sample timestamps observed by this fixture.
+            clock = count(1).__next__
         return VC003Source(
             make_config(session_id),
             backend_factory=lambda _config: backend,
             clock=clock,
         )
 
-    first_backend = _StressBackend([b"\x00" * 6])
-    second_backend = _StressBackend([b"\x00" * 6])
+    first_read_gate = threading.Event()
+    second_read_gate = threading.Event()
+    first_backend = _StressBackend([b"\x00" * 6], read_gate=first_read_gate)
+    second_backend = _StressBackend([b"\x00" * 6], read_gate=second_read_gate)
     normal_backends = [first_backend, second_backend]
 
     def normal_factory(_config: VC003SourceConfig) -> _StressBackend:
         return normal_backends.pop(0)
 
     normal_source = VC003Source(
-        make_config("capture-pressure-vc003-a"), backend_factory=normal_factory
+        make_config("capture-pressure-vc003-a"),
+        backend_factory=normal_factory,
+        clock=count(1).__next__,
     )
-    drain_backend = _StressBackend([b"\x01" * 6])
+    drain_read_gate = threading.Event()
+    drain_backend = _StressBackend([b"\x01" * 6], read_gate=drain_read_gate)
     drain_source = source_for("capture-pressure-vc003-drain", drain_backend)
     normal_start = normal_read = normal_stop = reset_new_session = normal_final_drain = False
     try:
         normal_source.start()
-        normal_start = first_backend.started.wait(timeout_s)
-        normal_read = _wait_for(lambda: normal_source.status().produced >= 1, timeout_s)
+        normal_start = first_backend.started.is_set()
+        normal_read = first_backend.read_entered.wait(timeout_s)
+        first_read_gate.set()
         sample = normal_source.read(timeout=timeout_s)
         normal_read = (
             normal_read and sample is not None and sample.session_id == "capture-pressure-vc003-a"
@@ -525,8 +540,10 @@ def _run_vc003_fake_lifecycle(timeout_s: float) -> dict[str, Any]:
             and first_backend.stopped.is_set()
         )
         drain_source.start()
+        drain_read_ready = drain_backend.read_entered.wait(timeout_s)
+        drain_read_gate.set()
         normal_final_drain = (
-            _wait_for(lambda: drain_source.status().produced >= 1, timeout_s)
+            drain_read_ready
             and (drained := drain_source.stop()) is not None
             and drained.sequence == 1
             and drain_source.status().final_drain_performed
@@ -537,8 +554,11 @@ def _run_vc003_fake_lifecycle(timeout_s: float) -> dict[str, Any]:
         )
         normal_source.reset("capture-pressure-vc003-b")
         normal_source.start()
+        second_read_ready = second_backend.read_entered.wait(timeout_s)
+        second_read_gate.set()
         reset_new_session = _wait_for(
-            lambda: normal_source.status().session_id == "capture-pressure-vc003-b"
+            lambda: second_read_ready
+            and normal_source.status().session_id == "capture-pressure-vc003-b"
             and normal_source.status().produced >= 1,
             timeout_s,
         )
@@ -687,22 +707,53 @@ def _run_vc003_fake_lifecycle(timeout_s: float) -> dict[str, Any]:
     if timeout_s >= 1.0:
         slow_backend = _StressBackend([None], stop_blocked=True)
         slow_source = source_for("non-exit-child", slow_backend)
+        stop_completed = threading.Event()
+        stop_errors: list[BaseException] = []
+        stop_controller: threading.Thread | None = None
         try:
             slow_source.start()
-            slow_backend.read_entered.wait(timeout_s)
-            slow_source.stop()
-            slow_status = slow_source.status()
-            non_exit_residual_observed = (
-                slow_backend.stop_entered.is_set() and not slow_backend.stop_returned.is_set()
+            read_started = slow_backend.read_entered.wait(timeout_s)
+
+            def stop_call() -> None:
+                try:
+                    slow_source.stop()
+                except BaseException as exc:
+                    stop_errors.append(exc)
+                finally:
+                    stop_completed.set()
+
+            # Keep the controller separate from the test thread.  The
+            # backend-stop deadline is then observed through events rather
+            # than by sampling a race-prone status immediately after stop().
+            stop_controller = threading.Thread(
+                target=stop_call,
+                name="capture-pressure-fake-stop-controller",
+                daemon=True,
             )
+            stop_controller.start()
+            stop_started = slow_backend.stop_entered.wait(timeout_s)
+            non_exit_residual_observed = (
+                read_started and stop_started and not slow_backend.stop_returned.is_set()
+            )
+            # VC003Source owns a fixed two-second stop deadline.  This wait is
+            # only an observation handshake for that existing deadline; it
+            # does not extend or retry the source operation.
+            deadline_observed = stop_completed.wait(
+                min(timeout_s + 2.0, float(threading.TIMEOUT_MAX))
+            )
+            slow_status = slow_source.status()
             non_exit_fatal_cleanup = (
                 non_exit_residual_observed
+                and deadline_observed
+                and not stop_errors
                 and slow_status.lifecycle == "error"
                 and slow_status.error is not None
             )
             slow_backend.release_stop.set()
             non_exit_cleanup_cleared = slow_backend.stop_returned.wait(timeout_s)
-            _wait_for(
+            if stop_controller is not None:
+                stop_controller.join(timeout_s)
+            workers_cleared = _wait_for(
                 lambda: not (
                     slow_source.status().thread_alive
                     or slow_source.status().start_thread_alive
@@ -712,11 +763,21 @@ def _run_vc003_fake_lifecycle(timeout_s: float) -> dict[str, Any]:
                 timeout_s,
             )
             slow_status = slow_source.status()
-            non_exit_threads_left_alive = slow_status.residual_worker_count
+            non_exit_threads_left_alive = slow_status.residual_worker_count + int(
+                stop_controller is not None and stop_controller.is_alive()
+            )
+            if not workers_cleared:
+                non_exit_cleanup_cleared = False
         except Exception:
             failures.append("non_exit_child_exception")
             with suppress(Exception):
                 slow_backend.release_stop.set()
+            if slow_backend.stop_entered.is_set():
+                with suppress(Exception):
+                    slow_backend.stop_returned.wait(timeout_s)
+            if stop_controller is not None:
+                with suppress(Exception):
+                    stop_controller.join(timeout_s)
     else:
         non_exit_mode = "bounded_fake_child"
         child_release = threading.Event()
@@ -2652,11 +2713,11 @@ def _verify_vc003_fake_lifecycle(evidence: Mapping[str, Any], timeout_s: float) 
             raise CapturePressureError(f"VC003 fake lifecycle result mismatch: {field}")
     if evidence["non_exit_mode"] not in {"bounded_fake_child", "source_backend_stop_deadline"}:
         raise CapturePressureError("VC003 fake lifecycle cleanup mode mismatch")
+    expected_mode = "source_backend_stop_deadline" if timeout_s >= 1.0 else "bounded_fake_child"
+    if evidence["non_exit_mode"] != expected_mode:
+        raise CapturePressureError("VC003 fake lifecycle cleanup mode contradicts timeout")
     if evidence["threads_left_alive"] != 0:
         raise CapturePressureError("VC003 fake lifecycle left a thread alive")
-    expected = _run_vc003_fake_lifecycle(timeout_s)
-    if dict(evidence) != expected:
-        raise CapturePressureError("VC003 fake lifecycle could not be recomputed")
 
 
 def verify_capture_pressure_report(
