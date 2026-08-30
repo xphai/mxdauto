@@ -1,0 +1,9 @@
+# G1-OBS-002B Python 3.12 / Windows x86-64 observation runtime lock.
+# Source index: https://pypi.org/simple
+# Exact artifact: onnxruntime-1.23.2-cp312-cp312-win_amd64.whl
+# Artifact size: 13470528 bytes
+--index-url https://pypi.org/simple
+--only-binary=:all:
+
+onnxruntime==1.23.2 \
+    --hash=sha256:25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435

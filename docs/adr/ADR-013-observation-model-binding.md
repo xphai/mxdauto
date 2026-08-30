@@ -8,7 +8,7 @@
 
 **实施负责人**：5.6 Luna max
 
-**对应工作包**：`G1-OBS-002A`
+**对应工作包**：`G1-OBS-002A`、`G1-OBS-002B`
 
 ## 1. 背景
 
@@ -19,13 +19,13 @@ ADR-011/012 已冻结 `FramePacket` admission、Pixel V1、CAS 和 FrameSource p
 
 ## 2. 决策
 
-`G1-OBS-002A` 使用以下只读管线：
+`G1-OBS-002A`/`G1-OBS-002B` 使用以下只读管线：
 
 ```text
 accepted + fresh FramePacket
   → Pixel V1 bytes/hash verification
   → deterministic crop/resize/ROI/model-letterbox
-  → injected DetectorBackend（本包使用 fake）
+  → DetectorBackend（002A 使用 fake；002B 使用经绑定校验的 ONNX backend）
   → Observation | ObservationFault(plan_suppressed=true)
   → 后续 G1-WST（本包不实现）
 ```
@@ -50,9 +50,12 @@ accepted + fresh FramePacket
 | 字段 | 冻结值 |
 |---|---|
 | model | `best_forest_v3-candidate` / SHA-256 `b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4` |
+| model relative id | `weights/best_forest_v3.onnx`（相对于 `MAPLE_MODEL_ROOT`；模型字节不入仓） |
 | classes | `[mob]` / SHA-256 `07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884` |
 | input | `images`, float32 NCHW `[1,3,640,640]` |
 | expected output | `output0`, `[1,5,8400]`；feature 数必须为 `4 + len(classes)` |
+| runtime/provider | ONNX Runtime `1.23.2`；请求与实际均为 `CPUExecutionProvider` |
+| runtime wheel | Windows CPython 3.12 wheel SHA-256 `25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435` |
 | detection / IoU | `0.25 / 0.45` |
 | ROI | `[0.04,0.00,0.98,0.84]` |
 
@@ -98,10 +101,26 @@ Legacy 继续独占真实输入。
 
 ## 6. 非目标与晋级边界
 
-本包不引入 `onnxruntime`，不复制或发布模型，不声明 GPU/CPU parity、真实模型精度/性能、人工 detection
-truth、NMS/temporal confirmation、完整 Replay/Shadow 或 `G1-OBS-002=Completed`。真实 ONNX backend、
-provider fallback 验证、人工会话隔离 truth、P/R 和 Model Card 由后续 `G1-OBS-002B` / `G1-MDL-008`
-完成。
+002A 本身不引入 `onnxruntime`，不复制或发布模型；002B 已完成 fail-closed ONNX backend、仓库外
+model/classes/runtime hash 绑定与 CPU observation smoke，但不声明 GPU/CPU parity、真实模型精度/性能、
+人工 detection truth、NMS/temporal confirmation、完整 Replay/Shadow 或 `G1-OBS-002=Completed`。
+provider fallback、人工会话隔离 truth、P/R 和 Model Card 仍由后续评估包完成。
+
+### 6.1 G1-OBS-002B 烟测收口
+
+002B 的代码与外部资产烟测已完成：真实 CPU 连续 3 次运行中，raw ONNX output digest 均为
+`2c6a6f02f1c2c3b59179097a6590194c3f130ca309c979b7bde8ee07b9de830e`，Observation `result_digest`
+均为 `fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20`。前一个 digest 是 raw
+ONNX output digest，不是 Observation result digest，也不是实机帧/捕获 session digest。
+
+portable report `evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json` 绑定 source
+`672ec53327ea79f6ef3bd530f97a3006bd668aff` 与 report digest
+`4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6`；ModelBinding digest 为
+`5d19b9d3c28eab8840ee182672d8f3c1e608af56781a3a95b4d74164daa73060`。
+
+输入审计保持 `input_owner=legacy`、`real_input_call_count=0`、`double_write_event_count=0`。模型与
+classes 保持在仓库外；本节不构成 VC-003/实机捕获完成，不授予 Core v2 输入权。完整 `G1-OBS-002`、
+整体 G1 与 G1 Gate 仍为 `In Progress`。
 
 本 ADR 已随 `G1-OBS-002A` protected PR 合并并接受（Accepted）：PR [#17](https://github.com/xphai/mxdauto/pull/17)、
 source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`、PR run
@@ -124,3 +143,6 @@ PR artifacts（SHA-256 前缀）如下：
 `ci-evidence` artifact digest 为 `sha256:6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`。
 该 outer verification 已闭环；完整 `G1-OBS-002`、整体 G1 与 G1 Gate 继续保持
 `In Progress`，`real_input_call_count=0`、`input_owner=legacy` 不变。
+
+在此 Accepted 契约之上，`G1-OBS-002B` 的代码/外部资产 CPU smoke 已完成；该状态仅证明 ONNX
+backend 的绑定与确定性 smoke，不改变完整 Observation evaluation、实机捕获或真实输入闭环状态。

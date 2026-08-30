@@ -4,13 +4,13 @@
 
 ## 0. 当前阶段的硬边界
 
-截至 2026-08-30，仓库处于 **G-1 Strategic PASS / G0 PASS / G1 In Progress**；`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 已完成，`G1-OBS-002A` 确定性基础已完成合并封存：
+截至 2026-08-30，仓库处于 **G-1 Strategic PASS / G0 PASS / G1 In Progress**；`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 已完成，`G1-OBS-002A` 确定性基础已完成合并封存，`G1-OBS-002B` 代码与外部资产 CPU smoke 已完成：
 
 - Core v2 任务的允许输出限定为不可变帧/状态、动作计划和 dry-run 结果；G0 packet 已封存，G1 FrameSource 已完成离线 admission、真实硬件/corpus 与 Candidate evidence 的闭环；
 - Core v2 不得调用真实 `InputSink`、键盘、receiver 或游戏窗口；
 - Legacy 保持唯一真实输入下发权；
 - Legacy 仅接受阻塞缺陷修复和迁移桥接，不接受新的控制逻辑；
-- 完整 `G1-FRM-001` 已完成；`G1-OBS-002A` 已完成领域契约、确定性预处理与 fake detector 适配器，真实 ONNX/评估、LOC/WST/Planner/Shadow 仍待后续包；完整 `G1-OBS-002` 仍为 `In Progress`。
+- 完整 `G1-FRM-001` 已完成；`G1-OBS-002A` 已完成领域契约、确定性预处理与 fake detector 适配器；`G1-OBS-002B` 已完成 fail-closed ONNX backend、仓库外 model/classes/runtime hash 绑定与 CPU smoke。人工 truth/评估、LOC/WST/Planner/Shadow 仍待后续包；完整 `G1-OBS-002` 仍为 `In Progress`。
 - 未经 Stage Gate 批准，不得宣称 Canary、Certified 或 Core v2 接管已经开始。
 - 当前可绑定远端事实为 run [`33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985)，最终 sealed packet 的 successor 复验为 run [`33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227)；失败运行统一登记在 `evidence/failures/failure-index.json`。
 - G1 FrameSource 会签版已通过 [Issue #13](https://github.com/xphai/mxdauto/issues/13) 与 [PR #15](https://github.com/xphai/mxdauto/pull/15) 合并（merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success）；main outer run `33283646596`（attempt 1）success，`ci-evidence` artifact digest 为 `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`；Candidate packet digest 为 `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。
@@ -24,7 +24,7 @@
 - `docs/decisions/DEC-001-pilot-baseline.md`：唯一 Pilot 候选；
 - `docs/REQUIREMENTS-TRACEABILITY.md`：需求—Gate—证据状态；
 - `docs/gates/G0-GATE-CHARTER.md`：G0 强制门禁，当前决定为 `PASS`。
-- `docs/adr/ADR-013-observation-model-binding.md` 与 `docs/tactical/G1-OBS-002A-observation-foundation.md`：当前 Observation 边界与战术范围。
+- `docs/adr/ADR-013-observation-model-binding.md`、`docs/tactical/G1-OBS-002A-observation-foundation.md` 与 `docs/tactical/G1-OBS-002B-onnx-backend.md`：当前 Observation 边界与战术范围。
 
 违反上述任一项的任务必须先暂停并升级到战略负责人，禁止通过“临时开关”绕过。
 
@@ -74,7 +74,7 @@ python tools/run_frame_admission_replay.py --runs 3 --fixture fixtures/g1/frame_
 python tools/run_clean_smoke.py --mode checkout-regression --output evidence/ci-run/checkout-smoke-report.json
 ```
 
-最后一条 checkout regression 命令要求工作树已提交且整洁；CI 在 fresh checkout 上执行。full-external 校验还需配置 `MAPLE_LEGACY_ROOT`、`MAPLE_MODEL_ROOT` 后运行不带 `--metadata-only` 的 strict 命令。任务涉及回放、Shadow 或 Bundle 时，战术包必须列出固定输入、输出路径、预期差异和 artifact hash。没有真实生成的输出不得填写为通过。
+最后一条 checkout regression 命令要求工作树已提交且整洁；CI 在 fresh checkout 上执行。full-external 校验还需配置 `MAPLE_LEGACY_ROOT`、`MAPLE_MODEL_ROOT`、`MAPLE_CORE_ROOT` 后运行不带 `--metadata-only` 的 strict 命令。`G1-OBS-002B` 先以 `python -m pip install --no-deps --require-hashes --requirement configs/g1-observation-requirements.lock` 安装冻结 runtime，再使用仓库外受控资产；固定 model relative id=`weights/best_forest_v3.onnx`、provider=`CPUExecutionProvider`，并执行三次比较 raw ONNX output 与 Observation result digest。没有真实生成的输出不得填写为通过；该 smoke 不得表述为实机捕获或输入接管。
 
 ## 4. Pull Request 必填内容
 
@@ -106,7 +106,7 @@ PR 描述直接引用战术包，并至少包含：
 - G0 只放行可复现契约、schema、静态质量和 dry-run/Shadow 准备；它不放行真实输入接管。
 - G0 的评审清单和当前状态以 `docs/gates/G0-GATE-CHARTER.md` 为准；本地测试数、workflow 文件或示例 manifest 均不单独产生 G0 PASS。
 - G0 minimal synthetic Replay/Shadow/clean smoke 不等价于 G1；进入 G1 后必须扩展固定录像 corpus、人工 truth/split、完整感知/WorldState/Planner 和 Shadow taxonomy。
-- G1-FRM-001A、G1-FRM-001B1 与 G1-FRM-001B2 已共同关闭完整 `G1-FRM-001`；`G1-OBS-002A` 已完成合并封存，只推进 Observation 基础，不等于完整 `G1-OBS-002` 或 G1 PASS；真实 input calls 继续为 0。
+- G1-FRM-001A、G1-FRM-001B1 与 G1-FRM-001B2 已共同关闭完整 `G1-FRM-001`；`G1-OBS-002A` 已完成合并封存，`G1-OBS-002B` 已完成代码/外部资产烟测，只推进 Observation 基础验证，不等于完整 `G1-OBS-002`、实机捕获或 G1 PASS；真实 input calls 与 double-write 继续为 0。
 - Canary/Certified 需要独立 Stage Gate、现场 session、故障注入和回退演练；CI 绿灯本身不授予这些权限。
 
 ## 6. 完成定义（DoD）

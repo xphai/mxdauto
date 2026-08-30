@@ -1,0 +1,174 @@
+{
+  "assets": [
+    {
+      "asset_id": "model",
+      "expected_sha256": "b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4",
+      "observed_sha256": "b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4",
+      "relative_id": "weights/best_forest_v3.onnx",
+      "root_env": "MAPLE_MODEL_ROOT",
+      "size_bytes": 44746005,
+      "status": "VERIFIED"
+    },
+    {
+      "asset_id": "classes",
+      "expected_sha256": "07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884",
+      "observed_sha256": "07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884",
+      "relative_id": "profiles/maple_legacy_cn/models/classes_v14_mob_only.yaml",
+      "root_env": "MAPLE_LEGACY_ROOT",
+      "size_bytes": 13,
+      "status": "VERIFIED"
+    },
+    {
+      "asset_id": "effective-config",
+      "expected_sha256": "5d57809b0ec4f81d3a0551bcdbebd6ce296179ebdd38f87191113c0f81a017b6",
+      "observed_sha256": "5d57809b0ec4f81d3a0551bcdbebd6ce296179ebdd38f87191113c0f81a017b6",
+      "relative_id": "configs/pilot-subject-01.resolved.json",
+      "root_env": "MAPLE_CORE_ROOT",
+      "size_bytes": 1518,
+      "status": "VERIFIED"
+    }
+  ],
+  "consistency": {
+    "all_equal": true,
+    "preprocess_equal": true,
+    "result_equal": true,
+    "run_count": 3,
+    "tensor_equal": true
+  },
+  "dependency_lock_sha256": "b512b0cac28dd0c73c2cf34733d8b76bd3dcb92432946603c93c0ffa19da5be9",
+  "evidence_id": "g1-obs-002b-20260830-cpu",
+  "failures": [],
+  "generated_at": "2026-08-30T03:09:02Z",
+  "input_audit": {
+    "core_v2_real_input_call_count": 0,
+    "double_write_event_count": 0,
+    "input_owner": "legacy",
+    "real_input_call_count": 0,
+    "real_input_enabled": false
+  },
+  "latency": {
+    "all_finite": true,
+    "max_ms": 480.8658,
+    "mean_ms": 473.7142666666667,
+    "min_ms": 463.4177,
+    "sample_count": 3
+  },
+  "limitations": [
+    "Offline FramePacket/CAS fixture or injected backend only; no device is opened.",
+    "The report establishes integration determinism, not detector accuracy or P/R.",
+    "The input audit remains Legacy-owned with every real-input counter at zero."
+  ],
+  "model_binding": {
+    "classes": [
+      "mob"
+    ],
+    "classes_sha256": "07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884",
+    "config_sha256": "5d57809b0ec4f81d3a0551bcdbebd6ce296179ebdd38f87191113c0f81a017b6",
+    "detection_confidence": 0.25,
+    "input_name": "images",
+    "input_size": {
+      "height": 640,
+      "width": 640
+    },
+    "iou_threshold": 0.45,
+    "model_id": "best_forest_v3-candidate",
+    "model_sha256": "b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4",
+    "output_name": "output0",
+    "output_shape": [
+      1,
+      5,
+      8400
+    ],
+    "preprocess_sha256": "d85c25d9fedb84179fb0c5bbcf37b358963d1d009e5cdc657c0583f900c8b434",
+    "preprocess_version": "g1-observation-preprocess-v1",
+    "release_id": "candidate-core-v2-20260829-shadow",
+    "requested_providers": [
+      "CPUExecutionProvider"
+    ],
+    "roi": [
+      0.04,
+      0.0,
+      0.98,
+      0.84
+    ]
+  },
+  "model_binding_sha256": "5d19b9d3c28eab8840ee182672d8f3c1e608af56781a3a95b4d74164daa73060",
+  "privacy_audit": {
+    "absolute_paths_present": false,
+    "finding_count": 0,
+    "model_custom_metadata_present": false,
+    "raw_artifacts_public": false
+  },
+  "release_id": "candidate-core-v2-20260829-shadow",
+  "report_digest": "4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6",
+  "report_type": "g1_obs_002b_observation_smoke",
+  "runs": [
+    {
+      "actual_provider": "CPUExecutionProvider",
+      "latency_ms": 476.8593,
+      "preprocess_digest": "d85c25d9fedb84179fb0c5bbcf37b358963d1d009e5cdc657c0583f900c8b434",
+      "result_digest": "fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20",
+      "run_index": 1,
+      "status": "success",
+      "tensor_digest": "dcedfa517bd079f4933c6db6ec7aebee53178575affe4af1a33364a8f6d3b7f9"
+    },
+    {
+      "actual_provider": "CPUExecutionProvider",
+      "latency_ms": 463.4177,
+      "preprocess_digest": "d85c25d9fedb84179fb0c5bbcf37b358963d1d009e5cdc657c0583f900c8b434",
+      "result_digest": "fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20",
+      "run_index": 2,
+      "status": "success",
+      "tensor_digest": "dcedfa517bd079f4933c6db6ec7aebee53178575affe4af1a33364a8f6d3b7f9"
+    },
+    {
+      "actual_provider": "CPUExecutionProvider",
+      "latency_ms": 480.8658,
+      "preprocess_digest": "d85c25d9fedb84179fb0c5bbcf37b358963d1d009e5cdc657c0583f900c8b434",
+      "result_digest": "fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20",
+      "run_index": 3,
+      "status": "success",
+      "tensor_digest": "dcedfa517bd079f4933c6db6ec7aebee53178575affe4af1a33364a8f6d3b7f9"
+    }
+  ],
+  "runtime": {
+    "actual_provider": "CPUExecutionProvider",
+    "input": {
+      "dtype": "tensor(float)",
+      "name": "images",
+      "shape": [
+        1,
+        3,
+        640,
+        640
+      ]
+    },
+    "ort_version": "1.23.2",
+    "output": {
+      "dtype": "tensor(float)",
+      "name": "output0",
+      "shape": [
+        1,
+        5,
+        8400
+      ]
+    },
+    "provider_inventory": [
+      "CPUExecutionProvider"
+    ],
+    "requested_provider": "CPUExecutionProvider",
+    "wheel_sha256": "25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435",
+    "wheel_size_bytes": 13470528
+  },
+  "schema_sha256": "bd0ef5d909d31726f1763f3caa8cc6de0bee24b8f8b1244d4aa70378b5dbed3a",
+  "schema_version": "1.0.0",
+  "scope": "offline_observation",
+  "sealed_state": {
+    "current_bundle_touched": false,
+    "evidence_id_is_new": true,
+    "sealed_bundle_touched": false
+  },
+  "source_commit": "672ec53327ea79f6ef3bd530f97a3006bd668aff",
+  "status": "PASS",
+  "tool_artifact_sha256": "e56866ef91ae3f5b5fd704956ec345ac7c418117ecacc30fe39f5bcd665fcdd9"
+}

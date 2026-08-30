@@ -1,0 +1,607 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/observation-runtime-report.schema.json",
+  "title": "Maple Automation Core G1-OBS-002B observation runtime report",
+  "description": "Strict, offline-only evidence for three deterministic ObservationAdapter runs.",
+  "type": "object",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "relativeId": {
+      "type": "string",
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!\\\\)(?!.*\\\\)(?!.*//)(?!.*:)(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))[^\\u0000]+$"
+    },
+    "shape": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": [
+        "asset_id",
+        "root_env",
+        "relative_id",
+        "expected_sha256",
+        "observed_sha256",
+        "size_bytes",
+        "status"
+      ],
+      "properties": {
+        "asset_id": {
+          "$ref": "#/$defs/id"
+        },
+        "root_env": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+        },
+        "relative_id": {
+          "$ref": "#/$defs/relativeId"
+        },
+        "expected_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "observed_sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "VERIFIED",
+            "MISSING",
+            "HASH_MISMATCH",
+            "INVALID",
+            "UNVERIFIED"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "tensorMetadata": {
+      "type": "object",
+      "required": [
+        "name",
+        "dtype",
+        "shape"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\\\/:]+$"
+        },
+        "dtype": {
+          "const": "tensor(float)"
+        },
+        "shape": {
+          "$ref": "#/$defs/shape"
+        }
+      },
+      "additionalProperties": false
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "run_index",
+        "status",
+        "preprocess_digest",
+        "tensor_digest",
+        "result_digest",
+        "actual_provider",
+        "latency_ms"
+      ],
+      "properties": {
+        "run_index": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "fault"
+          ]
+        },
+        "preprocess_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "tensor_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "result_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "actual_provider": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        "latency_ms": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 600000
+        }
+      },
+      "additionalProperties": false
+    },
+    "inputAudit": {
+      "type": "object",
+      "required": [
+        "input_owner",
+        "real_input_enabled",
+        "real_input_call_count",
+        "core_v2_real_input_call_count",
+        "double_write_event_count"
+      ],
+      "properties": {
+        "input_owner": {
+          "const": "legacy"
+        },
+        "real_input_enabled": {
+          "const": false
+        },
+        "real_input_call_count": {
+          "const": 0
+        },
+        "core_v2_real_input_call_count": {
+          "const": 0
+        },
+        "double_write_event_count": {
+          "const": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "modelBinding": {
+      "type": "object",
+      "required": [
+        "release_id",
+        "model_id",
+        "model_sha256",
+        "classes",
+        "classes_sha256",
+        "config_sha256",
+        "preprocess_version",
+        "preprocess_sha256",
+        "input_name",
+        "input_size",
+        "output_name",
+        "output_shape",
+        "requested_providers",
+        "detection_confidence",
+        "iou_threshold",
+        "roi"
+      ],
+      "properties": {
+        "release_id": {
+          "$ref": "#/$defs/id"
+        },
+        "model_id": {
+          "$ref": "#/$defs/id"
+        },
+        "model_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "classes_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "config_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "preprocess_version": {
+          "$ref": "#/$defs/id"
+        },
+        "preprocess_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "input_name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\\\/:]+$"
+        },
+        "input_size": {
+          "type": "object",
+          "required": [
+            "width",
+            "height"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "output_name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\\\/:]+$"
+        },
+        "output_shape": {
+          "$ref": "#/$defs/shape"
+        },
+        "requested_providers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          }
+        },
+        "detection_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "iou_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "roi": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "privacyAudit": {
+      "type": "object",
+      "required": [
+        "absolute_paths_present",
+        "model_custom_metadata_present",
+        "raw_artifacts_public",
+        "finding_count"
+      ],
+      "properties": {
+        "absolute_paths_present": {
+          "const": false
+        },
+        "model_custom_metadata_present": {
+          "const": false
+        },
+        "raw_artifacts_public": {
+          "const": false
+        },
+        "finding_count": {
+          "const": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_type",
+    "evidence_id",
+    "generated_at",
+    "status",
+    "scope",
+    "source_commit",
+    "release_id",
+    "model_binding",
+    "model_binding_sha256",
+    "tool_artifact_sha256",
+    "dependency_lock_sha256",
+    "schema_sha256",
+    "assets",
+    "runtime",
+    "runs",
+    "consistency",
+    "latency",
+    "input_audit",
+    "privacy_audit",
+    "sealed_state",
+    "failures",
+    "limitations",
+    "report_digest"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "report_type": {
+      "const": "g1_obs_002b_observation_smoke"
+    },
+    "evidence_id": {
+      "$ref": "#/$defs/id"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "QUARANTINE"
+      ]
+    },
+    "scope": {
+      "const": "offline_observation"
+    },
+    "source_commit": {
+      "$ref": "#/$defs/commit"
+    },
+    "release_id": {
+      "$ref": "#/$defs/id"
+    },
+    "model_binding": {
+      "$ref": "#/$defs/modelBinding"
+    },
+    "model_binding_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "tool_artifact_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "dependency_lock_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "schema_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "$ref": "#/$defs/asset"
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "required": [
+        "ort_version",
+        "wheel_sha256",
+        "wheel_size_bytes",
+        "requested_provider",
+        "actual_provider",
+        "provider_inventory",
+        "input",
+        "output"
+      ],
+      "properties": {
+        "ort_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$"
+        },
+        "wheel_sha256": {
+          "const": "25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435"
+        },
+        "wheel_size_bytes": {
+          "const": 13470528
+        },
+        "requested_provider": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        "actual_provider": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        "provider_inventory": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          }
+        },
+        "input": {
+          "$ref": "#/$defs/tensorMetadata"
+        },
+        "output": {
+          "$ref": "#/$defs/tensorMetadata"
+        }
+      },
+      "additionalProperties": false
+    },
+    "runs": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/run"
+      }
+    },
+    "consistency": {
+      "type": "object",
+      "required": [
+        "run_count",
+        "all_equal",
+        "preprocess_equal",
+        "tensor_equal",
+        "result_equal"
+      ],
+      "properties": {
+        "run_count": {
+          "const": 3
+        },
+        "all_equal": {
+          "type": "boolean"
+        },
+        "preprocess_equal": {
+          "type": "boolean"
+        },
+        "tensor_equal": {
+          "type": "boolean"
+        },
+        "result_equal": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "latency": {
+      "type": "object",
+      "required": [
+        "sample_count",
+        "min_ms",
+        "max_ms",
+        "mean_ms",
+        "all_finite"
+      ],
+      "properties": {
+        "sample_count": {
+          "const": 3
+        },
+        "min_ms": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 600000
+        },
+        "max_ms": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 600000
+        },
+        "mean_ms": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 600000
+        },
+        "all_finite": {
+          "const": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "input_audit": {
+      "$ref": "#/$defs/inputAudit"
+    },
+    "privacy_audit": {
+      "$ref": "#/$defs/privacyAudit"
+    },
+    "sealed_state": {
+      "type": "object",
+      "required": [
+        "evidence_id_is_new",
+        "current_bundle_touched",
+        "sealed_bundle_touched"
+      ],
+      "properties": {
+        "evidence_id_is_new": {
+          "const": true
+        },
+        "current_bundle_touched": {
+          "const": false
+        },
+        "sealed_bundle_touched": {
+          "const": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z]:[\\\\/])(?!/)(?!\\\\)[^\\\\]+$"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z]:[\\\\/])(?!/)(?!\\\\)[^\\\\]+$"
+      }
+    },
+    "report_digest": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "PASS"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "consistency": {
+            "properties": {
+              "all_equal": {
+                "const": true
+              },
+              "preprocess_equal": {
+                "const": true
+              },
+              "tensor_equal": {
+                "const": true
+              },
+              "result_equal": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
