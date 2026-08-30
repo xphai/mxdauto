@@ -18,28 +18,41 @@
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$"
     },
     "fault": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
-        null,
         "admission_missing",
         "ambiguous_packet",
         "candidate_lineage_mismatch",
         "clock_domain_mismatch",
+        "calibration_mismatch",
+        "config_invalid",
+        "detector_fault",
         "duplicate",
+        "execution_invalid",
+        "extraction_error",
         "extractor_error",
         "extractor_missing",
         "extractor_result_invalid",
+        "frame_type",
         "frame_size_changed",
+        "geometry_mismatch",
+        "image_ref_mismatch",
         "no_frame",
         "out_of_order",
-        "pixel_unavailable",
         "packet_lineage_mismatch",
+        "pixel_hash_mismatch",
+        "pixel_missing",
+        "pixel_unavailable",
+        "pixel_spec_mismatch",
+        "roi_unconfigured",
         "session_mismatch",
         "source_error",
         "source_mismatch",
         "stale",
         "suppressed",
+        "timestamp_mismatch",
         "timestamp_regression",
+        "transform_mismatch",
         "truth_invalid"
       ]
     },
@@ -51,7 +64,17 @@
         "candidate_digest",
         "evidence_digest",
         "result_digest",
-        "fault"
+        "detector_result_digest",
+        "detector_state_digest",
+        "detector_config_digest",
+        "exception_type_digest",
+        "fault",
+        "invoked",
+        "as_of_offset_ns",
+        "as_of_ns",
+        "effective_now_ns",
+        "observed_at_ns",
+        "generation"
       ],
       "properties": {
         "sample_id": {"$ref": "#/$defs/id"},
@@ -59,8 +82,39 @@
         "candidate_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
         "evidence_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
         "result_digest": {"$ref": "#/$defs/sha256"},
-        "fault": {"$ref": "#/$defs/fault"}
+        "detector_result_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "detector_state_digest": {"$ref": "#/$defs/sha256"},
+        "detector_config_digest": {"$ref": "#/$defs/sha256"},
+        "exception_type_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "fault": {"anyOf": [{"$ref": "#/$defs/fault"}, {"type": "null"}]},
+        "invoked": {"type": "boolean"},
+        "as_of_offset_ns": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Per-packet detector-now offset added to observed_at_ns."
+        },
+        "as_of_ns": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Compatibility alias for as_of_offset_ns."
+        },
+        "effective_now_ns": {
+          "anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}],
+          "description": "observed_at_ns plus as_of_offset_ns; null for pre-detector rejections."
+        },
+        "observed_at_ns": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]},
+        "generation": {"type": "integer", "minimum": 0}
       },
+      "allOf": [
+        {
+          "if": {"properties": {"observed_at_ns": {"type": "integer"}}},
+          "then": {"properties": {"effective_now_ns": {"type": "integer"}}}
+        },
+        {
+          "if": {"properties": {"observed_at_ns": {"type": "null"}}},
+          "then": {"properties": {"effective_now_ns": {"type": "null"}}}
+        }
+      ],
       "additionalProperties": false
     },
     "run": {
@@ -81,26 +135,40 @@
     "zeroInputAudit": {
       "type": "object",
       "required": [
-        "input_owner",
-        "real_input_enabled",
-        "real_input_call_count",
         "core_v2_real_input_call_count",
-        "receiver_connect_count",
-        "window_write_count",
         "double_write_event_count",
+        "failure_count",
+        "input_owner",
         "keyboard_call_count",
-        "mouse_call_count"
+        "mouse_call_count",
+        "real_input_call_count",
+        "real_input_enabled",
+        "receiver_connect_count",
+        "report_digest",
+        "report_type",
+        "schema_version",
+        "source_commit",
+        "status",
+        "wheel_sha256",
+        "window_write_count"
       ],
       "properties": {
-        "input_owner": {"const": "legacy"},
-        "real_input_enabled": {"const": false},
-        "real_input_call_count": {"const": 0},
         "core_v2_real_input_call_count": {"const": 0},
-        "receiver_connect_count": {"const": 0},
-        "window_write_count": {"const": 0},
         "double_write_event_count": {"const": 0},
+        "failure_count": {"const": 0},
+        "input_owner": {"const": "legacy"},
         "keyboard_call_count": {"const": 0},
-        "mouse_call_count": {"const": 0}
+        "mouse_call_count": {"const": 0},
+        "real_input_call_count": {"const": 0},
+        "real_input_enabled": {"const": false},
+        "receiver_connect_count": {"const": 0},
+        "report_digest": {"$ref": "#/$defs/sha256"},
+        "report_type": {"const": "b2_zero_input_audit"},
+        "schema_version": {"const": "1.0.0"},
+        "source_commit": {"$ref": "#/$defs/gitCommit"},
+        "status": {"const": "PASS"},
+        "wheel_sha256": {"$ref": "#/$defs/sha256"},
+        "window_write_count": {"const": 0}
       },
       "additionalProperties": false
     }
@@ -111,18 +179,28 @@
     "report_id",
     "scope",
     "truth_scope",
-    "source_commit",
+    "verification_profile",
+    "corpus_source_commit",
+    "replay_source_commit",
     "manifest_digest",
     "corpus_digest",
-    "config_digest",
+    "extractor_artifact_digest",
+    "extractor_config_digest",
+    "as_of_offset_ns",
     "as_of_ns",
+    "timing_strategy",
     "sample_order_digest",
     "sample_count",
     "repeat_count",
     "deterministic",
+    "execution_valid",
     "status",
     "event_tape_digest",
+    "accepted_ledger_digest",
+    "calibration_artifact_digest",
+    "zero_input_audit_artifact_digest",
     "zero_input_audit",
+    "execution_faults",
     "limitations",
     "runs",
     "report_digest"
@@ -133,22 +211,48 @@
     "report_id": {"$ref": "#/$defs/id"},
     "scope": {"const": "G1-LOC-003B"},
     "truth_scope": {"const": "frame_ingestion_only"},
-    "source_commit": {"$ref": "#/$defs/gitCommit"},
+    "verification_profile": {"enum": ["b2_gate", "contract_fixture"]},
+    "corpus_source_commit": {"$ref": "#/$defs/gitCommit"},
+    "replay_source_commit": {"$ref": "#/$defs/gitCommit"},
     "manifest_digest": {"$ref": "#/$defs/sha256"},
     "corpus_digest": {"$ref": "#/$defs/sha256"},
-    "config_digest": {"$ref": "#/$defs/sha256"},
-    "as_of_ns": {"type": "integer", "minimum": 0},
+    "extractor_artifact_digest": {"$ref": "#/$defs/sha256"},
+    "extractor_config_digest": {"$ref": "#/$defs/sha256"},
+    "as_of_offset_ns": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Per-packet detector-now offset added to observed_at_ns."
+    },
+    "as_of_ns": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Compatibility alias for as_of_offset_ns."
+    },
+    "timing_strategy": {
+      "const": "observed_at_ns=ledger_received_at_ns_or_ledger_admitted_at_ns_or_event_recorded_at_ns;effective_now_ns=observed_at_ns+as_of_offset_ns;as_of_ns_alias=as_of_offset_ns"
+    },
     "sample_order_digest": {"$ref": "#/$defs/sha256"},
     "sample_count": {"type": "integer", "minimum": 1},
     "repeat_count": {"const": 3},
     "deterministic": {"type": "boolean"},
+    "execution_valid": {"type": "boolean"},
     "status": {"enum": ["PASS", "FAIL"]},
     "event_tape_digest": {"$ref": "#/$defs/sha256"},
+    "accepted_ledger_digest": {"$ref": "#/$defs/sha256"},
+    "calibration_artifact_digest": {"$ref": "#/$defs/sha256"},
+    "zero_input_audit_artifact_digest": {"$ref": "#/$defs/sha256"},
     "zero_input_audit": {"$ref": "#/$defs/zeroInputAudit"},
-    "limitations": {
+    "execution_faults": {
       "type": "array",
-      "minItems": 1,
-      "items": {"type": "string", "minLength": 1}
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/fault"}
+    },
+    "limitations": {
+      "const": [
+        "truth_scope is frame_ingestion_only; no marker accuracy claim is made.",
+        "Replay compares detector contract outputs only; it does not establish marker accuracy.",
+        "Raw pixels, host paths, and identity mappings are excluded from this report."
+      ]
     },
     "runs": {
       "type": "array",
@@ -158,5 +262,23 @@
     },
     "report_digest": {"$ref": "#/$defs/sha256"}
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"deterministic": {"const": true}, "execution_valid": {"const": true}},
+        "required": ["deterministic", "execution_valid"]
+      },
+      "then": {"properties": {"status": {"const": "PASS"}}}
+    },
+    {
+      "if": {
+        "anyOf": [
+          {"properties": {"deterministic": {"const": false}}},
+          {"properties": {"execution_valid": {"const": false}}}
+        ]
+      },
+      "then": {"properties": {"status": {"const": "FAIL"}}}
+    }
+  ],
   "additionalProperties": false
 }
