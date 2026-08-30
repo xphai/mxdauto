@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 
 import numpy as np
 import pytest
@@ -35,6 +35,7 @@ def _geometry() -> SourceGeometry:
 def _config() -> MinimapMarkerConfig:
     return MinimapMarkerConfig(
         geometry=_geometry(),
+        minimap_roi=SourceRect(x=2, y=3, width=28, height=18),
         transform_version="capture-v1",
         source_id="source",
         session_id="session",
@@ -91,7 +92,7 @@ def test_unique_yellow_marker_emits_anonymous_candidate_and_lineage() -> None:
     with tempfile.TemporaryDirectory() as directory:
         store = PixelStore(directory)
         frame = _frame(store, _pixels((0, 255, 255)))
-        result = MinimapMarkerExtractor(_config(), store).extract(frame)
+        result = MinimapMarkerExtractor(_config(), store).extract(frame, now_ns=200)
 
     assert result.status is MinimapMarkerStatus.CANDIDATE
     assert result.succeeded
@@ -115,7 +116,7 @@ def test_orange_is_excluded() -> None:
         store = PixelStore(directory)
         pixels = _pixels()
         pixels[8:11, 10:13] = (0, 205, 255)
-        result = MinimapMarkerExtractor(_config(), store).extract(_frame(store, pixels))
+        result = MinimapMarkerExtractor(_config(), store).extract(_frame(store, pixels), now_ns=200)
 
     assert result.status is MinimapMarkerStatus.NO_CANDIDATE
     assert result.candidate is None
@@ -131,7 +132,7 @@ def test_multiple_yellow_components_are_ambiguous() -> None:
         pixels = _pixels()
         pixels[8:11, 10:13] = (0, 255, 255)
         pixels[15:18, 20:23] = (0, 255, 255)
-        result = MinimapMarkerExtractor(_config(), store).extract(_frame(store, pixels))
+        result = MinimapMarkerExtractor(_config(), store).extract(_frame(store, pixels), now_ns=200)
 
     assert result.status is MinimapMarkerStatus.NO_CANDIDATE
     assert result.candidate is None
@@ -143,7 +144,9 @@ def test_empty_frame_has_no_candidate_and_result_roundtrips_hash_only() -> None:
 
     with tempfile.TemporaryDirectory() as directory:
         store = PixelStore(directory)
-        result = MinimapMarkerExtractor(_config(), store).extract(_frame(store, _pixels()))
+        result = MinimapMarkerExtractor(_config(), store).extract(
+            _frame(store, _pixels()), now_ns=200
+        )
 
     assert result.status is MinimapMarkerStatus.NO_CANDIDATE
     payload = result.to_dict()
@@ -157,14 +160,13 @@ def test_empty_frame_has_no_candidate_and_result_roundtrips_hash_only() -> None:
 
 def test_validation_is_fail_closed_for_stale_and_wrong_image_ref() -> None:
     import tempfile
-    from dataclasses import replace
 
     with tempfile.TemporaryDirectory() as directory:
         store = PixelStore(directory)
         frame = _frame(store, _pixels((0, 255, 255)))
         extractor = MinimapMarkerExtractor(_config(), store)
         stale = extractor.extract(frame, now_ns=2_000)
-        wrong_ref = extractor.extract(replace(frame, image_ref="frame://raw"))
+        wrong_ref = extractor.extract(replace(frame, image_ref="frame://raw"), now_ns=200)
 
     assert stale.status is MinimapMarkerStatus.FAULT
     assert stale.fault is not None and stale.fault.code is MinimapMarkerFaultCode.STALE
@@ -172,6 +174,10 @@ def test_validation_is_fail_closed_for_stale_and_wrong_image_ref() -> None:
     assert wrong_ref.status is MinimapMarkerStatus.FAULT
     assert wrong_ref.fault is not None
     assert wrong_ref.fault.code is MinimapMarkerFaultCode.IMAGE_REF_MISMATCH
+    assert wrong_ref.evidence is not None
+    assert wrong_ref.fault.image_ref == f"cas://sha256/{frame.content_hash}"
+    assert wrong_ref.evidence.image_ref == f"cas://sha256/{frame.content_hash}"
+    assert "frame://raw" not in wrong_ref.to_json()
 
 
 def test_config_is_frozen_and_digest_roundtrips() -> None:
@@ -179,3 +185,122 @@ def test_config_is_frozen_and_digest_roundtrips() -> None:
     assert config.digest == MinimapMarkerConfig.from_dict(config.to_dict()).digest
     with pytest.raises(FrozenInstanceError):
         config.area_max = 1  # type: ignore[misc]
+
+
+def test_roi_is_required_and_must_fit_content_rect() -> None:
+    import tempfile
+
+    unconfigured = MinimapMarkerConfig(
+        geometry=_geometry(),
+        transform_version="capture-v1",
+        source_id="source",
+        session_id="session",
+        clock_domain="monotonic",
+    )
+    with tempfile.TemporaryDirectory() as directory:
+        store = PixelStore(directory)
+        result = MinimapMarkerExtractor(unconfigured, store).extract(
+            _frame(store, _pixels((0, 255, 255))), now_ns=200
+        )
+
+    assert result.status is MinimapMarkerStatus.FAULT
+    assert result.fault is not None
+    assert result.fault.code is MinimapMarkerFaultCode.ROI_UNCONFIGURED
+    with pytest.raises(ValueError):
+        MinimapMarkerConfig(
+            geometry=_geometry(),
+            minimap_roi=SourceRect(x=1, y=3, width=28, height=18),
+        )
+
+
+def test_detection_is_limited_to_roi_and_offsets_geometry_to_source() -> None:
+    import tempfile
+
+    config = MinimapMarkerConfig(
+        geometry=_geometry(),
+        minimap_roi=SourceRect(x=8, y=7, width=10, height=10),
+        transform_version="capture-v1",
+        source_id="source",
+        session_id="session",
+        clock_domain="monotonic",
+    )
+    with tempfile.TemporaryDirectory() as directory:
+        store = PixelStore(directory)
+        result = MinimapMarkerExtractor(config, store).extract(
+            _frame(store, _pixels((0, 255, 255))), now_ns=200
+        )
+
+    assert result.status is MinimapMarkerStatus.CANDIDATE
+    assert result.marker is not None
+    assert result.marker.source_bbox == SourceRect(x=10, y=8, width=3, height=3)
+    assert result.marker.source_centroid == pytest.approx((11.0, 9.0))
+
+
+def test_explicit_observation_time_and_generation_are_bound_to_candidate() -> None:
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as directory:
+        store = PixelStore(directory)
+        frame = _frame(store, _pixels((0, 255, 255)))
+        result = MinimapMarkerExtractor(_config(), store).extract(
+            frame,
+            now_ns=200,
+            observed_at_ns=150,
+            generation=2,
+        )
+
+    assert result.status is MinimapMarkerStatus.CANDIDATE
+    assert result.candidate is not None
+    assert result.evidence is not None
+    assert result.candidate.observed_at_ns == 150
+    assert result.candidate.generation == 2
+    assert result.evidence.observed_at_ns == 150
+
+
+def test_observation_time_and_clock_are_fail_closed() -> None:
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as directory:
+        store = PixelStore(directory)
+        frame = _frame(store, _pixels((0, 255, 255)))
+        extractor = MinimapMarkerExtractor(_config(), store)
+        missing_clock = extractor.extract(frame)
+        before_receive = extractor.extract(frame, now_ns=105)
+        before_capture_observed = extractor.extract(frame, now_ns=200, observed_at_ns=99)
+        after_check_observed = extractor.extract(frame, now_ns=200, observed_at_ns=201)
+        delayed = extractor.extract(frame, now_ns=2_000)
+
+    for result in (missing_clock, before_receive, before_capture_observed, after_check_observed):
+        assert result.status is MinimapMarkerStatus.FAULT
+        assert result.candidate is None
+    assert missing_clock.fault is not None
+    assert missing_clock.fault.code is MinimapMarkerFaultCode.TIMESTAMP_MISMATCH
+    assert before_receive.fault is not None
+    assert before_receive.fault.code is MinimapMarkerFaultCode.TIMESTAMP_MISMATCH
+    assert before_capture_observed.fault is not None
+    assert before_capture_observed.fault.code is MinimapMarkerFaultCode.TIMESTAMP_MISMATCH
+    assert after_check_observed.fault is not None
+    assert after_check_observed.fault.code is MinimapMarkerFaultCode.TIMESTAMP_MISMATCH
+    assert delayed.fault is not None and delayed.fault.code is MinimapMarkerFaultCode.STALE
+
+
+def test_bright_core_is_independent_and_rejects_blue_edge_pixels() -> None:
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as directory:
+        store = PixelStore(directory)
+        result = MinimapMarkerExtractor(_config(), store).extract(
+            _frame(store, _pixels((55, 255, 255))), now_ns=200
+        )
+
+    assert result.status is MinimapMarkerStatus.NO_CANDIDATE
+    assert result.evidence is not None
+    assert result.evidence.component_count == 0
+
+
+def test_subject_id_is_fixed_anonymous_and_not_serialized_from_custom_identity() -> None:
+    with pytest.raises(ValueError):
+        MinimapMarkerConfig(geometry=_geometry(), subject_id="alice@example.com")
+
+    config_payload = _config().to_hash_only()
+    assert "alice@example.com" not in json.dumps(config_payload, sort_keys=True)

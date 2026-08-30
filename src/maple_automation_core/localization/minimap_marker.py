@@ -20,7 +20,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from math import isfinite
-from typing import Any, Protocol, Self, cast
+from typing import Any, NoReturn, Protocol, Self, cast
 
 import cv2
 import numpy as np
@@ -134,6 +134,7 @@ class MinimapMarkerConfig:
     pixel_spec: PixelSpec
     transform_version: str
     calibration_sha256: str
+    minimap_roi: SourceRect | None
     max_age_ns: int | None
     session_id: str | None
     source_id: str | None
@@ -162,6 +163,8 @@ class MinimapMarkerConfig:
         pixel_spec: PixelSpec | None = None,
         transform_version: str = "capture-v1",
         calibration_sha256: str | None = None,
+        minimap_roi: SourceRect | None = None,
+        roi: SourceRect | None = None,
         max_age_ns: int | None = None,
         session_id: str | None = None,
         source_id: str | None = None,
@@ -189,6 +192,20 @@ class MinimapMarkerConfig:
             actual_geometry = _pilot_geometry()
         if not isinstance(actual_geometry, SourceGeometry):
             raise TypeError("geometry must be SourceGeometry.")
+        if minimap_roi is not None and roi is not None and minimap_roi != roi:
+            raise ValueError("minimap_roi and roi must match.")
+        actual_roi = minimap_roi if minimap_roi is not None else roi
+        if actual_roi is not None:
+            if not isinstance(actual_roi, SourceRect):
+                raise TypeError("minimap_roi must be SourceRect or None.")
+            content_rect = actual_geometry.content_rect
+            if not (
+                content_rect.x <= actual_roi.x
+                and content_rect.y <= actual_roi.y
+                and actual_roi.x2 <= content_rect.x2
+                and actual_roi.y2 <= content_rect.y2
+            ):
+                raise ValueError("minimap_roi must fit fully inside geometry.content_rect.")
 
         if not isinstance(transform_version, str) or not transform_version.strip():
             raise ValueError("transform_version must be a non-empty string.")
@@ -209,6 +226,9 @@ class MinimapMarkerConfig:
 
         if max_age_ns is not None:
             ensure_non_negative_int(max_age_ns, "max_age_ns")
+
+        if subject_id != ANONYMOUS_PLAYER_SUBJECT:
+            raise ValueError("subject_id is fixed to the anonymous marker subject.")
 
         expected_spec = PixelSpec(
             width=actual_geometry.source_size.width,
@@ -254,6 +274,7 @@ class MinimapMarkerConfig:
         object.__setattr__(self, "pixel_spec", actual_spec)
         object.__setattr__(self, "transform_version", transform_version)
         object.__setattr__(self, "calibration_sha256", actual_calibration)
+        object.__setattr__(self, "minimap_roi", actual_roi)
         object.__setattr__(self, "max_age_ns", max_age_ns)
         object.__setattr__(self, "session_id", session_id)
         object.__setattr__(self, "source_id", source_id)
@@ -329,6 +350,7 @@ class MinimapMarkerConfig:
             "pixel_spec": self.pixel_spec.to_dict(),
             "transform_version": self.transform_version,
             "calibration_sha256": self.calibration_sha256,
+            "minimap_roi": None if self.minimap_roi is None else self.minimap_roi.to_dict(),
             "max_age_ns": self.max_age_ns,
             "session_id": self.session_id,
             "source_id": self.source_id,
@@ -359,11 +381,17 @@ class MinimapMarkerConfig:
             raw_target = data.get("bgr_target", list(YELLOW_BGR))
             if not isinstance(raw_target, list | tuple):
                 raise ValueError("bgr_target must be an array.")
+            raw_roi = data.get("minimap_roi", data.get("roi"))
             result = cls(
                 geometry=SourceGeometry.from_dict(data["geometry"]),
                 pixel_spec=PixelSpec.from_dict(data["pixel_spec"]),
                 transform_version=data["transform_version"],
                 calibration_sha256=data["calibration_sha256"],
+                minimap_roi=(
+                    None
+                    if raw_roi is None
+                    else SourceRect.from_dict(cast(Mapping[str, Any], raw_roi))
+                ),
                 max_age_ns=data.get("max_age_ns"),
                 session_id=data.get("session_id"),
                 source_id=data.get("source_id"),
@@ -416,6 +444,7 @@ class MinimapMarkerFaultCode(str, Enum):
     CLOCK_DOMAIN_MISMATCH = "clock_domain_mismatch"
     TRANSFORM_MISMATCH = "transform_mismatch"
     GEOMETRY_MISMATCH = "geometry_mismatch"
+    ROI_UNCONFIGURED = "roi_unconfigured"
     CALIBRATION_MISMATCH = "calibration_mismatch"
     IMAGE_REF_MISMATCH = "image_ref_mismatch"
     PIXEL_SPEC_MISMATCH = "pixel_spec_mismatch"
@@ -570,6 +599,7 @@ class MinimapMarkerEvidence:
     freshness_ns: int
     status: MinimapMarkerStatus
     components: tuple[MinimapMarkerComponent, ...] = field(default_factory=tuple)
+    observed_at_ns: int | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -585,10 +615,18 @@ class MinimapMarkerEvidence:
             raise ValueError("received_at_ns must be >= captured_at_ns.")
         if self.checked_at_ns < self.captured_at_ns:
             raise ValueError("checked_at_ns must be >= captured_at_ns.")
+        observed_at_ns = self.checked_at_ns if self.observed_at_ns is None else self.observed_at_ns
+        ensure_time_ns(observed_at_ns, "observed_at_ns")
+        if observed_at_ns < self.captured_at_ns:
+            raise ValueError("observed_at_ns must be >= captured_at_ns.")
+        if observed_at_ns > self.checked_at_ns:
+            raise ValueError("observed_at_ns must be <= checked_at_ns.")
+        object.__setattr__(self, "observed_at_ns", observed_at_ns)
         object.__setattr__(
             self, "pixel_digest", _normalise_sha256(self.pixel_digest, "pixel_digest")
         )
         ensure_non_empty_str(self.image_ref, "image_ref")
+        object.__setattr__(self, "image_ref", f"cas://sha256/{self.pixel_digest.lower()}")
         if not isinstance(self.pixel_spec, PixelSpec):
             raise TypeError("pixel_spec must be PixelSpec.")
         if not isinstance(self.geometry, SourceGeometry):
@@ -661,6 +699,7 @@ class MinimapMarkerEvidence:
             "captured_at_ns": self.captured_at_ns,
             "received_at_ns": self.received_at_ns,
             "checked_at_ns": self.checked_at_ns,
+            "observed_at_ns": self.observed_at_ns,
             "pixel_digest": self.pixel_digest,
             "image_ref": self.image_ref,
             "pixel_spec": self.pixel_spec.to_dict(),
@@ -694,6 +733,10 @@ class MinimapMarkerEvidence:
                 captured_at_ns=data["captured_at_ns"],
                 received_at_ns=data["received_at_ns"],
                 checked_at_ns=data.get("checked_at_ns", data["received_at_ns"]),
+                observed_at_ns=data.get(
+                    "observed_at_ns",
+                    data.get("checked_at_ns", data["received_at_ns"]),
+                ),
                 pixel_digest=data["pixel_digest"],
                 image_ref=data["image_ref"],
                 pixel_spec=PixelSpec.from_dict(data["pixel_spec"]),
@@ -754,6 +797,7 @@ class MinimapMarkerFault:
             self, "pixel_digest", _normalise_sha256(self.pixel_digest, "pixel_digest")
         )
         ensure_non_empty_str(self.image_ref, "image_ref")
+        object.__setattr__(self, "image_ref", f"cas://sha256/{self.pixel_digest.lower()}")
         details = ensure_mapping(self.details, "details")
         ensure_json_value(details, "details")
         object.__setattr__(self, "details", freeze_json_value(details))
@@ -840,7 +884,7 @@ class MinimapMarkerResult:
                 self.candidate.session_id != self.evidence.session_id
                 or self.candidate.source_id != self.evidence.source_id
                 or self.candidate.source_frame_id != self.evidence.frame_id
-                or self.candidate.observed_at_ns != self.evidence.received_at_ns
+                or self.candidate.observed_at_ns != self.evidence.observed_at_ns
                 or self.candidate.calibration_sha256 != self.evidence.calibration_sha256
                 or self.candidate.working_size != self.evidence.geometry.working_size
                 or self.candidate.evidence_source is not PlayerAnchorSource.MINIMAP_YELLOW_MARKER
@@ -990,7 +1034,7 @@ def _raise_fault(
     code: MinimapMarkerFaultCode,
     message: str,
     details: Mapping[str, Any] | None = None,
-) -> None:
+) -> NoReturn:
     raise _ExtractionFault(code, message, {} if details is None else details)
 
 
@@ -1044,12 +1088,41 @@ class MinimapMarkerExtractor:
 
     def _now(self, frame: FramePacket, now_ns: int | None) -> int:
         if now_ns is None:
-            # Frame receipt is the deterministic offline observation point.
-            now_ns = frame.received_at_ns if self.clock is None else self.clock()
+            if self.clock is None:
+                raise ValueError("marker extraction requires now_ns or a clock.")
+            now_ns = self.clock()
         ensure_time_ns(now_ns, "now_ns")
-        if now_ns < frame.captured_at_ns:
-            raise ValueError("now_ns must be >= captured_at_ns in the frame clock domain.")
+        if now_ns < frame.received_at_ns:
+            raise ValueError("now_ns must be >= received_at_ns in the frame clock domain.")
         return now_ns
+
+    def _observed_at(self, frame: FramePacket, checked_at_ns: int, value: int | None) -> int:
+        observed_at_ns = checked_at_ns if value is None else value
+        try:
+            ensure_time_ns(observed_at_ns, "observed_at_ns")
+        except ValueError as exc:
+            _raise_fault(
+                MinimapMarkerFaultCode.TIMESTAMP_MISMATCH,
+                "candidate observation timestamp is invalid",
+                {"reason_type": type(exc).__name__},
+            )
+        if observed_at_ns < frame.captured_at_ns or observed_at_ns > checked_at_ns:
+            _raise_fault(
+                MinimapMarkerFaultCode.TIMESTAMP_MISMATCH,
+                "candidate observation timestamp is outside frame check interval",
+            )
+        return observed_at_ns
+
+    def _generation(self, generation: int) -> int:
+        try:
+            ensure_non_negative_int(generation, "generation")
+        except ValueError as exc:
+            _raise_fault(
+                MinimapMarkerFaultCode.EXTRACTION_ERROR,
+                "candidate generation is invalid",
+                {"reason_type": type(exc).__name__},
+            )
+        return generation
 
     def _freshness(self, frame: FramePacket, now_ns: int) -> tuple[int, int]:
         try:
@@ -1074,6 +1147,7 @@ class MinimapMarkerExtractor:
         freshness_ns: int,
         status: MinimapMarkerStatus,
         components: tuple[MinimapMarkerComponent, ...] = (),
+        observed_at_ns: int | None = None,
         geometry: SourceGeometry | None = None,
         pixel_spec: PixelSpec | None = None,
         calibration_sha256: str | None = None,
@@ -1092,6 +1166,7 @@ class MinimapMarkerExtractor:
             if calibration_sha256 is None
             else calibration_sha256
         )
+        canonical_image_ref = f"cas://sha256/{frame.content_hash.lower()}"
         return MinimapMarkerEvidence(
             config_digest=self.config.digest,
             session_id=frame.session_id,
@@ -1100,8 +1175,9 @@ class MinimapMarkerExtractor:
             captured_at_ns=frame.captured_at_ns,
             received_at_ns=frame.received_at_ns,
             checked_at_ns=now_ns,
+            observed_at_ns=observed_at_ns,
             pixel_digest=frame.content_hash,
-            image_ref=frame.image_ref,
+            image_ref=canonical_image_ref,
             pixel_spec=actual_spec,
             geometry=actual_geometry,
             geometry_sha256=canonical_geometry_sha256(actual_geometry),
@@ -1120,6 +1196,7 @@ class MinimapMarkerExtractor:
         fault: _ExtractionFault,
         age_ns: int = 0,
         freshness_ns: int = 0,
+        observed_at_ns: int | None = None,
     ) -> MinimapMarkerResult:
         evidence = self._make_evidence(
             frame,
@@ -1128,6 +1205,7 @@ class MinimapMarkerExtractor:
             freshness_ns=max(0, freshness_ns),
             status=MinimapMarkerStatus.FAULT,
             components=(),
+            observed_at_ns=observed_at_ns,
         )
         details = _safe_details(fault.details)
         if not isinstance(details, Mapping):
@@ -1141,7 +1219,7 @@ class MinimapMarkerExtractor:
             frame_id=frame.frame_id,
             failed_at_ns=now_ns,
             pixel_digest=frame.content_hash,
-            image_ref=frame.image_ref,
+            image_ref=f"cas://sha256/{frame.content_hash.lower()}",
             details=cast(Mapping[str, Any], details),
         )
         return MinimapMarkerResult(
@@ -1178,6 +1256,23 @@ class MinimapMarkerExtractor:
             _raise_fault(
                 MinimapMarkerFaultCode.GEOMETRY_MISMATCH,
                 "frame source geometry does not match frozen marker config",
+            )
+        roi = config.minimap_roi
+        if roi is None:
+            _raise_fault(
+                MinimapMarkerFaultCode.ROI_UNCONFIGURED,
+                "minimap ROI is not configured",
+            )
+        content_rect = config.geometry.content_rect
+        if not (
+            content_rect.x <= roi.x
+            and content_rect.y <= roi.y
+            and roi.x2 <= content_rect.x2
+            and roi.y2 <= content_rect.y2
+        ):
+            _raise_fault(
+                MinimapMarkerFaultCode.ROI_UNCONFIGURED,
+                "minimap ROI is outside geometry.content_rect",
             )
         expected_image_ref = f"cas://sha256/{frame.content_hash.lower()}"
         if frame.image_ref != expected_image_ref:
@@ -1275,7 +1370,7 @@ class MinimapMarkerExtractor:
         try:
             pixels = validate_pixels(spec, raw)
             actual = pixel_digest(spec, pixels)
-        except (TypeError, ValueError) as exc:
+        except Exception as exc:
             _raise_fault(
                 MinimapMarkerFaultCode.PIXEL_HASH_MISMATCH,
                 "pixel CAS bytes failed Pixel V1 validation",
@@ -1294,18 +1389,26 @@ class MinimapMarkerExtractor:
         spec: PixelSpec,
         geometry: SourceGeometry,
     ) -> tuple[MinimapMarkerComponent, ...]:
-        # No resize/crop copy occurs here.  The source bytes are viewed at the
-        # exact PixelSpec shape and the content rectangle is a logical mask.
+        # The source bytes are viewed at the exact PixelSpec shape. Detection
+        # is bounded by the digest-bound minimap ROI, never by the full
+        # content rectangle.
         source = np.frombuffer(pixels, dtype=np.uint8).reshape(spec.shape)
+        roi = self.config.minimap_roi
+        if roi is None:
+            _raise_fault(
+                MinimapMarkerFaultCode.ROI_UNCONFIGURED,
+                "minimap ROI is not configured",
+            )
+        source_roi = source[roi.y : roi.y2, roi.x : roi.x2]
         target = np.asarray(self.config.bgr_target, dtype=np.uint8)
         tolerance = np.full((3,), self.config.bgr_tolerance, dtype=np.uint8)
         lower = np.maximum(target.astype(np.int16) - tolerance.astype(np.int16), 0).astype(np.uint8)
         upper = np.minimum(target.astype(np.int16) + tolerance.astype(np.int16), 255).astype(
             np.uint8
         )
-        bgr_mask = cv2.inRange(source, lower, upper) != 0
+        bgr_mask = cv2.inRange(source_roi, lower, upper) != 0
 
-        hsv = cv2.cvtColor(source, cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(source_roi, cv2.COLOR_BGR2HSV)
         hsv_mask = (
             (hsv[:, :, 0] >= self.config.hue_min)
             & (hsv[:, :, 0] <= self.config.hue_max)
@@ -1315,37 +1418,37 @@ class MinimapMarkerExtractor:
         # The hue floor is the explicit orange exclusion.  The channel-ratio
         # gate also rejects red-heavy orange edge pixels that fall in the
         # broad BGR tolerance band.
-        green = source[:, :, 1].astype(np.float32)
-        red = source[:, :, 2].astype(np.float32)
+        green = source_roi[:, :, 1].astype(np.float32)
+        red = source_roi[:, :, 2].astype(np.float32)
         ratio_mask = green >= self.config.green_red_ratio_min * np.maximum(red, 1.0)
         mask = bgr_mask & hsv_mask & ratio_mask
 
-        rect = geometry.content_rect
-        if rect.y > 0:
-            mask[: rect.y, :] = False
-        if rect.y2 < spec.height:
-            mask[rect.y2 :, :] = False
-        if rect.x > 0:
-            mask[:, : rect.x] = False
-        if rect.x2 < spec.width:
-            mask[:, rect.x2 :] = False
-
-        # ``mask`` already carries the fixed saturation/value floor.  Count
-        # those brilliant pixels as the core; keeping the core count separate
-        # in the evidence makes the minimum explicit without introducing a
-        # second, learned colour rule.
-        bright_core = mask
+        # The core is intentionally stricter and independent from the broad
+        # component mask.  Its count is joined to labels below in one ROI-wide
+        # aggregation, so near-yellow edge pixels cannot satisfy the core rule.
+        bright_core = (
+            (source_roi[:, :, 0] <= YELLOW_BRIGHT_B_MAX)
+            & (source_roi[:, :, 1] >= YELLOW_BRIGHT_GR_MAX)
+            & (source_roi[:, :, 2] >= YELLOW_BRIGHT_GR_MAX)
+            & (hsv[:, :, 1] >= YELLOW_BRIGHT_SV_MIN)
+            & (hsv[:, :, 2] >= YELLOW_BRIGHT_SV_MIN)
+        )
         labels_count, labels, stats, centroids = cv2.connectedComponentsWithStats(
             mask.astype(np.uint8), connectivity=8
         )
+        core_counts = np.bincount(
+            labels.reshape(-1),
+            weights=bright_core.reshape(-1).astype(np.int64),
+            minlength=labels_count,
+        )
         components: list[MinimapMarkerComponent] = []
         for label in range(1, labels_count):
-            x = int(stats[label, cv2.CC_STAT_LEFT])
-            y = int(stats[label, cv2.CC_STAT_TOP])
+            x = roi.x + int(stats[label, cv2.CC_STAT_LEFT])
+            y = roi.y + int(stats[label, cv2.CC_STAT_TOP])
             width = int(stats[label, cv2.CC_STAT_WIDTH])
             height = int(stats[label, cv2.CC_STAT_HEIGHT])
             area = int(stats[label, cv2.CC_STAT_AREA])
-            core_pixels = int(np.count_nonzero(bright_core & (labels == label)))
+            core_pixels = int(core_counts[label])
             if not (
                 self.config.area_min <= area <= self.config.area_max
                 and width <= self.config.width_max
@@ -1354,7 +1457,10 @@ class MinimapMarkerExtractor:
             ):
                 continue
             source_bbox = SourceRect(x=x, y=y, width=width, height=height)
-            centroid = (float(centroids[label, 0]), float(centroids[label, 1]))
+            centroid = (
+                roi.x + float(centroids[label, 0]),
+                roi.y + float(centroids[label, 1]),
+            )
             working_left, working_top = geometry.source_to_working(float(x), float(y))
             working_right, working_bottom = geometry.source_to_working(
                 float(x + width), float(y + height)
@@ -1377,7 +1483,13 @@ class MinimapMarkerExtractor:
             )
         return tuple(sorted(components, key=lambda c: (c.source_bbox.y, c.source_bbox.x, c.digest)))
 
-    def extract(self, frame: FramePacket, now_ns: int | None = None) -> MinimapMarkerResult:
+    def extract(
+        self,
+        frame: FramePacket,
+        now_ns: int | None = None,
+        observed_at_ns: int | None = None,
+        generation: int = 0,
+    ) -> MinimapMarkerResult:
         """Return one deterministic marker result for ``frame``.
 
         Type errors at the API boundary follow the rest of the package and
@@ -1390,10 +1502,10 @@ class MinimapMarkerExtractor:
             raise TypeError("frame must be FramePacket.")
         try:
             checked_at_ns = self._now(frame, now_ns)
-        except (TypeError, ValueError) as exc:
-            # FramePacket timestamps are valid by construction; use receipt as
-            # a stable evidence timestamp if a caller supplied a bad clock.
-            checked_at_ns = frame.received_at_ns
+        except Exception as exc:
+            # Keep a valid frame-domain timestamp for the fail-closed record;
+            # this is not used as a successful observation timestamp.
+            checked_at_ns = frame.captured_at_ns
             fault = _ExtractionFault(
                 MinimapMarkerFaultCode.TIMESTAMP_MISMATCH,
                 "marker extraction clock returned an invalid timestamp",
@@ -1401,7 +1513,14 @@ class MinimapMarkerExtractor:
             )
             return self._fault_result(frame, now_ns=checked_at_ns, fault=fault)
 
+        actual_observed_at_ns: int | None = None
         try:
+            actual_observed_at_ns = self._observed_at(
+                frame,
+                checked_at_ns,
+                observed_at_ns,
+            )
+            actual_generation = self._generation(generation)
             age_ns, freshness_ns, spec, calibration = self._validate_frame(frame, checked_at_ns)
             pixels = self._read_pixels(frame, spec)
             components = self._components(pixels, spec, frame.source_geometry)
@@ -1413,6 +1532,7 @@ class MinimapMarkerExtractor:
                     freshness_ns=freshness_ns,
                     status=MinimapMarkerStatus.NO_CANDIDATE,
                     components=components,
+                    observed_at_ns=actual_observed_at_ns,
                     pixel_spec=spec,
                     calibration_sha256=calibration,
                 )
@@ -1429,6 +1549,7 @@ class MinimapMarkerExtractor:
                 freshness_ns=freshness_ns,
                 status=MinimapMarkerStatus.CANDIDATE,
                 components=components,
+                observed_at_ns=actual_observed_at_ns,
                 pixel_spec=spec,
                 calibration_sha256=calibration,
             )
@@ -1437,8 +1558,8 @@ class MinimapMarkerExtractor:
                 session_id=frame.session_id,
                 source_id=frame.source_id,
                 source_frame_id=frame.frame_id,
-                observed_at_ns=frame.received_at_ns,
-                generation=0,
+                observed_at_ns=actual_observed_at_ns,
+                generation=actual_generation,
                 subject_id=self.config.subject_id,
                 confidence=self.config.candidate_confidence,
                 visibility=Visibility.VISIBLE,
@@ -1465,6 +1586,7 @@ class MinimapMarkerExtractor:
                 fault=extraction_fault,
                 age_ns=age_ns,
                 freshness_ns=freshness_ns,
+                observed_at_ns=actual_observed_at_ns,
             )
         except (TypeError, ValueError, cv2.error) as exc:
             # Decoder/library errors are still fail-closed and are represented
@@ -1484,17 +1606,38 @@ class MinimapMarkerExtractor:
                 fault=library_fault,
                 age_ns=age_ns,
                 freshness_ns=freshness_ns,
+                observed_at_ns=actual_observed_at_ns,
             )
 
     def extract_candidate(
-        self, frame: FramePacket, now_ns: int | None = None
+        self,
+        frame: FramePacket,
+        now_ns: int | None = None,
+        observed_at_ns: int | None = None,
+        generation: int = 0,
     ) -> PlayerCandidate | None:
         """Return only the unique candidate, suppressing all other branches."""
 
-        return self.extract(frame, now_ns=now_ns).candidate
+        return self.extract(
+            frame,
+            now_ns=now_ns,
+            observed_at_ns=observed_at_ns,
+            generation=generation,
+        ).candidate
 
-    def __call__(self, frame: FramePacket, now_ns: int | None = None) -> MinimapMarkerResult:
-        return self.extract(frame, now_ns=now_ns)
+    def __call__(
+        self,
+        frame: FramePacket,
+        now_ns: int | None = None,
+        observed_at_ns: int | None = None,
+        generation: int = 0,
+    ) -> MinimapMarkerResult:
+        return self.extract(
+            frame,
+            now_ns=now_ns,
+            observed_at_ns=observed_at_ns,
+            generation=generation,
+        )
 
 
 MinimapYellowMarkerExtractor = MinimapMarkerExtractor
@@ -1509,6 +1652,8 @@ def extract_minimap_marker(
     cas: PixelStoreReader | None = None,
     now_ns: int | None = None,
     clock: Callable[[], int] | None = None,
+    observed_at_ns: int | None = None,
+    generation: int = 0,
 ) -> MinimapMarkerResult:
     """Functional wrapper around :class:`MinimapMarkerExtractor`."""
 
@@ -1517,7 +1662,12 @@ def extract_minimap_marker(
         pixel_store=pixel_store,
         cas=cas,
         clock=clock,
-    ).extract(frame, now_ns=now_ns)
+    ).extract(
+        frame,
+        now_ns=now_ns,
+        observed_at_ns=observed_at_ns,
+        generation=generation,
+    )
 
 
 extract_minimap_yellow_marker = extract_minimap_marker
@@ -1534,6 +1684,8 @@ def extract_player_candidate(
     cas: PixelStoreReader | None = None,
     now_ns: int | None = None,
     clock: Callable[[], int] | None = None,
+    observed_at_ns: int | None = None,
+    generation: int = 0,
 ) -> PlayerCandidate | None:
     """Functional candidate-only convenience wrapper."""
 
@@ -1544,6 +1696,8 @@ def extract_player_candidate(
         cas=cas,
         now_ns=now_ns,
         clock=clock,
+        observed_at_ns=observed_at_ns,
+        generation=generation,
     ).candidate
 
 
