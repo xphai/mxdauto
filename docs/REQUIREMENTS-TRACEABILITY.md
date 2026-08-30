@@ -96,6 +96,11 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 | G1-FRM-001B1 | Pixel V1/CAS、raw capacity=1、VC-003 adapter/fake backend、Legacy local snapshot provenance、corpus/truth 工具、Event Tape、stress、schemas/verifiers、Python 3.12 CI wheel；PR #5 原始实现，PR #7～#10 hardening | B2 使用 source `37e57b9...` 的精确 wheel；本包本身不产生 hardware PASS | `Completed`，真实输入 0 |
 | G1-FRM-001B2 | source `37e57b9...` 的 300 秒 VC-003 smoke、4-session/300-sample corpus、3-run replay、4 Event Tapes、CAS/provenance/privacy/zero-input 与 G1 Frame Candidate packet | packaging PR #11 / P=`72c3ad0...` / outer run `33258468278` 已完成；QA/技术/现场/privacy/release/Sol-U 组织会签待完成 | `In Progress / Technical + Outer CI PASS`，真实输入 0 |
 
+`G1-FRM-001` 的完整审计矩阵已建立于
+[`docs/gates/G1-FRM-001-GATE-CHARTER.md`](gates/G1-FRM-001-GATE-CHARTER.md)，组织会签入口为
+[GitHub Issue #13](https://github.com/xphai/mxdauto/issues/13)。该入口只固化真实审阅流程，不改变
+`signoffs=[]` 与 `Countersign Pending` 的当前事实。
+
 ### G1-FRM-001A 合并证据
 
 - 实现 PR：[#3](https://github.com/xphai/mxdauto/pull/3)；feature source commit `7cca4154a38e8bca29b917aa3c5abcc43a51391d`；merge commit `b30ddedb1f05945e68fb348b221cdfa123e83c59`。
