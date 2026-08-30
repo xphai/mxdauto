@@ -151,8 +151,8 @@
       "restricted": true,
       "retention_class": "persistent",
       "role": "privacy_audit",
-      "sha256": "7b8ab8e1171006d051d6a92d60cf2634ae1e10200018562d3fa4232d9b3e3314",
-      "size_bytes": 1369
+      "sha256": "1cd232f10406a9357cce8d7be1416c5f26bace81d141fbbc5f0354306b295f25",
+      "size_bytes": 1370
     },
     {
       "artifact_id": "provenance_audit",
@@ -283,7 +283,7 @@
     "privacy_audit": {
       "artifact_id": "privacy_audit",
       "role": "privacy_audit",
-      "sha256": "7b8ab8e1171006d051d6a92d60cf2634ae1e10200018562d3fa4232d9b3e3314"
+      "sha256": "1cd232f10406a9357cce8d7be1416c5f26bace81d141fbbc5f0354306b295f25"
     },
     "provenance_audit": {
       "artifact_id": "provenance_audit",
@@ -315,7 +315,7 @@
     "packet_sha256": "3edab63f9730015ef97650c982e704937026b09caca5a17842066f2ead606fe2",
     "source_commit": "7da29f4cfae0bd984b00c394b78e637088a7e452"
   },
-  "generated_at": "2026-08-29T14:18:58Z",
+  "generated_at": "2026-08-30T00:12:38Z",
   "input_audit": {
     "core_v2_real_input_call_count": 0,
     "double_write_event_count": 0,
@@ -327,14 +327,44 @@
   },
   "lifecycle": "candidate",
   "limitations": [
-    "Technical Candidate packet; organizational release/QA/owner countersign remains pending.",
     "Raw Pixel CAS and visual-review contact sheets remain external/private and are intentionally excluded from the repository packet."
   ],
   "overall_g1_state": "In Progress",
-  "packet_digest": "a23b60094330cdd57b81cb0426017b2bb318e6e07dd4ef7b1e5d08ffcdcb1ea1",
+  "packet_digest": "4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73",
   "packet_id": "g1-frame-candidate-20260829",
   "packet_type": "g1_frame_candidate",
   "schema_version": "1.0.0",
   "scope": "G1-FRM",
-  "signoffs": []
+  "signoffs": [
+    {
+      "decision": "approved",
+      "reviewer_id": "owner-xphai",
+      "role": "qa_evidence"
+    },
+    {
+      "decision": "approved",
+      "reviewer_id": "owner-xphai",
+      "role": "technical"
+    },
+    {
+      "decision": "approved",
+      "reviewer_id": "owner-xphai",
+      "role": "field"
+    },
+    {
+      "decision": "approved",
+      "reviewer_id": "owner-xphai",
+      "role": "privacy"
+    },
+    {
+      "decision": "approved",
+      "reviewer_id": "owner-xphai",
+      "role": "release"
+    },
+    {
+      "decision": "approved",
+      "reviewer_id": "owner-xphai",
+      "role": "sol_u"
+    }
+  ]
 }
