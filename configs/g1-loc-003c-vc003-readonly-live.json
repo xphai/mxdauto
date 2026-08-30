@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0.0",
+  "config_id": "g1-loc-003c-vc003-readonly-live",
+  "config_version": "g1-loc-003c-vc003-readonly-live-v1",
+  "scope": "G1-LOC-003C",
+  "truth_scope": "live_marker_integration_only",
+  "execution_mode": "read_only_live",
+  "generation": 0,
+  "scope_excluded": [
+    "ObservationResult",
+    "affine",
+    "world",
+    "map",
+    "platform",
+    "planner",
+    "action",
+    "input",
+    "receiver",
+    "window",
+    "resolver",
+    "accuracy"
+  ],
+  "measurement_window": {
+    "warmup_seconds": 30,
+    "measurement_seconds": 300,
+    "bucket_count": 100,
+    "bucket_seconds": 3,
+    "bucket_clock": "FramePacket.received_at_ns",
+    "bucket_boundary": "half_open",
+    "generation": 0
+  },
+  "capture": {
+    "read_only": true,
+    "source_id": "capture-card-primary",
+    "selector": "VC-003 Video",
+    "backend": "dshow",
+    "fourcc": "MJPG",
+    "fps": 30.0,
+    "width": 1920,
+    "height": 1080,
+    "channels": 3,
+    "pixel_format": "BGR8",
+    "dtype": "uint8",
+    "stride": 5760,
+    "length": 6220800,
+    "timestamp_origin": "host_monotonic_post_retrieve",
+    "clock_domain": "monotonic",
+    "source_size": {
+      "width": 1920,
+      "height": 1080
+    },
+    "content_rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 1080
+    },
+    "working_size": {
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "marker": {
+    "extractor": "MinimapMarkerExtractor",
+    "extractor_artifact_sha256": "508b309fce0988a2b0c1e7f4b2ab13a4702a969be5f0175950cb9f779c18a651",
+    "base_config_raw_sha256": "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79",
+    "base_config_semantic_sha256": "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22aa",
+    "calibration_sha256": "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549",
+    "roi": {
+      "x": 309,
+      "y": 238,
+      "width": 97,
+      "height": 113
+    },
+    "bucket_clock": "FramePacket.received_at_ns",
+    "bucket_boundary": "half_open",
+    "working_space_candidate": true,
+    "resolver_invoked": false,
+    "accuracy_evaluated": false,
+    "base_config": {
+      "area_max": 120,
+      "area_min": 3,
+      "bgr_target": [
+        0,
+        255,
+        255
+      ],
+      "bgr_tolerance": 55,
+      "bright_b_max": 50,
+      "bright_core_min": 3,
+      "bright_green_red_min": 220,
+      "bright_saturation_min": 205,
+      "bright_value_min": 240,
+      "calibration_sha256": "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549",
+      "candidate_confidence": 1.0,
+      "clock_domain": null,
+      "digest": "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a",
+      "geometry": {
+        "content_rect": {
+          "height": 1080,
+          "width": 1920,
+          "x": 0,
+          "y": 0
+        },
+        "source_size": {
+          "height": 1080,
+          "width": 1920
+        },
+        "working_size": {
+          "height": 1080,
+          "width": 1920
+        }
+      },
+      "green_red_ratio_min": 0.82,
+      "height_max": 20,
+      "hue_max": 35,
+      "hue_min": 25,
+      "max_age_ns": 250000000,
+      "minimap_roi": {
+        "height": 113,
+        "width": 97,
+        "x": 309,
+        "y": 238
+      },
+      "pixel_spec": {
+        "channels": 3,
+        "dtype": "uint8",
+        "height": 1080,
+        "length": 6220800,
+        "pixel_format": "BGR8",
+        "stride": 5760,
+        "width": 1920
+      },
+      "saturation_min": 195,
+      "session_id": null,
+      "source_id": null,
+      "subject_id": "anonymous-player",
+      "transform_version": "capture-v1",
+      "value_min": 235,
+      "version": "g1-loc-003b-minimap-marker-v1",
+      "width_max": 20
+    }
+  },
+  "expected_bindings": {
+    "upstream_b2_packet": {
+      "kind": "g1_frame_candidate_packet",
+      "expected_sha256": "4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73",
+      "external_ref": "external://g1-frame-candidate-20260829/g1-frame-candidate-packet.json"
+    },
+    "loc003b_report_raw": {
+      "kind": "loc003b_report_artifact",
+      "expected_sha256": "37076a1937fa10ce317c4899a43470dfcce9dd7c155f6a0efa8ef089f0efc4d5",
+      "external_ref": "external://g1-loc-003b/g1-loc-003b-marker-replay-20260830.json"
+    },
+    "loc003b_report_semantic": {
+      "kind": "loc003b_report_semantic_digest",
+      "expected_sha256": "9528f117200bfcb24d3723a081e83e4889f273322c798fef6fd62cfc14a361ff",
+      "external_ref": "external://g1-loc-003b/g1-loc-003b-marker-replay-20260830.json#report_digest"
+    },
+    "base_marker_config_raw": {
+      "kind": "loc003b_marker_config_artifact",
+      "expected_sha256": "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79",
+      "external_ref": "external://g1-loc-003b/configs/g1-loc-003b-minimap-marker.json"
+    },
+    "base_marker_config_semantic": {
+      "kind": "loc003b_marker_config_semantic_digest",
+      "expected_sha256": "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a",
+      "external_ref": "external://g1-loc-003b/configs/g1-loc-003b-minimap-marker.json#digest"
+    },
+    "calibration": {
+      "kind": "marker_calibration_digest",
+      "expected_sha256": "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549",
+      "external_ref": "external://g1-loc-003c/calibration"
+    },
+    "extractor": {
+      "kind": "minimap_marker_extractor_source",
+      "expected_sha256": "508b309fce0988a2b0c1e7f4b2ab13a4702a969be5f0175950cb9f779c18a651",
+      "external_ref": "external://g1-loc-003b/src/maple_automation_core/localization/minimap_marker.py"
+    }
+  },
+  "input_policy": {
+    "input_owner": "legacy",
+    "real_input_enabled": false,
+    "real_input_call_count": 0,
+    "core_v2_real_input_call_count": 0,
+    "double_write_event_count": 0
+  },
+  "output_policy": {
+    "public_row_kind": "hash_only",
+    "public_selected_row_count": 100,
+    "one_row_per_bucket": true,
+    "allow_duplicate_pixel_digest": true,
+    "include_coordinates": false,
+    "include_raw_bytes": false,
+    "include_absolute_paths": false,
+    "include_device_original_id": false
+  },
+  "run_specific_audits": true,
+  "limitations": [
+    "truth_scope is live_marker_integration_only; no resolver or marker accuracy claim is made.",
+    "The read-only chain is VC003Source to accepted FramePacket/CAS to MinimapMarkerExtractor to a working-space candidate.",
+    "Raw pixels and private verifier rows remain external and are not part of the public report."
+  ]
+}

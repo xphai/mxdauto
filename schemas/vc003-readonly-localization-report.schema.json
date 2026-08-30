@@ -1,0 +1,1249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/vc003-readonly-localization-report.schema.json",
+  "title": "G1-LOC-003C VC-003 read-only localization report",
+  "description": "Metadata-only evidence for VC003Source to an accepted FramePacket/CAS to MinimapMarkerExtractor to a working-space candidate. Resolver and marker accuracy are outside this truth scope.",
+  "type": "object",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "externalRef": {
+      "type": "string",
+      "minLength": 11,
+      "pattern": "^external://[^\\\\\\r\\n]+$"
+    },
+    "nonNegativeInt": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "binding": {
+      "type": "object",
+      "required": [
+        "kind",
+        "expected_sha256",
+        "external_ref"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "expected_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "external_ref": {
+          "$ref": "#/$defs/externalRef"
+        }
+      },
+      "additionalProperties": false
+    },
+    "format": {
+      "type": "object",
+      "required": [
+        "width",
+        "height",
+        "fps",
+        "fourcc",
+        "backend",
+        "channels",
+        "pixel_format",
+        "dtype",
+        "stride",
+        "length"
+      ],
+      "properties": {
+        "width": {
+          "const": 1920
+        },
+        "height": {
+          "const": 1080
+        },
+        "fps": {
+          "const": 30
+        },
+        "fourcc": {
+          "const": "MJPG"
+        },
+        "backend": {
+          "const": "dshow"
+        },
+        "channels": {
+          "const": 3
+        },
+        "pixel_format": {
+          "const": "BGR8"
+        },
+        "dtype": {
+          "const": "uint8"
+        },
+        "stride": {
+          "const": 5760
+        },
+        "length": {
+          "const": 6220800
+        }
+      },
+      "additionalProperties": false
+    },
+    "fullFrameSize": {
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "const": 1920
+        },
+        "height": {
+          "const": 1080
+        }
+      },
+      "additionalProperties": false
+    },
+    "fullFrameRect": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "const": 0
+        },
+        "y": {
+          "const": 0
+        },
+        "width": {
+          "const": 1920
+        },
+        "height": {
+          "const": 1080
+        }
+      },
+      "additionalProperties": false
+    },
+    "fullFrameGeometry": {
+      "type": "object",
+      "required": [
+        "source_size",
+        "content_rect",
+        "working_size"
+      ],
+      "properties": {
+        "source_size": {
+          "$ref": "#/$defs/fullFrameSize"
+        },
+        "content_rect": {
+          "$ref": "#/$defs/fullFrameRect"
+        },
+        "working_size": {
+          "$ref": "#/$defs/fullFrameSize"
+        }
+      },
+      "additionalProperties": false
+    },
+    "capture": {
+      "type": "object",
+      "required": [
+        "read_only",
+        "source_id",
+        "selector",
+        "requested",
+        "negotiated",
+        "timestamp_origin",
+        "clock_domain",
+        "accepted_cas_required",
+        "geometry"
+      ],
+      "properties": {
+        "read_only": {
+          "const": true
+        },
+        "source_id": {
+          "const": "capture-card-primary"
+        },
+        "selector": {
+          "const": "VC-003 Video"
+        },
+        "requested": {
+          "$ref": "#/$defs/format"
+        },
+        "negotiated": {
+          "$ref": "#/$defs/format"
+        },
+        "timestamp_origin": {
+          "const": "host_monotonic_post_retrieve"
+        },
+        "clock_domain": {
+          "const": "monotonic"
+        },
+        "accepted_cas_required": {
+          "const": true
+        },
+        "device_fingerprint_sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "geometry": {
+          "$ref": "#/$defs/fullFrameGeometry"
+        }
+      },
+      "additionalProperties": false
+    },
+    "statusCounts": {
+      "type": "object",
+      "required": [
+        "accepted",
+        "no_frame",
+        "stale",
+        "duplicate",
+        "out_of_order",
+        "timestamp_regression",
+        "frame_size_changed",
+        "source_mismatch",
+        "session_mismatch",
+        "clock_domain_mismatch",
+        "source_error"
+      ],
+      "properties": {
+        "accepted": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "no_frame": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "stale": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "duplicate": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "out_of_order": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "timestamp_regression": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "frame_size_changed": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "source_mismatch": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "session_mismatch": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "clock_domain_mismatch": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "source_error": {
+          "$ref": "#/$defs/nonNegativeInt"
+        }
+      },
+      "additionalProperties": false
+    },
+    "admission": {
+      "type": "object",
+      "required": [
+        "accepted_count",
+        "rejected_count",
+        "status_counts",
+        "accepted_frame_ledger_sha256",
+        "cas_lineage_verified"
+      ],
+      "properties": {
+        "accepted_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "rejected_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "status_counts": {
+          "$ref": "#/$defs/statusCounts"
+        },
+        "accepted_frame_ledger_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "cas_lineage_verified": {
+          "const": true
+        },
+        "accepted_cas_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "accepted_packet_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "max_accepted_age_ns": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "max_inter_frame_gap_ns": {
+          "$ref": "#/$defs/nonNegativeInt"
+        }
+      },
+      "additionalProperties": false
+    },
+    "selector": {
+      "type": "object",
+      "required": [
+        "policy",
+        "bucket_count",
+        "selected_count",
+        "selected_rows_digest",
+        "allow_duplicate_pixel_digest"
+      ],
+      "properties": {
+        "policy": {
+          "const": "one_representative_per_3s_bucket"
+        },
+        "bucket_count": {
+          "const": 100
+        },
+        "selected_count": {
+          "const": 100
+        },
+        "selected_rows_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "allow_duplicate_pixel_digest": {
+          "const": true
+        },
+        "candidate_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "no_candidate_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "rejected_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "fault_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        }
+      },
+      "additionalProperties": false
+    },
+    "marker": {
+      "type": "object",
+      "required": [
+        "extractor",
+        "extractor_artifact_sha256",
+        "config_semantic_sha256",
+        "base_config_raw_sha256",
+        "calibration_sha256",
+        "geometry",
+        "candidate_stage",
+        "resolver_invoked",
+        "accuracy_evaluated",
+        "candidate_count",
+        "no_candidate_count",
+        "fault_count"
+      ],
+      "properties": {
+        "extractor": {
+          "const": "MinimapMarkerExtractor"
+        },
+        "extractor_artifact_sha256": {
+          "const": "508b309fce0988a2b0c1e7f4b2ab13a4702a969be5f0175950cb9f779c18a651"
+        },
+        "config_semantic_sha256": {
+          "const": "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a"
+        },
+        "base_config_raw_sha256": {
+          "const": "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79"
+        },
+        "calibration_sha256": {
+          "const": "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549"
+        },
+        "candidate_stage": {
+          "const": "working_space"
+        },
+        "resolver_invoked": {
+          "const": false
+        },
+        "accuracy_evaluated": {
+          "const": false
+        },
+        "candidate_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "no_candidate_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "fault_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "candidate_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "result_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "geometry": {
+          "$ref": "#/$defs/fullFrameGeometry"
+        }
+      },
+      "additionalProperties": false
+    },
+    "timing": {
+      "type": "object",
+      "required": [
+        "warmup_seconds",
+        "measurement_seconds",
+        "bucket_count",
+        "bucket_seconds",
+        "bucket_clock",
+        "bucket_boundary",
+        "generation",
+        "timestamp_origin",
+        "clock_domain",
+        "monotonic",
+        "bucket_coverage_digest"
+      ],
+      "properties": {
+        "warmup_seconds": {
+          "const": 30
+        },
+        "measurement_seconds": {
+          "const": 300
+        },
+        "bucket_count": {
+          "const": 100
+        },
+        "bucket_seconds": {
+          "const": 3
+        },
+        "bucket_clock": {
+          "const": "FramePacket.received_at_ns"
+        },
+        "bucket_boundary": {
+          "const": "half_open"
+        },
+        "generation": {
+          "const": 0
+        },
+        "timestamp_origin": {
+          "const": "host_monotonic_post_retrieve"
+        },
+        "clock_domain": {
+          "const": "monotonic"
+        },
+        "monotonic": {
+          "const": true
+        },
+        "bucket_coverage_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "measurement_start_offset_ns": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "measurement_end_offset_ns": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "max_inter_frame_gap_ns": {
+          "$ref": "#/$defs/nonNegativeInt"
+        }
+      },
+      "additionalProperties": false
+    },
+    "lineage": {
+      "type": "object",
+      "required": [
+        "chain",
+        "upstream_b2_packet_sha256",
+        "pixel_digest_domain",
+        "cas_required",
+        "candidate_output",
+        "resolver_invoked",
+        "accuracy_evaluated"
+      ],
+      "properties": {
+        "chain": {
+          "const": "VC003Source->accepted FramePacket/CAS->MinimapMarkerExtractor->working-space candidate"
+        },
+        "upstream_b2_packet_sha256": {
+          "const": "4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73"
+        },
+        "accepted_frame_ledger_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pixel_digest_domain": {
+          "const": "MAPLE_PIXEL_V1"
+        },
+        "cas_required": {
+          "const": true
+        },
+        "candidate_output": {
+          "const": "working_space_candidate"
+        },
+        "resolver_invoked": {
+          "const": false
+        },
+        "accuracy_evaluated": {
+          "const": false
+        },
+        "world_state_emitted": {
+          "const": false
+        },
+        "private_rows_external_ref": {
+          "$ref": "#/$defs/externalRef"
+        }
+      },
+      "additionalProperties": false
+    },
+    "failure": {
+      "type": "object",
+      "required": [
+        "capture_error_count",
+        "admission_error_count",
+        "selector_error_count",
+        "marker_error_count",
+        "timing_error_count",
+        "lineage_error_count",
+        "privacy_error_count",
+        "cleanup_error_count",
+        "total_count",
+        "codes"
+      ],
+      "properties": {
+        "capture_error_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "admission_error_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "selector_error_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "marker_error_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "timing_error_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "lineage_error_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "privacy_error_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "cleanup_error_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "total_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._-]+$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "zeroInput": {
+      "type": "object",
+      "required": [
+        "audit_id",
+        "run_index",
+        "scope",
+        "reused_from_b2",
+        "input_owner",
+        "real_input_enabled",
+        "real_input_call_count",
+        "core_v2_real_input_call_count",
+        "receiver_connect_count",
+        "window_write_count",
+        "keyboard_call_count",
+        "mouse_call_count",
+        "double_write_event_count"
+      ],
+      "properties": {
+        "audit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "run_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "scope": {
+          "const": "G1-LOC-003C"
+        },
+        "reused_from_b2": {
+          "const": false
+        },
+        "input_owner": {
+          "const": "legacy"
+        },
+        "real_input_enabled": {
+          "const": false
+        },
+        "real_input_call_count": {
+          "const": 0
+        },
+        "core_v2_real_input_call_count": {
+          "const": 0
+        },
+        "receiver_connect_count": {
+          "const": 0
+        },
+        "window_write_count": {
+          "const": 0
+        },
+        "keyboard_call_count": {
+          "const": 0
+        },
+        "mouse_call_count": {
+          "const": 0
+        },
+        "double_write_event_count": {
+          "const": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "privacy": {
+      "type": "object",
+      "required": [
+        "audit_id",
+        "run_index",
+        "scope",
+        "reused_from_b2",
+        "raw_artifacts_public",
+        "coordinates_present",
+        "absolute_paths_present",
+        "raw_bytes_present",
+        "device_original_id_present",
+        "private_artifacts_external_only",
+        "finding_count"
+      ],
+      "properties": {
+        "audit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "run_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "scope": {
+          "const": "G1-LOC-003C"
+        },
+        "reused_from_b2": {
+          "const": false
+        },
+        "raw_artifacts_public": {
+          "const": false
+        },
+        "coordinates_present": {
+          "const": false
+        },
+        "absolute_paths_present": {
+          "const": false
+        },
+        "raw_bytes_present": {
+          "const": false
+        },
+        "device_original_id_present": {
+          "const": false
+        },
+        "private_artifacts_external_only": {
+          "const": true
+        },
+        "finding_count": {
+          "const": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "cleanup": {
+      "type": "object",
+      "required": [
+        "status",
+        "capture_stopped",
+        "residual_thread_count",
+        "residual_child_count",
+        "private_artifacts_released",
+        "cleanup_failure_count"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "PASS",
+            "FAIL"
+          ]
+        },
+        "capture_stopped": {
+          "type": "boolean"
+        },
+        "residual_thread_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "residual_child_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "private_artifacts_released": {
+          "type": "boolean"
+        },
+        "cleanup_failure_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        }
+      },
+      "additionalProperties": false
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "run_index",
+        "selected_row_count",
+        "zero_input",
+        "privacy"
+      ],
+      "properties": {
+        "run_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "selected_row_count": {
+          "const": 100
+        },
+        "zero_input": {
+          "$ref": "#/$defs/zeroInput"
+        },
+        "privacy": {
+          "$ref": "#/$defs/privacy"
+        },
+        "status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "HOLD",
+            "NOT-RUN",
+            "HOLD/NOT-RUN",
+            "QUARANTINE"
+          ]
+        },
+        "execution_valid": {
+          "type": "boolean"
+        },
+        "selected_rows_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "publicRow": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "row_kind",
+        "bucket_index",
+        "status",
+        "generation",
+        "frame_digest",
+        "pixel_digest",
+        "candidate_digest",
+        "evidence_digest",
+        "result_digest",
+        "row_digest"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "row_kind": {
+          "const": "public_hash_only"
+        },
+        "bucket_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99
+        },
+        "status": {
+          "enum": [
+            "candidate",
+            "no_candidate",
+            "rejected",
+            "fault"
+          ]
+        },
+        "generation": {
+          "const": 0
+        },
+        "frame_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pixel_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "candidate_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "result_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "row_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sample_ordinal": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bucket_offset_ns": {
+          "type": "integer",
+          "minimum": 0,
+          "exclusiveMaximum": 3000000000
+        },
+        "selected": {
+          "const": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "const": "candidate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "candidate_digest": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "no_candidate",
+                  "rejected",
+                  "fault"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "candidate_digest": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "artifact_id",
+        "role",
+        "external_ref",
+        "sha256",
+        "size_bytes",
+        "privacy_class",
+        "retention_class"
+      ],
+      "properties": {
+        "artifact_id": {
+          "$ref": "#/$defs/id"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "external_ref": {
+          "$ref": "#/$defs/externalRef"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "size_bytes": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "privacy_class": {
+          "enum": [
+            "public_hash_only",
+            "deidentified",
+            "restricted",
+            "private"
+          ]
+        },
+        "retention_class": {
+          "enum": [
+            "ephemeral",
+            "candidate",
+            "persistent"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "privacy_class"
+            ],
+            "properties": {
+              "privacy_class": {
+                "enum": [
+                  "restricted",
+                  "private"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "external_ref": {
+                "$ref": "#/$defs/externalRef"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_type",
+    "scope",
+    "truth_scope",
+    "scope_excluded",
+    "report_id",
+    "generated_at",
+    "source_commit",
+    "config_sha256",
+    "status",
+    "execution_valid",
+    "expected_bindings",
+    "capture",
+    "admission",
+    "selector",
+    "marker",
+    "timing",
+    "lineage",
+    "failure",
+    "zero_input",
+    "privacy",
+    "cleanup",
+    "runs",
+    "selected_row_count",
+    "public_selected_rows",
+    "limitations",
+    "report_digest"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "report_type": {
+      "const": "vc003_readonly_localization"
+    },
+    "scope": {
+      "const": "G1-LOC-003C"
+    },
+    "truth_scope": {
+      "const": "live_marker_integration_only"
+    },
+    "scope_excluded": {
+      "const": [
+        "ObservationResult",
+        "affine",
+        "world",
+        "map",
+        "platform",
+        "planner",
+        "action",
+        "input",
+        "receiver",
+        "window",
+        "resolver",
+        "accuracy"
+      ]
+    },
+    "report_id": {
+      "$ref": "#/$defs/id"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "source_commit": {
+      "$ref": "#/$defs/commit"
+    },
+    "config_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "status": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "HOLD",
+        "NOT-RUN",
+        "HOLD/NOT-RUN",
+        "QUARANTINE"
+      ]
+    },
+    "execution_valid": {
+      "type": "boolean"
+    },
+    "expected_bindings": {
+      "type": "object",
+      "required": [
+        "upstream_b2_packet",
+        "loc003b_report_raw",
+        "loc003b_report_semantic",
+        "base_marker_config_raw",
+        "base_marker_config_semantic",
+        "calibration",
+        "extractor"
+      ],
+      "properties": {
+        "upstream_b2_packet": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "properties": {
+                "expected_sha256": {
+                  "const": "4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73"
+                }
+              }
+            }
+          ]
+        },
+        "loc003b_report_raw": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "properties": {
+                "expected_sha256": {
+                  "const": "37076a1937fa10ce317c4899a43470dfcce9dd7c155f6a0efa8ef089f0efc4d5"
+                }
+              }
+            }
+          ]
+        },
+        "loc003b_report_semantic": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "properties": {
+                "expected_sha256": {
+                  "const": "9528f117200bfcb24d3723a081e83e4889f273322c798fef6fd62cfc14a361ff"
+                }
+              }
+            }
+          ]
+        },
+        "base_marker_config_raw": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "properties": {
+                "expected_sha256": {
+                  "const": "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79"
+                }
+              }
+            }
+          ]
+        },
+        "base_marker_config_semantic": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "properties": {
+                "expected_sha256": {
+                  "const": "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a"
+                }
+              }
+            }
+          ]
+        },
+        "calibration": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "properties": {
+                "expected_sha256": {
+                  "const": "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549"
+                }
+              }
+            }
+          ]
+        },
+        "extractor": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "properties": {
+                "expected_sha256": {
+                  "const": "508b309fce0988a2b0c1e7f4b2ab13a4702a969be5f0175950cb9f779c18a651"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "capture": {
+      "$ref": "#/$defs/capture"
+    },
+    "admission": {
+      "$ref": "#/$defs/admission"
+    },
+    "selector": {
+      "$ref": "#/$defs/selector"
+    },
+    "marker": {
+      "$ref": "#/$defs/marker"
+    },
+    "timing": {
+      "$ref": "#/$defs/timing"
+    },
+    "lineage": {
+      "$ref": "#/$defs/lineage"
+    },
+    "failure": {
+      "$ref": "#/$defs/failure"
+    },
+    "zero_input": {
+      "$ref": "#/$defs/zeroInput"
+    },
+    "privacy": {
+      "$ref": "#/$defs/privacy"
+    },
+    "cleanup": {
+      "$ref": "#/$defs/cleanup"
+    },
+    "runs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/run"
+      }
+    },
+    "selected_row_count": {
+      "const": 100
+    },
+    "public_selected_rows": {
+      "type": "array",
+      "minItems": 100,
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/publicRow"
+      }
+    },
+    "restricted_rows_artifact": {
+      "type": "object",
+      "required": [
+        "external_ref",
+        "sha256",
+        "row_count",
+        "privacy_class"
+      ],
+      "properties": {
+        "external_ref": {
+          "$ref": "#/$defs/externalRef"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "row_count": {
+          "$ref": "#/$defs/nonNegativeInt"
+        },
+        "privacy_class": {
+          "const": "restricted"
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z]:[\\\\/])(?!/)(?!\\\\)[^\\\\]+$"
+      }
+    },
+    "report_digest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "report_sha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "additionalProperties": false
+}
