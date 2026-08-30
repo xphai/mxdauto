@@ -311,6 +311,41 @@ def test_bright_core_is_independent_and_rejects_blue_edge_pixels() -> None:
     assert result.evidence.component_count == 0
 
 
+def test_compressed_yellow_core_uses_configured_limits() -> None:
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as directory:
+        store = PixelStore(directory)
+        result = MinimapMarkerExtractor(_config(), store).extract(
+            _frame(store, _pixels((40, 240, 240))), now_ns=200
+        )
+
+    assert result.status is MinimapMarkerStatus.CANDIDATE
+    assert result.marker is not None
+    assert result.marker.bright_core_pixels == 9
+
+
+def test_core_limits_are_serialized_and_tampering_is_rejected() -> None:
+    config = _config()
+    payload = config.to_dict()
+    assert payload["bright_b_max"] == 50
+    assert payload["bright_green_red_min"] == 220
+    assert payload["bright_saturation_min"] == 205
+    assert payload["bright_value_min"] == 240
+    assert MinimapMarkerConfig.from_dict(payload) == config
+
+    for field_name in (
+        "bright_b_max",
+        "bright_green_red_min",
+        "bright_saturation_min",
+        "bright_value_min",
+    ):
+        tampered = dict(payload)
+        tampered[field_name] = tampered[field_name] - 1
+        with pytest.raises(ValueError):
+            MinimapMarkerConfig.from_dict(tampered)
+
+
 def test_subject_id_is_fixed_anonymous_and_not_serialized_from_custom_identity() -> None:
     with pytest.raises(ValueError):
         MinimapMarkerConfig(geometry=_geometry(), subject_id="alice@example.com")

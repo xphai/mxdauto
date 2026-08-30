@@ -70,9 +70,13 @@ YELLOW_AREA_MIN = 3
 YELLOW_AREA_MAX = 120
 YELLOW_WIDTH_MAX = 20
 YELLOW_HEIGHT_MAX = 20
-YELLOW_BRIGHT_B_MAX = 10
-YELLOW_BRIGHT_GR_MAX = 245
-YELLOW_BRIGHT_SV_MIN = 245
+# These core limits are frozen in ``MinimapMarkerConfig`` below.  The module
+# constants provide only the immutable constructor defaults; extraction reads
+# the config fields so every threshold is digest-bound and serialised.
+YELLOW_BRIGHT_B_MAX = 50
+YELLOW_BRIGHT_GREEN_RED_MIN = 220
+YELLOW_BRIGHT_SATURATION_MIN = 205
+YELLOW_BRIGHT_VALUE_MIN = 240
 
 
 class PixelStoreReader(Protocol):
@@ -149,6 +153,10 @@ class MinimapMarkerConfig:
     saturation_min: int
     value_min: int
     bright_core_min: int
+    bright_b_max: int
+    bright_green_red_min: int
+    bright_saturation_min: int
+    bright_value_min: int
     green_red_ratio_min: float
     area_min: int
     area_max: int
@@ -179,6 +187,10 @@ class MinimapMarkerConfig:
         saturation_min: int = YELLOW_SATURATION_MIN,
         value_min: int = YELLOW_VALUE_MIN,
         bright_core_min: int = YELLOW_BRIGHT_CORE_MIN,
+        bright_b_max: int = YELLOW_BRIGHT_B_MAX,
+        bright_green_red_min: int = YELLOW_BRIGHT_GREEN_RED_MIN,
+        bright_saturation_min: int = YELLOW_BRIGHT_SATURATION_MIN,
+        bright_value_min: int = YELLOW_BRIGHT_VALUE_MIN,
         green_red_ratio_min: float = YELLOW_GREEN_RED_RATIO,
         area_min: int = YELLOW_AREA_MIN,
         area_max: int = YELLOW_AREA_MAX,
@@ -264,6 +276,18 @@ class MinimapMarkerConfig:
         _fixed_int(saturation_min, YELLOW_SATURATION_MIN, "saturation_min")
         _fixed_int(value_min, YELLOW_VALUE_MIN, "value_min")
         _fixed_int(bright_core_min, YELLOW_BRIGHT_CORE_MIN, "bright_core_min")
+        _fixed_int(bright_b_max, YELLOW_BRIGHT_B_MAX, "bright_b_max")
+        _fixed_int(
+            bright_green_red_min,
+            YELLOW_BRIGHT_GREEN_RED_MIN,
+            "bright_green_red_min",
+        )
+        _fixed_int(
+            bright_saturation_min,
+            YELLOW_BRIGHT_SATURATION_MIN,
+            "bright_saturation_min",
+        )
+        _fixed_int(bright_value_min, YELLOW_BRIGHT_VALUE_MIN, "bright_value_min")
         _fixed_float(green_red_ratio_min, YELLOW_GREEN_RED_RATIO, "green_red_ratio_min")
         _fixed_int(area_min, YELLOW_AREA_MIN, "area_min")
         _fixed_int(area_max, YELLOW_AREA_MAX, "area_max")
@@ -289,6 +313,10 @@ class MinimapMarkerConfig:
         object.__setattr__(self, "saturation_min", YELLOW_SATURATION_MIN)
         object.__setattr__(self, "value_min", YELLOW_VALUE_MIN)
         object.__setattr__(self, "bright_core_min", YELLOW_BRIGHT_CORE_MIN)
+        object.__setattr__(self, "bright_b_max", YELLOW_BRIGHT_B_MAX)
+        object.__setattr__(self, "bright_green_red_min", YELLOW_BRIGHT_GREEN_RED_MIN)
+        object.__setattr__(self, "bright_saturation_min", YELLOW_BRIGHT_SATURATION_MIN)
+        object.__setattr__(self, "bright_value_min", YELLOW_BRIGHT_VALUE_MIN)
         object.__setattr__(self, "green_red_ratio_min", YELLOW_GREEN_RED_RATIO)
         object.__setattr__(self, "area_min", YELLOW_AREA_MIN)
         object.__setattr__(self, "area_max", YELLOW_AREA_MAX)
@@ -364,6 +392,10 @@ class MinimapMarkerConfig:
             "saturation_min": self.saturation_min,
             "value_min": self.value_min,
             "bright_core_min": self.bright_core_min,
+            "bright_b_max": self.bright_b_max,
+            "bright_green_red_min": self.bright_green_red_min,
+            "bright_saturation_min": self.bright_saturation_min,
+            "bright_value_min": self.bright_value_min,
             "green_red_ratio_min": self.green_red_ratio_min,
             "area_min": self.area_min,
             "area_max": self.area_max,
@@ -406,6 +438,10 @@ class MinimapMarkerConfig:
                 saturation_min=data.get("saturation_min", YELLOW_SATURATION_MIN),
                 value_min=data.get("value_min", YELLOW_VALUE_MIN),
                 bright_core_min=data.get("bright_core_min", YELLOW_BRIGHT_CORE_MIN),
+                bright_b_max=data["bright_b_max"],
+                bright_green_red_min=data["bright_green_red_min"],
+                bright_saturation_min=data["bright_saturation_min"],
+                bright_value_min=data["bright_value_min"],
                 green_red_ratio_min=data.get("green_red_ratio_min", YELLOW_GREEN_RED_RATIO),
                 area_min=data.get("area_min", YELLOW_AREA_MIN),
                 area_max=data.get("area_max", YELLOW_AREA_MAX),
@@ -1433,11 +1469,11 @@ class MinimapMarkerExtractor:
         # component mask.  Its count is joined to labels below in one ROI-wide
         # aggregation, so near-yellow edge pixels cannot satisfy the core rule.
         bright_core = (
-            (source_roi[:, :, 0] <= YELLOW_BRIGHT_B_MAX)
-            & (source_roi[:, :, 1] >= YELLOW_BRIGHT_GR_MAX)
-            & (source_roi[:, :, 2] >= YELLOW_BRIGHT_GR_MAX)
-            & (hsv[:, :, 1] >= YELLOW_BRIGHT_SV_MIN)
-            & (hsv[:, :, 2] >= YELLOW_BRIGHT_SV_MIN)
+            (source_roi[:, :, 0] <= self.config.bright_b_max)
+            & (source_roi[:, :, 1] >= self.config.bright_green_red_min)
+            & (source_roi[:, :, 2] >= self.config.bright_green_red_min)
+            & (hsv[:, :, 1] >= self.config.bright_saturation_min)
+            & (hsv[:, :, 2] >= self.config.bright_value_min)
         )
         labels_count, labels, stats, centroids = cv2.connectedComponentsWithStats(
             mask.astype(np.uint8), connectivity=8
@@ -1728,7 +1764,11 @@ __all__ = [
     "YELLOW_AREA_MIN",
     "YELLOW_BGR",
     "YELLOW_BGR_TOLERANCE",
+    "YELLOW_BRIGHT_B_MAX",
     "YELLOW_BRIGHT_CORE_MIN",
+    "YELLOW_BRIGHT_GREEN_RED_MIN",
+    "YELLOW_BRIGHT_SATURATION_MIN",
+    "YELLOW_BRIGHT_VALUE_MIN",
     "YELLOW_GREEN_RED_RATIO",
     "YELLOW_HEIGHT_MAX",
     "YELLOW_HUE_MAX",
