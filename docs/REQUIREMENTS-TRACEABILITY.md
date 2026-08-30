@@ -3,7 +3,7 @@
 > **状态截止**：2026-08-30
 > **战略负责人**：5.6Sol Ultra  
 > **战术包负责人**：5.6 Luna max  
-> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（完整 `G1-FRM-001`=`Completed`；`G1-OBS-002A`=`In Progress`；完整 `G1-OBS-002` 未完成）
+> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（完整 `G1-FRM-001`=`Completed`；`G1-OBS-002A`=`Completed`；完整 `G1-OBS-002`=`In Progress`）
 
 ## 1. 用途与来源
 
@@ -36,8 +36,8 @@
 | REQ-ENV-001 | 双机 Windows 环境：控制端采集/决策，游戏端 receiver | `COLLECTION_ANALYSIS.md` §2/§4/§8 | G2、G3、G6 | 控制端 clean report、游戏端无 Python receiver clean report、租约/双写审计、双机安装矩阵 | Legacy 曾以 `10.66.0.1 → 10.66.0.2:27183` 联通；Core v2 receiver/HIL/clean 报告为空 | `CANDIDATE` |
 | REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | B2 canonical source `37e57b9662fa3d061e840d4b9c86ab89efe24f2f`、wheel `62b3b2f3...b273f`；300 秒 hardware PASS（8,999 capture / 4,499 admitted，29.996666 / 14.996666 FPS），300 unique corpus、full CAS/provenance/privacy/zero-input 与 Candidate verifier PASS。Issue #13 六角色批准；PR #15 / merge `fe29a4c...` / PR run `33283195258` / main outer run `33283646596` 已绑定，完整 FrameSource 已完成；G3/G4 现场要求仍待后续 Gate | `PARTIAL-G1-FRM` |
 | REQ-UI-001 | 目标客户端模板隔离；桌面坐标经内容矩形转为 `1366×768` 归一化坐标 | `REQUIREMENTS_CONFIRMED.md` §1/§5 | G1、G5 | Profile/模板 manifest、geometry/calibration hash、窗口偏移 Replay、每 workflow UI fixture | 已合并的 `G1-FRM-001A` 固定 `1920×1080 → [277,167,1366,768] → 1296×700` 并生成 geometry/calibration identity；真实窗口偏移与 UI/rune workflow 仍待后续包 | `PARTIAL-G1-FRM` + `PARTIAL-DATA` |
-| REQ-CV-001 | YOLO monster 检测，ONNX 优先，GPU 推理并保留 CPU 回退，类别/阈值/ROI 可追溯 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G4 | Model Card、人工真值会话隔离 split、部署 ONNX P/R、PT/ONNX 差、GPU/CPU parity、负样本、Replay/Shadow | DEC-001 选择 `best_forest_v3-candidate`、`[mob]`、`640×640`；G1-OBS-002A 已形成 ModelBinding、确定性 preprocess 与 fake backend 边界；真实 ONNX、NMS、P/R、GPU/CPU 报告仍为空 | `DONE-L1 contract/component` / runtime `CANDIDATE` |
-| REQ-CV-002 | 模型加载失败时抑制动作并记录原因 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G2 | 模型缺失/hash/class/input mismatch 故障 fixture；WorldState unknown；ActionSpec 数为 0；FaultEvent | G1-OBS-002A 已实现有限 fault、`plan_suppressed=true` 与 backend 前置调用 0；WorldState/Event Tape/Action 下游证据仍待后继包 | `DONE-L1 observation boundary` / downstream `MISSING` |
+| REQ-CV-001 | YOLO monster 检测，ONNX 优先，GPU 推理并保留 CPU 回退，类别/阈值/ROI 可追溯 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G4 | Model Card、人工真值会话隔离 split、部署 ONNX P/R、PT/ONNX 差、GPU/CPU parity、负样本、Replay/Shadow | `G1-OBS-002A=Completed`，已形成 ModelBinding、确定性 preprocess 与 fake backend 边界；真实 ONNX、NMS、P/R、GPU/CPU 报告仍为空 | `DONE-L1 contract/component` / runtime `CANDIDATE` |
+| REQ-CV-002 | 模型加载失败时抑制动作并记录原因 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G2 | 模型缺失/hash/class/input mismatch 故障 fixture；WorldState unknown；ActionSpec 数为 0；FaultEvent | `G1-OBS-002A=Completed`，已实现有限 fault、`plan_suppressed=true` 与 backend 前置调用 0；WorldState/Event Tape/Action 下游证据仍待后继包 | `DONE-L1 observation boundary` / downstream `MISSING` |
 | REQ-LOC-001 | 本人位置、地图/平台坐标和时序一致性 | 原始自动打怪需求；`COLLECTION_ANALYSIS.md` §6 | G1、G4 | 人工 truth、坐标变换版本、4 个定位边界回归、100 圈、身份切换 0 | Core v2 有坐标/WorldState 契约；Legacy cache 最近可见 4 个投影失败节点，后续完整报告为空 | `DONE-L1 contract` / runtime `MISSING` |
 | REQ-FUN-001 | 自动移动与打怪 | `REQUIREMENTS_CONFIRMED.md` §2/§4 | G1→G4 | Golden plan、Shadow diff、Action lifecycle、Canary、5×4h session、本人误攻击 0 | DEC-001 冻结方向键、`attack=a`、`jump=alt`；只有 Action 数据类型，无 Planner/Controller/现场 | `MISSING` |
 | REQ-FUN-002 | 自动补 HP/MP | `REQUIREMENTS_CONFIRMED.md` §2/§4；`MEDIA_REVIEW.md` §1/§3F | G4 | 静态 ROI truth、服药前后动态 fixture、cooldown/失败谓词、Replay/Canary/field | 多档 HP/MP 静态截图已有；服药动态样本仍缺；DEC-001 冻结 Insert/Delete | `PARTIAL-DATA` |
@@ -67,7 +67,7 @@
 |---|---|---|
 | G-1 | Pilot、匿名 Profile、输入所有权、原始范围映射 | **战略封存完成**：ADR-004、DEC-001 和本矩阵已形成 |
 | G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **PASS**：工程/失败链、branch protection、required `quality`、PR #1、Owner countersign 与 main post-merge run 已闭环 |
-| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：完整 `G1-FRM-001` 已 Completed；`G1-OBS-002A` 正在实施确定性 Observation 基础；真实 backend/evaluation、LOC/WST/Planner/完整 Shadow 仍待完成 |
+| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：完整 `G1-FRM-001` 已 Completed；`G1-OBS-002A` 已 Completed；真实 backend/evaluation、LOC/WST/Planner/完整 Shadow 仍待完成 |
 | G2 | INP-001/002/003、SAFE-001/002、NFR-001 的 simulator/HIL | 未开始 |
 | G3 | FUN-001 + 输入租约的单图有界现场 | 未开始；Core v2 现场 session 为 0 |
 | G4 | Pilot 打怪、HP/MP、安全、4 小时 Certified | 未开始 |
@@ -95,7 +95,7 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 | G1-FRM-001 | 001A synthetic admission、001B1 software foundation、001B2 hardware/corpus/Candidate、Issue #13 六角色会签与 Gate Charter 已闭环 | PR #15 / merge `fe29a4c...` / PR run `33283195258` / main outer run `33283646596` 已绑定；下一包为 `G1-OBS-002` | `Completed`，真实输入 0 |
 | G1-FRM-001B1 | Pixel V1/CAS、raw capacity=1、VC-003 adapter/fake backend、Legacy local snapshot provenance、corpus/truth 工具、Event Tape、stress、schemas/verifiers、Python 3.12 CI wheel；PR #5 原始实现，PR #7～#10 hardening | B2 使用 source `37e57b9...` 的精确 wheel；本包本身不产生 hardware PASS | `Completed`，真实输入 0 |
 | G1-FRM-001B2 | source `37e57b9...` 的 300 秒 VC-003 smoke、4-session/300-sample corpus、3-run replay、4 Event Tapes、CAS/provenance/privacy/zero-input 与会签版 G1 Frame Candidate packet | packaging PR #11 / P=`72c3ad0...` / outer run `33258468278`；Issue #13 六角色批准；PR #15 / merge `fe29a4c...` / main outer run `33283646596` success；`ci-evidence` digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c` | `Completed`，真实输入 0 |
-| G1-OBS-002A | Observation/Detection/ModelBinding/Fault 契约；Pixel V1→crop/resize→ROI/letterbox；fake detector、provider/shape/hash fail-closed 与 working-space 逆投影 | 真实 ONNX runtime、NMS/temporal、人工 truth、P/R、GPU/CPU parity、Replay/Shadow 与完整 OBS Gate | `In Progress`，真实输入 0 |
+| G1-OBS-002A | Observation/Detection/ModelBinding/Fault 契约；Pixel V1→crop/resize→ROI/letterbox；fake detector、provider/shape/hash fail-closed 与 working-space 逆投影 | 真实 ONNX runtime、NMS/temporal、人工 truth、P/R、GPU/CPU parity、Replay/Shadow 与完整 OBS Gate | `Completed`，真实输入 0 |
 
 `G1-FRM-001` 的完整审计矩阵见
 [`docs/gates/G1-FRM-001-GATE-CHARTER.md`](gates/G1-FRM-001-GATE-CHARTER.md)。组织会签入口
@@ -127,7 +127,14 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 - Candidate：`evidence/g1-frame-candidate-20260829/g1-frame-candidate-packet.json`，会签版 packet digest `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`；metadata-only、clean-checkout 与受控 full-root verification 均 PASS。
 - Outer seal：PR [#11](https://github.com/xphai/mxdauto/pull/11)；PR run [`33258100541`](https://github.com/xphai/mxdauto/actions/runs/33258100541) success；P=`72c3ad081db33d083fdcd5a5e0f62e73f886c233`；outer main run [`33258468278`](https://github.com/xphai/mxdauto/actions/runs/33258468278) success，Candidate conditional verifier 实际执行并通过。
 - 会签/SCM：Issue #13 六角色均由 `owner-xphai` 批准；PR [#15](https://github.com/xphai/mxdauto/pull/15) / PR run [`33283195258`](https://github.com/xphai/mxdauto/actions/runs/33283195258) success / merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38` / main outer run [`33283646596`](https://github.com/xphai/mxdauto/actions/runs/33283646596) attempt 1 success / `ci-evidence` digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。
-- 边界：raw Pixel CAS/视觉 review sheet 保持私有；overall G1 仍 `In Progress`，`G1-OBS-002A` 正在实施且完整 OBS 尚未完成，`input_owner=legacy`，Core v2 真实输入为 0。
+- 边界：raw Pixel CAS/视觉 review sheet 保持私有；overall G1 仍 `In Progress`，`G1-OBS-002A` 已完成且完整 OBS 尚未完成，`input_owner=legacy`，Core v2 真实输入为 0。
+
+### G1-OBS-002A 合并封存证据
+
+- 实现 PR：[#17](https://github.com/xphai/mxdauto/pull/17)；source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`；PR run [`33286071567`](https://github.com/xphai/mxdauto/actions/runs/33286071567) `success`；merge commit `1ccbceb79113a0322112b08d1a42a33dcacccad6`。
+- PR artifacts（SHA-256 前缀）：`g1-frame-source-b1=0cc18e...`、`frame-admission=6eee1f...`、`checkout=6a27b8...`、`ci-evidence=b7ca02...`、`build=ca6724...`、`quality=ee798f...`。
+- main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1 在 cacheless checkout regression 中暴露两项 capture-stress 时序偶发失败（541 passed / 2 failed，coverage 93.47%），已隔离；attempt 2 对同一 merge commit 完整重跑并 `success`。attempt 2 artifacts（SHA-256）：`g1-frame-source-b1=43d4f7a4735c6c151876a0d668aea4309679baa75ea2a8dab02e601194f0c922`、`frame-admission=82f8199ad80e0eab8c2f8ca04e225376f683152be983b23d31dac6d4c310c9ea`、`checkout=68db7194d87a072b9559364b204791dcbd9804be6073d45a83fee0204549f2d3`、`ci-evidence=6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`、`build=d6b92239401aefe5625addcd028788831f36a546b225d8471d41f3dbe787e7b3`、`quality=e369a9e70bf3475170cc086fbd308e19c40cc41b4b89ce998cfaa4f4581fa421`。
+- 本包已 `Completed`；完整 `G1-OBS-002`、整体 G1 与 G1 Gate 仍为 `In Progress`；`input_owner=legacy`，Core v2 real input calls=0。
 
 ## 7. 维护规则
 
