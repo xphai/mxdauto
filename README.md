@@ -79,7 +79,7 @@
 - 已接入 fail-closed `OnnxDetectorBackend` 与严格的 provider/tensor contract；实际 provider 为 `CPUExecutionProvider`，ONNX Runtime 为 `1.23.2`。
 - 外部模型不入仓：model relative id 为 `weights/best_forest_v3.onnx`，SHA-256 为 `b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4`；classes SHA-256 为 `07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884`。
 - Windows CPython 3.12 ORT wheel SHA-256 为 `25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435`；真实 CPU smoke 连续 3 次的 raw ONNX output digest 均为 `2c6a6f02f1c2c3b59179097a6590194c3f130ca309c979b7bde8ee07b9de830e`，Observation `result_digest` 均为 `fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20`。
-- portable report 位于 `evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json`，绑定 source commit `cde7cc969a4a4d2508199460420cc8fc1ed4427f`，report digest 为 `17a2c15edb910096c93d7d4bdbeb9d7e114033ef530861eea9243ec5fcaf669d`。
+- portable report 位于 `evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json`，绑定 source commit `672ec53327ea79f6ef3bd530f97a3006bd668aff`，report digest 为 `4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6`。
 - 输入审计保持 `input_owner=legacy`、`real_input_call_count=0`、`double_write_event_count=0`；本节完成不等于实机捕获或完整 `G1-OBS-002`。详见 [`docs/tactical/G1-OBS-002B-onnx-backend.md`](docs/tactical/G1-OBS-002B-onnx-backend.md)。
 
 ### 当前阶段的输入边界

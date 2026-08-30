@@ -12,9 +12,9 @@
 | status | `Completed (code + external-asset smoke)` |
 | dependency | `G1-OBS-002A=Completed`；ADR-007、ADR-013、DEC-001 |
 | input boundary | `input_owner=legacy`；`real_input_call_count=0`；`double_write_event_count=0` |
-| source commit | `cde7cc969a4a4d2508199460420cc8fc1ed4427f` |
+| source commit | `672ec53327ea79f6ef3bd530f97a3006bd668aff` |
 | evidence report | `evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json` |
-| report digest | `17a2c15edb910096c93d7d4bdbeb9d7e114033ef530861eea9243ec5fcaf669d` |
+| report digest | `4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6` |
 
 ## 2. 目标与边界
 
@@ -68,7 +68,7 @@ InputSink、receiver、键鼠、窗口和 Legacy 输入所有权不得接入或�
 | model SHA-256 | `b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4` |
 | classes | `[mob]` |
 | classes SHA-256 | `07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884` |
-| provider | requested and actual `CPUExecutionProvider` |
+| provider | requested/actual 均为 `CPUExecutionProvider`；runtime inventory 必须精确为 `[CPUExecutionProvider]`，禁止 fallback |
 | ONNX Runtime | `1.23.2`；Windows CPython 3.12 wheel SHA-256 `25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435` |
 | input contract | `images`；float32 NCHW `[1,3,640,640]` |
 | output contract | `output0`；float32 `[1,5,8400]` |
@@ -90,8 +90,8 @@ Observation。`output0` 的 feature 轴保持 ADR-013 定义，当前包不执�
 | backend | ONNX backend code path 已完成，provider 与 input/output contract fail-closed |
 | external assets | model/classes 以仓库外受控资产加载并按上述 SHA-256 校验 |
 | CPU smoke | 真实 CPU `3` 次运行；三次 raw ONNX output digest 一致：`2c6a6f02f1c2c3b59179097a6590194c3f130ca309c979b7bde8ee07b9de830e`；三次 Observation `result_digest` 一致：`fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20` |
-| portable report | `PASS`；source `cde7cc969a4a4d2508199460420cc8fc1ed4427f`；report digest `17a2c15edb910096c93d7d4bdbeb9d7e114033ef530861eea9243ec5fcaf669d` |
-| artifact binding | tool `c0b3c22af6f509ffde9ebcc6e887610496028c36ab32cdf338eb4455a8fbb365`；schema `17ca3435f7a95274471a2386c6ceaab9b52739350d2caf987db60478c3fd525b`；lock `b512b0cac28dd0c73c2cf34733d8b76bd3dcb92432946603c93c0ffa19da5be9` |
+| portable report | `PASS`；source `672ec53327ea79f6ef3bd530f97a3006bd668aff`；report digest `4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6` |
+| artifact binding | tool `e56866ef91ae3f5b5fd704956ec345ac7c418117ecacc30fe39f5bcd665fcdd9`；schema `bd0ef5d909d31726f1763f3caa8cc6de0bee24b8f8b1244d4aa70378b5dbed3a`；lock `b512b0cac28dd0c73c2cf34733d8b76bd3dcb92432946603c93c0ffa19da5be9` |
 | preprocess digest | 三次一致：`d85c25d9fedb84179fb0c5bbcf37b358963d1d009e5cdc657c0583f900c8b434` |
 | tensor digest | 三次一致：`dcedfa517bd079f4933c6db6ec7aebee53178575affe4af1a33364a8f6d3b7f9` |
 | input audit | `input_owner=legacy`；`real_input_call_count=0`；`double_write_event_count=0` |
@@ -133,7 +133,7 @@ python tools/run_observation_smoke.py `
 - observed_at: `2026-08-30`
 - source_type: command
 - source_ref: `evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json`；`tools/run_observation_smoke.py`；本节 §5.2
-- content_hash: report `17a2c15edb910096c93d7d4bdbeb9d7e114033ef530861eea9243ec5fcaf669d`；raw ONNX output `2c6a6f02f1c2c3b59179097a6590194c3f130ca309c979b7bde8ee07b9de830e`；Observation `result_digest` `fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20`；preprocess `d85c25d9fedb84179fb0c5bbcf37b358963d1d009e5cdc657c0583f900c8b434`；tensor `dcedfa517bd079f4933c6db6ec7aebee53178575affe4af1a33364a8f6d3b7f9`
+- content_hash: report `4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6`；raw ONNX output `2c6a6f02f1c2c3b59179097a6590194c3f130ca309c979b7bde8ee07b9de830e`；Observation `result_digest` `fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20`；preprocess `d85c25d9fedb84179fb0c5bbcf37b358963d1d009e5cdc657c0583f900c8b434`；tensor `dcedfa517bd079f4933c6db6ec7aebee53178575affe4af1a33364a8f6d3b7f9`
 - repro_command: 见本文件 §5.2；需要仓库外受控 model/classes/config roots
 - raw_excerpt: `CPUExecutionProvider × 3; raw ONNX output digest and Observation result_digest equal across runs; input_owner=legacy; real_input_call_count=0; double_write_event_count=0`
 - linked_workitem: `G1-OBS-002B`

@@ -295,8 +295,8 @@ rollback_release_id
 | G1-OBS-002B | fail-closed ONNX backend、外部 model/classes/runtime hash 绑定、CPU observation smoke | G1-OBS-002A、ADR-013、DEC-001 | Sol-U 晋级规则；Luna-M 实现 | **Completed（代码/外部资产烟测）**：3 次 CPU smoke 的 raw ONNX output digest 一致；Observation result digest 一致；真实输入仍为 0；不等于实机捕获或完整 OBS Gate |
 
 002B portable report 为 `evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json`：source
-`cde7cc969a4a4d2508199460420cc8fc1ed4427f`，report digest
-`17a2c15edb910096c93d7d4bdbeb9d7e114033ef530861eea9243ec5fcaf669d`；报告绑定
+`672ec53327ea79f6ef3bd530f97a3006bd668aff`，report digest
+`4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6`；报告绑定
 tool/schema/runtime lock/ModelBinding，模型字节与绝对路径不入仓。
 | G1-LOC-003 | 玩家身份、地图/平台坐标、置信度和未知态；所有变换携带版本 | G1-OBS | Sol-U 不变量；Luna-M 实现 | 未开始 |
 | G1-WST-004 | 纯函数式 WorldState reducer、clock/randomness 注入、状态版本与 provenance | G1-OBS、LOC | Sol-U 契约；Luna-M 实现 | 未开始 |

@@ -270,5 +270,5 @@ def test_published_cpu_smoke_report_verifies() -> None:
     report = json.loads(path.read_text(encoding="utf-8"))
 
     assert report["status"] == "PASS"
-    assert report["source_commit"] == "cde7cc969a4a4d2508199460420cc8fc1ed4427f"
+    assert report["source_commit"] == "672ec53327ea79f6ef3bd530f97a3006bd668aff"
     validate_report(report)

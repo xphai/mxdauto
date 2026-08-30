@@ -114,8 +114,8 @@ provider fallback、人工会话隔离 truth、P/R 和 Model Card 仍由后续�
 ONNX output digest，不是 Observation result digest，也不是实机帧/捕获 session digest。
 
 portable report `evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json` 绑定 source
-`cde7cc969a4a4d2508199460420cc8fc1ed4427f` 与 report digest
-`17a2c15edb910096c93d7d4bdbeb9d7e114033ef530861eea9243ec5fcaf669d`；ModelBinding digest 为
+`672ec53327ea79f6ef3bd530f97a3006bd668aff` 与 report digest
+`4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6`；ModelBinding digest 为
 `5d19b9d3c28eab8840ee182672d8f3c1e608af56781a3a95b4d74164daa73060`。
 
 输入审计保持 `input_owner=legacy`、`real_input_call_count=0`、`double_write_event_count=0`。模型与

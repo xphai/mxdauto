@@ -143,7 +143,7 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 - backend：fail-closed ONNX backend；请求与实际 provider 均为 `CPUExecutionProvider`；输入 `images` float32 NCHW `[1,3,640,640]`，输出 `output0` float32 `[1,5,8400]`。
 - 外部绑定：model relative id=`weights/best_forest_v3.onnx`，SHA-256=`b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4`；classes SHA-256=`07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884`；Windows CPython 3.12 ORT 1.23.2 wheel SHA-256=`25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435`；模型与 classes 字节不入仓。
 - smoke：真实 CPU 连续 3 次运行；三次 raw ONNX output digest 均为 `2c6a6f02f1c2c3b59179097a6590194c3f130ca309c979b7bde8ee07b9de830e`，三次 Observation `result_digest` 均为 `fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20`。
-- portable report：`evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json`，source `cde7cc969a4a4d2508199460420cc8fc1ed4427f`，report digest `17a2c15edb910096c93d7d4bdbeb9d7e114033ef530861eea9243ec5fcaf669d`；严格 verifier 绑定 tool/schema/lock/ModelBinding。
+- portable report：`evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json`，source `672ec53327ea79f6ef3bd530f97a3006bd668aff`，report digest `4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6`；严格 verifier 绑定 tool/schema/lock/ModelBinding。
 - 输入审计与边界：`input_owner=legacy`、`real_input_call_count=0`、`double_write_event_count=0`；该证据只关闭代码/外部资产烟测，不构成实机捕获、模型 P/R、完整 `G1-OBS-002` 或整体 G1 PASS。
 
 ## 7. 维护规则
