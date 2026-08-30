@@ -8,8 +8,17 @@ from typing import Any, cast
 
 import pytest
 
-from maple_automation_core.capture.pixel_store import PixelSpec, PixelStore, pixel_digest
-from maple_automation_core.capture.vc003_source import VC003RawFrame, VC003SourceConfig
+from maple_automation_core.capture.pixel_store import (
+    PixelArtifact,
+    PixelSpec,
+    PixelStore,
+    pixel_digest,
+)
+from maple_automation_core.capture.vc003_source import (
+    VC003RawFrame,
+    VC003Source,
+    VC003SourceConfig,
+)
 from maple_automation_core.domain.frame import FrameSize, SourceRect
 from maple_automation_core.replay.vc003_live_marker import (
     BUCKET_DURATION_NS,
@@ -339,3 +348,66 @@ def test_fail_closed_summary_contains_no_sensitive_payload() -> None:
     assert body["absolute_paths_public"] is False
     assert "pixels" not in body
     assert "path" not in body
+
+
+def test_capacity_one_cas_is_a_volatile_pixel_store_with_real_artifact() -> None:
+    cas = CapacityOneMemoryCAS()
+    spec = PixelSpec(width=2, height=1)
+    pixels = b"\x01\x02\x03\x04\x05\x06"
+    digest = pixel_digest(spec, pixels)
+
+    assert isinstance(cas, PixelStore)
+    artifact = cas.put_artifact(
+        spec,
+        pixels,
+        privacy_class="restricted",
+        retention_class="candidate",
+        source_provenance_id="vc003-live",
+        session_id="session-a",
+        source_sequence=1,
+        expected_pixel_digest=digest,
+    )
+    assert isinstance(artifact, PixelArtifact)
+    assert artifact.pixel_digest == digest
+    assert artifact.ref == f"cas://sha256/{digest}"
+    assert cas.artifact(digest) is artifact
+    assert cas.read(digest, spec) == pixels
+
+
+def test_vc003_source_accepts_capacity_one_cas_without_temporary_storage() -> None:
+    cas = CapacityOneMemoryCAS()
+    source = VC003Source(VC003SourceConfig(source_geometry=None), pixel_store=cas)
+
+    assert source.pixel_store is cas
+    assert source._temporary_cas is None
+
+
+def test_runner_reuses_source_capacity_one_cas_for_extractor_and_poll_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cas = CapacityOneMemoryCAS()
+    source = VC003Source(VC003SourceConfig(source_geometry=None), pixel_store=cas)
+    seen: list[float] = []
+
+    def read(*, timeout: float = 0.0, **_kwargs: object) -> None:
+        seen.append(timeout)
+        return None
+
+    monkeypatch.setattr(source, "read", read)
+    runner = VC003LiveMarkerRunner(
+        source,
+        source_config=source.config,
+        pixel_store=cas,
+        clock=lambda: 1_000,
+    )
+
+    assert runner.source_store is cas
+    assert runner.memory_cas is cas
+    assert runner.extractor.pixel_store is runner.read_only_store
+    assert runner.read_only_store._store is cas
+
+    admission, outcome = runner.poll(now_ns=1_000, timeout_s=0.05)
+    assert admission.packet is None
+    assert isinstance(outcome, VC003FailClosedSummary)
+    assert outcome.code == "admission_no_frame"
+    assert seen == [0.05]

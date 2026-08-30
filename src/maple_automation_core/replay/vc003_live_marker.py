@@ -36,6 +36,9 @@ from maple_automation_core.capture.pixel_store import (
     pixel_digest,
     validate_pixels,
 )
+from maple_automation_core.capture.pixel_store import (
+    encoded_sha256 as encoded_payload_sha256,
+)
 from maple_automation_core.capture.vc003_source import VC003Source, VC003SourceConfig
 from maple_automation_core.domain.frame import FramePacket, FrameSize, SourceGeometry, SourceRect
 from maple_automation_core.localization.minimap_marker import (
@@ -407,11 +410,11 @@ class MemoryCASArtifact:
 
 @dataclass(frozen=True, slots=True)
 class _MemoryEntry:
-    artifact: MemoryCASArtifact
+    artifact: PixelArtifact
     data: bytes = field(repr=False, compare=False)
 
 
-class CapacityOneMemoryCAS:
+class CapacityOneMemoryCAS(PixelStore):
     """Thread-safe, capacity-one volatile pixel CAS.
 
     ``put`` atomically replaces the current sample.  ``retain_selected``
@@ -422,6 +425,10 @@ class CapacityOneMemoryCAS:
     capacity = 1
 
     def __init__(self) -> None:
+        # Do not call ``PixelStore.__init__``: this implementation deliberately
+        # has no root and never creates a directory or a backing file.  The
+        # subclass relationship is required by VC003Source's strict storage
+        # boundary, while every storage operation below remains in memory.
         self._lock = RLock()
         self._entry: _MemoryEntry | None = None
         self._superseded_count = 0
@@ -438,18 +445,30 @@ class CapacityOneMemoryCAS:
             return spec_or_pixels, validate_pixels(spec_or_pixels, pixels_or_spec)
         if isinstance(pixels_or_spec, PixelSpec):
             return pixels_or_spec, validate_pixels(pixels_or_spec, spec_or_pixels)
+        if pixels_or_spec is None:
+            return FULL_FRAME_PIXEL_SPEC, validate_pixels(FULL_FRAME_PIXEL_SPEC, spec_or_pixels)
         raise TypeError("put expects (PixelSpec, pixels) or (pixels, PixelSpec)")
 
-    def put(
+    def _make_artifact(
         self,
         spec_or_pixels: PixelSpec | object,
-        pixels_or_spec: object | PixelSpec | None = None,
+        pixels_or_spec: object | None,
         *,
-        source_provenance_id: str = "unknown",
-        session_id: str = "unknown",
-        source_sequence: int = 0,
-        expected_pixel_digest: str | None = None,
-    ) -> str:
+        encoded_bytes: object | None,
+        encoded_sha256: str | None,
+        encoded_hash: str | None,
+        storage_encoding: str,
+        encoded_size: int | None,
+        privacy_class: str,
+        retention_class: str,
+        source_provenance_id: str,
+        session_id: str,
+        source_sequence: int,
+        parent_pixel_digest: str | None,
+        transform_version: str | None,
+        calibration_sha256: str | None,
+        expected_pixel_digest: str | None,
+    ) -> tuple[PixelArtifact, bytes]:
         spec, data = self._arguments(spec_or_pixels, pixels_or_spec)
         digest = pixel_digest(spec, data)
         if (
@@ -457,23 +476,157 @@ class CapacityOneMemoryCAS:
             and _sha256(expected_pixel_digest, "expected_pixel_digest") != digest
         ):
             raise VC003LiveMarkerValidationError("expected pixel digest does not match bytes")
+
+        # Match PixelStore's source-container argument contract even though
+        # this CAS retains only canonical raw pixels.  The raw backing hash is
+        # still emitted in the returned PixelArtifact, while encoded source
+        # evidence remains hash/size metadata only.
+        source_encoded_digest: str | None = None
+        source_encoded_size: int | None = None
+        if encoded_bytes is not None:
+            source_encoded_digest = encoded_payload_sha256(encoded_bytes)
+            encoded_view = memoryview(cast(Any, encoded_bytes))
+            try:
+                source_encoded_size = len(encoded_view.cast("B"))
+            except (TypeError, ValueError) as exc:
+                raise TypeError("encoded payload must expose a contiguous byte buffer") from exc
+            finally:
+                encoded_view.release()
+            if encoded_size is not None and encoded_size != source_encoded_size:
+                raise ValueError("encoded_size does not match encoded_bytes")
+        if encoded_sha256 is not None:
+            supplied = _sha256(encoded_sha256, "encoded_sha256")
+            if source_encoded_digest is not None and supplied != source_encoded_digest:
+                raise VC003LiveMarkerValidationError("encoded_sha256 does not match encoded_bytes")
+            source_encoded_digest = supplied
+        if encoded_hash is not None:
+            supplied_hash = _sha256(encoded_hash, "encoded_hash")
+            if source_encoded_digest is not None and supplied_hash != source_encoded_digest:
+                raise VC003LiveMarkerValidationError("encoded_hash does not match encoded payload")
+            source_encoded_digest = supplied_hash
+        if source_encoded_digest is not None:
+            if encoded_size is None and source_encoded_size is None:
+                raise ValueError("encoded_size is required when only an encoded hash is supplied")
+            if source_encoded_size is None:
+                source_encoded_size = encoded_size
+        elif encoded_size is not None:
+            raise ValueError("encoded_size requires encoded source bytes or hash")
+
         provenance = _token(source_provenance_id, "source_provenance_id")
         session = _token(session_id, "session_id")
         sequence = _non_negative(source_sequence, "source_sequence")
-        artifact = MemoryCASArtifact(
+        artifact = PixelArtifact(
             pixel_digest=digest,
             spec=spec,
             byte_length=len(data),
+            # An empty path makes the volatile nature explicit.  ``ref`` is
+            # still the canonical cas://sha256/<digest> identity used by the
+            # source and frame packet contracts.
+            path="",
+            encoded_sha256=encoded_payload_sha256(data),
+            storage_encoding=storage_encoding,
+            encoded_size=len(data),
+            source_encoded_sha256=source_encoded_digest,
+            source_encoded_size=source_encoded_size,
+            privacy_class=privacy_class,
+            retention_class=retention_class,
             source_provenance_id=provenance,
             session_id=session,
             source_sequence=sequence,
+            parent_pixel_digest=parent_pixel_digest,
+            transform_version=transform_version,
+            calibration_sha256=calibration_sha256,
         )
+        return artifact, data
+
+    def _store_artifact(self, artifact: PixelArtifact, data: bytes) -> None:
         with self._lock:
             if self._entry is not None:
                 self._superseded_count += 1
             self._entry = _MemoryEntry(artifact=artifact, data=bytes(data))
             self._put_count += 1
-        return digest
+
+    def put(
+        self,
+        spec_or_pixels: PixelSpec | object,
+        pixels_or_spec: object | PixelSpec | None = None,
+        *,
+        encoded_bytes: object | None = None,
+        encoded_sha256: str | None = None,
+        encoded_hash: str | None = None,
+        storage_encoding: str = "raw",
+        encoded_size: int | None = None,
+        privacy_class: str = "private",
+        retention_class: str = "persistent",
+        source_provenance_id: str = "unknown",
+        session_id: str = "unknown",
+        source_sequence: int = 0,
+        parent_pixel_digest: str | None = None,
+        transform_version: str | None = None,
+        calibration_sha256: str | None = None,
+        expected_pixel_digest: str | None = None,
+    ) -> str:
+        artifact, data = self._make_artifact(
+            spec_or_pixels,
+            pixels_or_spec,
+            encoded_bytes=encoded_bytes,
+            encoded_sha256=encoded_sha256,
+            encoded_hash=encoded_hash,
+            storage_encoding=storage_encoding,
+            encoded_size=encoded_size,
+            privacy_class=privacy_class,
+            retention_class=retention_class,
+            source_provenance_id=source_provenance_id,
+            session_id=session_id,
+            source_sequence=source_sequence,
+            parent_pixel_digest=parent_pixel_digest,
+            transform_version=transform_version,
+            calibration_sha256=calibration_sha256,
+            expected_pixel_digest=expected_pixel_digest,
+        )
+        self._store_artifact(artifact, data)
+        return artifact.pixel_digest
+
+    def put_artifact(
+        self,
+        spec_or_pixels: PixelSpec | object,
+        pixels_or_spec: object | None = None,
+        *,
+        encoded_bytes: object | None = None,
+        encoded_sha256: str | None = None,
+        encoded_hash: str | None = None,
+        storage_encoding: str = "raw",
+        encoded_size: int | None = None,
+        privacy_class: str = "private",
+        retention_class: str = "persistent",
+        source_provenance_id: str = "unknown",
+        session_id: str = "unknown",
+        source_sequence: int = 0,
+        parent_pixel_digest: str | None = None,
+        transform_version: str | None = None,
+        calibration_sha256: str | None = None,
+        expected_pixel_digest: str | None = None,
+    ) -> PixelArtifact:
+        artifact, data = self._make_artifact(
+            spec_or_pixels,
+            pixels_or_spec,
+            encoded_bytes=encoded_bytes,
+            encoded_sha256=encoded_sha256,
+            encoded_hash=encoded_hash,
+            storage_encoding=storage_encoding,
+            encoded_size=encoded_size,
+            privacy_class=privacy_class,
+            retention_class=retention_class,
+            source_provenance_id=source_provenance_id,
+            session_id=session_id,
+            source_sequence=source_sequence,
+            parent_pixel_digest=parent_pixel_digest,
+            transform_version=transform_version,
+            calibration_sha256=calibration_sha256,
+            expected_pixel_digest=expected_pixel_digest,
+        )
+        self._store_artifact(artifact, data)
+        return artifact
 
     store = put
     write = put
@@ -496,7 +649,7 @@ class CapacityOneMemoryCAS:
     load = read
     read_pixels = read
 
-    def artifact(self, digest: str) -> MemoryCASArtifact:
+    def artifact(self, digest: str) -> PixelArtifact:
         expected = _sha256(digest, "digest")
         with self._lock:
             if self._entry is None or self._entry.artifact.pixel_digest != expected:
@@ -504,6 +657,27 @@ class CapacityOneMemoryCAS:
             return self._entry.artifact
 
     get_artifact = artifact
+    read_artifact = artifact
+
+    def occurrence(
+        self,
+        digest: str,
+        *,
+        source_provenance_id: str,
+        session_id: str,
+        source_sequence: int,
+    ) -> PixelArtifact:
+        artifact = self.artifact(digest)
+        if (
+            artifact.source_provenance_id != _token(source_provenance_id, "source_provenance_id")
+            or artifact.session_id != _token(session_id, "session_id")
+            or artifact.source_sequence != _non_negative(source_sequence, "source_sequence")
+        ):
+            raise VC003LiveMarkerValidationError("capacity-one CAS occurrence identity mismatch")
+        return artifact
+
+    get_occurrence = occurrence
+    read_occurrence = occurrence
 
     def exists(self, digest: str, spec: PixelSpec | None = None) -> bool:
         try:
@@ -530,7 +704,7 @@ class CapacityOneMemoryCAS:
             return None if self._entry is None else self._entry.artifact.pixel_digest
 
     @property
-    def latest(self) -> MemoryCASArtifact | None:
+    def latest(self) -> PixelArtifact | None:
         with self._lock:
             return None if self._entry is None else self._entry.artifact
 
@@ -574,11 +748,7 @@ class CapacityOneMemoryCAS:
         provenance = _token(source_provenance_id, "source_provenance_id")
         session = _token(session_id, "session_id")
         sequence = _non_negative(source_sequence, "source_sequence")
-        if (
-            provenance != entry_provenance
-            or session != entry_session
-            or sequence != entry_sequence
-        ):
+        if provenance != entry_provenance or session != entry_session or sequence != entry_sequence:
             raise VC003LiveMarkerValidationError(
                 "selected retention identity does not match the CAS occurrence"
             )
@@ -652,9 +822,7 @@ class VC003BucketSelection:
         _ensure_time(self.captured_at_ns, "captured_at_ns")
         _ensure_time(self.received_at_ns, "received_at_ns")
         if self.captured_at_ns > self.received_at_ns:
-            raise VC003LiveMarkerValidationError(
-                "captured_at_ns must not exceed received_at_ns"
-            )
+            raise VC003LiveMarkerValidationError("captured_at_ns must not exceed received_at_ns")
         _token(self.session_id, "session_id")
         _token(self.source_id, "source_id")
         _sha256(self.pixel_digest, "pixel_digest")
@@ -674,9 +842,7 @@ class VC003BucketSelection:
             raise VC003LiveMarkerValidationError("selection pixel_digest does not match packet")
         packet_received = _obj_attr(self.packet, "received_at_ns", default=None)
         if packet_received is not None and packet_received != self.received_at_ns:
-            raise VC003LiveMarkerValidationError(
-                "selection received_at_ns does not match packet"
-            )
+            raise VC003LiveMarkerValidationError("selection received_at_ns does not match packet")
 
     @property
     def frame(self) -> object:
@@ -1082,9 +1248,7 @@ class VC003SelectedRow:
         if self.checked_at_ns < self.admitted_at_ns or self.completed_at_ns < self.checked_at_ns:
             raise VC003LiveMarkerValidationError("row timestamps moved backwards")
         if self.captured_at_ns > self.admitted_at_ns:
-            raise VC003LiveMarkerValidationError(
-                "captured_at_ns must not exceed admitted_at_ns"
-            )
+            raise VC003LiveMarkerValidationError("captured_at_ns must not exceed admitted_at_ns")
         if self.generation != GENERATION:
             raise VC003LiveMarkerValidationError("generation is fixed at 0")
         for value, name in (
@@ -1377,9 +1541,7 @@ class VC003SelectedRow:
         if isinstance(artifact, PixelArtifact) and (
             artifact.privacy_class != "restricted" or artifact.retention_class != "candidate"
         ):
-            raise VC003LiveMarkerValidationError(
-                "selected artifact must be restricted/candidate"
-            )
+            raise VC003LiveMarkerValidationError("selected artifact must be restricted/candidate")
         status = _status(_result_attr(result, "status", default=None))
         evidence = _result_attr(result, "evidence", default=None)
         for actual, expected, name in (
@@ -1557,9 +1719,7 @@ class VC003RestrictedPrivateRow:
             self.artifact.privacy_class != "restricted"
             or self.artifact.retention_class != "candidate"
         ):
-            raise VC003LiveMarkerValidationError(
-                "restricted artifact must be restricted/candidate"
-            )
+            raise VC003LiveMarkerValidationError("restricted artifact must be restricted/candidate")
 
     @property
     def digest(self) -> str:
@@ -2244,6 +2404,12 @@ class VC003LiveMarkerRunner:
                 else None
             )
         )
+        # When the source already owns the volatile capacity-one CAS, reuse it
+        # for admission verification and extraction.  This keeps the live
+        # path source -> CAS -> read-only extractor at one in-memory slot
+        # instead of copying every delivered frame into a second CAS.
+        if memory_cas is None and isinstance(source_store, CapacityOneMemoryCAS):
+            memory_cas = source_store
         self.memory_cas = CapacityOneMemoryCAS() if memory_cas is None else memory_cas
         self.read_only_store = ReadOnlyPixelStore(self.memory_cas)
         self.extractor = MinimapMarkerExtractor(marker, self.read_only_store, clock=clock)
@@ -2323,14 +2489,15 @@ class VC003LiveMarkerRunner:
         source_store = self.source_store
         try:
             data = source_store.read(packet.content_hash, FULL_FRAME_PIXEL_SPEC)
-            self.memory_cas.put(
-                FULL_FRAME_PIXEL_SPEC,
-                data,
-                source_provenance_id=self.source_provenance_id,
-                session_id=packet.session_id,
-                source_sequence=packet.frame_id,
-                expected_pixel_digest=packet.content_hash,
-            )
+            if self.memory_cas is not source_store:
+                self.memory_cas.put(
+                    FULL_FRAME_PIXEL_SPEC,
+                    data,
+                    source_provenance_id=self.source_provenance_id,
+                    session_id=packet.session_id,
+                    source_sequence=packet.frame_id,
+                    expected_pixel_digest=packet.content_hash,
+                )
         except Exception as exc:
             return self._fail_closed(
                 packet, f"pixel_cas_{type(exc).__name__}", packet.source_geometry
@@ -2396,10 +2563,21 @@ class VC003LiveMarkerRunner:
         self,
         *,
         now_ns: int | None = None,
+        timeout_s: float = 0.05,
     ) -> tuple[FrameAdmissionResult, VC003SelectedRow | VC003FailClosedSummary | None]:
-        raw = self.source.read()
-        admission = self.adapter.ingest(raw, received_at_ns=now_ns)
-        return admission, self.process_admission(admission, checked_at_ns=now_ns)
+        if isinstance(timeout_s, bool) or not isinstance(timeout_s, int | float) or timeout_s < 0:
+            raise ValueError("timeout_s must be a non-negative number")
+        raw: RawFrame | None
+        if isinstance(self.source, VC003Source):
+            raw = self.source.read(timeout=float(timeout_s))
+        else:
+            # FrameSource.read() uses the adapter's ``now_ns`` spelling rather
+            # than a source wait timeout; retain that older protocol for
+            # injected sources while using timeout_s for the VC003 source.
+            raw = self.source.read()
+        observed_at_ns = self._now(now_ns)
+        admission = self.adapter.ingest(raw, received_at_ns=observed_at_ns)
+        return admission, self.process_admission(admission, checked_at_ns=observed_at_ns)
 
     read = poll
 
