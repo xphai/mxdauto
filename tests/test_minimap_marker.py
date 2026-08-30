@@ -266,17 +266,30 @@ def test_observation_time_and_clock_are_fail_closed() -> None:
         extractor = MinimapMarkerExtractor(_config(), store)
         missing_clock = extractor.extract(frame)
         before_receive = extractor.extract(frame, now_ns=105)
+        before_receive_observed = extractor.extract(frame, now_ns=200, observed_at_ns=105)
         before_capture_observed = extractor.extract(frame, now_ns=200, observed_at_ns=99)
         after_check_observed = extractor.extract(frame, now_ns=200, observed_at_ns=201)
         delayed = extractor.extract(frame, now_ns=2_000)
 
-    for result in (missing_clock, before_receive, before_capture_observed, after_check_observed):
+    for result in (
+        missing_clock,
+        before_receive,
+        before_receive_observed,
+        before_capture_observed,
+        after_check_observed,
+    ):
         assert result.status is MinimapMarkerStatus.FAULT
         assert result.candidate is None
     assert missing_clock.fault is not None
     assert missing_clock.fault.code is MinimapMarkerFaultCode.TIMESTAMP_MISMATCH
+    assert missing_clock.evidence is not None
+    assert missing_clock.evidence.checked_at_ns == frame.received_at_ns
+    assert missing_clock.evidence.observed_at_ns == frame.received_at_ns
+    assert missing_clock.fault.failed_at_ns == frame.received_at_ns
     assert before_receive.fault is not None
     assert before_receive.fault.code is MinimapMarkerFaultCode.TIMESTAMP_MISMATCH
+    assert before_receive_observed.fault is not None
+    assert before_receive_observed.fault.code is MinimapMarkerFaultCode.TIMESTAMP_MISMATCH
     assert before_capture_observed.fault is not None
     assert before_capture_observed.fault.code is MinimapMarkerFaultCode.TIMESTAMP_MISMATCH
     assert after_check_observed.fault is not None
@@ -304,3 +317,20 @@ def test_subject_id_is_fixed_anonymous_and_not_serialized_from_custom_identity()
 
     config_payload = _config().to_hash_only()
     assert "alice@example.com" not in json.dumps(config_payload, sort_keys=True)
+
+
+def test_result_rejects_nonanonymous_candidate_from_hash_only_payload() -> None:
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as directory:
+        store = PixelStore(directory)
+        result = MinimapMarkerExtractor(_config(), store).extract(
+            _frame(store, _pixels((0, 255, 255))), now_ns=200
+        )
+
+    assert result.candidate is not None
+    payload = json.loads(result.to_json())
+    payload["candidate"]["subject_id"] = "alice@example.com"
+    with pytest.raises(ValueError):
+        MinimapMarkerResult.from_dict(payload)
+    assert "alice@example.com" not in result.to_json()

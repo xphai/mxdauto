@@ -615,10 +615,14 @@ class MinimapMarkerEvidence:
             raise ValueError("received_at_ns must be >= captured_at_ns.")
         if self.checked_at_ns < self.captured_at_ns:
             raise ValueError("checked_at_ns must be >= captured_at_ns.")
+        if self.checked_at_ns < self.received_at_ns:
+            raise ValueError("checked_at_ns must be >= received_at_ns.")
         observed_at_ns = self.checked_at_ns if self.observed_at_ns is None else self.observed_at_ns
         ensure_time_ns(observed_at_ns, "observed_at_ns")
         if observed_at_ns < self.captured_at_ns:
             raise ValueError("observed_at_ns must be >= captured_at_ns.")
+        if observed_at_ns < self.received_at_ns:
+            raise ValueError("observed_at_ns must be >= received_at_ns.")
         if observed_at_ns > self.checked_at_ns:
             raise ValueError("observed_at_ns must be <= checked_at_ns.")
         object.__setattr__(self, "observed_at_ns", observed_at_ns)
@@ -876,6 +880,8 @@ class MinimapMarkerResult:
                 raise ValueError("candidate result requires candidate and evidence only.")
             if self.evidence.status is not MinimapMarkerStatus.CANDIDATE:
                 raise ValueError("candidate evidence status mismatch.")
+            if self.candidate.subject_id != ANONYMOUS_PLAYER_SUBJECT:
+                raise ValueError("candidate subject must be the anonymous marker subject.")
             if self.candidate.evidence_digest != self.evidence.digest:
                 raise ValueError("candidate evidence_digest must match evidence digest.")
             if self.candidate.pixel_digest != self.evidence.pixel_digest:
@@ -1106,7 +1112,7 @@ class MinimapMarkerExtractor:
                 "candidate observation timestamp is invalid",
                 {"reason_type": type(exc).__name__},
             )
-        if observed_at_ns < frame.captured_at_ns or observed_at_ns > checked_at_ns:
+        if observed_at_ns < frame.received_at_ns or observed_at_ns > checked_at_ns:
             _raise_fault(
                 MinimapMarkerFaultCode.TIMESTAMP_MISMATCH,
                 "candidate observation timestamp is outside frame check interval",
@@ -1503,9 +1509,9 @@ class MinimapMarkerExtractor:
         try:
             checked_at_ns = self._now(frame, now_ns)
         except Exception as exc:
-            # Keep a valid frame-domain timestamp for the fail-closed record;
+            # Keep a valid terminal timestamp for the fail-closed record;
             # this is not used as a successful observation timestamp.
-            checked_at_ns = frame.captured_at_ns
+            checked_at_ns = frame.received_at_ns
             fault = _ExtractionFault(
                 MinimapMarkerFaultCode.TIMESTAMP_MISMATCH,
                 "marker extraction clock returned an invalid timestamp",
