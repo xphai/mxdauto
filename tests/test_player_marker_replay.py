@@ -4,14 +4,19 @@ import copy
 import json
 from hashlib import sha256
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 from test_frame_corpus import _make_fixture, _make_tapes
 
 from maple_automation_core.capture.frame_source import canonical_calibration_sha256
-from maple_automation_core.capture.pixel_store import canonical_json
+from maple_automation_core.capture.pixel_store import PixelSpec, PixelStore, canonical_json
 from maple_automation_core.domain.frame import FramePacket, FrameSize, SourceGeometry, SourceRect
+from maple_automation_core.localization.minimap_marker import (
+    MinimapMarkerConfig,
+    MinimapMarkerExtractor,
+)
 from maple_automation_core.replay.frame_corpus import canonical_digest, load_strict_json
 from maple_automation_core.replay.player_marker import (
     PLAYER_MARKER_REPLAY_LIMITATIONS,
@@ -195,6 +200,58 @@ def test_three_runs_use_real_frame_packet_and_skip_wrong_size_before_extractor(
         as_of_offset_ns=10_000,
         sample_order=["sample-0", "sample-1", "sample-2"],
     )
+
+
+def test_actual_minimap_extractor_is_compatible_with_replay_contract(tmp_path: Path) -> None:
+    manifest, truth_root, cas_root = _make_fixture(tmp_path)
+    inputs = _replay_inputs(manifest, truth_root, as_of_offset_ns=0)
+    calibration = cast(dict[str, Any], inputs["calibration"])
+    geometry = SourceGeometry.from_dict(cast(dict[str, Any], calibration["geometry"]))
+    config = MinimapMarkerConfig(
+        geometry=geometry,
+        transform_version="synthetic-v1",
+        calibration_sha256=cast(str, calibration["calibration_sha256"]),
+        minimap_roi=SourceRect(x=0, y=0, width=2, height=1),
+        max_age_ns=100_000,
+    )
+
+    class ReadOnlyPixelStore:
+        def __init__(self, root: Path) -> None:
+            self._store = PixelStore(root)
+
+        def read(self, digest: str, spec: PixelSpec | None = None) -> bytes:
+            return self._store.read(digest, spec)
+
+    extractor = MinimapMarkerExtractor(
+        config=config,
+        pixel_store=ReadOnlyPixelStore(cas_root),
+    )
+    report = PlayerMarkerReplayRunner(
+        manifest,
+        verification_profile="contract_fixture",
+        truth_root=truth_root,
+        cas_root=cas_root,
+        event_tapes=cast(list[Path], inputs["event_tapes"]),
+        extractor=extractor,
+        replay_source_commit="c" * 40,
+        config=config.to_dict(),
+        config_digest=config.digest,
+        extractor_artifact_digest="d" * 64,
+        accepted_frame_ledger=cast(list[dict[str, Any]], inputs["accepted_frame_ledger"]),
+        calibration=calibration,
+        zero_input_audit=cast(dict[str, Any], inputs["zero_input_audit"]),
+        as_of_offset_ns=0,
+        max_age_ns=config.max_age_ns,
+    ).run_three_times()
+
+    assert report.status == "PASS"
+    assert report.execution_valid is True
+    assert [sample.status for sample in report.runs[0].samples] == [
+        "no_marker",
+        "no_marker",
+        "rejected",
+    ]
+    assert [sample.invoked for sample in report.runs[0].samples] == [True, True, False]
 
 
 def test_report_schema_and_self_digest_reject_tampering(tmp_path: Path) -> None:
