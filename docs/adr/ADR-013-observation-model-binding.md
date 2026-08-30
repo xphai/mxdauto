@@ -1,0 +1,107 @@
+# ADR-013：Observation、模型绑定与确定性预处理契约
+
+**状态**：提议（Proposed / implementation in progress）
+
+**日期**：2026-08-30
+
+**战略负责人**：5.6Sol Ultra
+
+**实施负责人**：5.6 Luna max
+
+**对应工作包**：`G1-OBS-002A`
+
+## 1. 背景
+
+ADR-011/012 已冻结 `FramePacket` admission、Pixel V1、CAS 和 FrameSource provenance；下一边界
+必须把已接受帧转换为可回放的检测 Observation。DEC-001 同时冻结了 Pilot 模型、类别、输入尺寸、
+阈值和 ROI。若运行时自动采用模型内嵌 classes/shape、静默更换 provider，或让 backend 返回顺序进入
+摘要，固定 Frame 仍可能产生不同结果，并掩盖 Bundle 漂移。
+
+## 2. 决策
+
+`G1-OBS-002A` 使用以下只读管线：
+
+```text
+accepted + fresh FramePacket
+  → Pixel V1 bytes/hash verification
+  → deterministic crop/resize/ROI/model-letterbox
+  → injected DetectorBackend（本包使用 fake）
+  → Observation | ObservationFault(plan_suppressed=true)
+  → 后续 G1-WST（本包不实现）
+```
+
+本包新增不可变、严格可序列化的领域对象：
+
+- `DetectionBox`：半开区间、有限数值、正面积且严格位于声明的 `working` space；
+- `Detection`：`class_id + class_name + confidence + box`；
+- `ModelBinding`：release/model/classes/config/preprocess hash、输入输出 tensor contract、provider
+  偏好、阈值和 ROI；
+- `Observation`：frame/pixel/calibration/model/config/preprocess/provider lineage 与 canonical detections；
+- `ObservationFault`：有限 reason code、同一预期 lineage 和诊断 details；
+- `ObservationResult`：成功与故障严格互斥。成功时 `plan_suppressed=false`；故障时恒为 `true`。
+
+所有 SHA-256 规范化为小写。Detection 按置信度、类别和坐标排序，backend tensor/anchor 遍历顺序
+不得影响 `detection_digest` 或 Observation digest。
+
+## 3. Pilot 模型绑定
+
+逻辑值沿用 DEC-001 与 ADR-007 的外部资产绑定，不把模型复制进仓库：
+
+| 字段 | 冻结值 |
+|---|---|
+| model | `best_forest_v3-candidate` / SHA-256 `b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4` |
+| classes | `[mob]` / SHA-256 `07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884` |
+| input | `images`, float32 NCHW `[1,3,640,640]` |
+| expected output | `output0`, `[1,5,8400]`；feature 数必须为 `4 + len(classes)` |
+| detection / IoU | `0.25 / 0.45` |
+| ROI | `[0.04,0.00,0.98,0.84]` |
+
+classes、shape、hash、provider 或配置任一不一致均产生显式 fault；禁止自动同步、静默 fallback 或继续
+输出成功 Observation。backend 响应必须显式回报实际 provider、input/output name 与 shape，全部精确
+匹配后才写入 Observation；缺失声明同样 fail closed。构造参数与 Frame metadata 中同时出现的 asset
+声明必须逐一一致，禁止用一份正确声明遮蔽另一份冲突声明。
+`output0` 的 feature 轴固定为 `[cx, cy, width, height, class_probability...]`：前四项使用
+model-input pixel space，不含独立 objectness；低于 detection threshold 的 anchor 直接忽略。本包不执行
+NMS，任何高于阈值但坐标越界、非有限或非正面积的输出均使整帧 fail closed。
+
+## 4. 确定性预处理
+
+1. 重新验证 Pixel V1 bytes 与 `FramePacket.content_hash`；
+2. 按 ADR-011 geometry 执行 `1920×1080 → [277,167,1366,768] → 1296×700`；
+3. 在 working image 上按固定舍入规则裁剪 DEC-001 ROI；
+4. 等比 resize 后使用固定值 `114` 居中 letterbox 至 `640×640`；
+5. BGR→RGB，除以 255，输出只读 contiguous float32 NCHW tensor；
+6. 按整数 resize 后的实际宽高分别记录 `scale_x/scale_y`，并以它们执行精确正逆坐标变换；
+7. 记录 preprocess config SHA-256 与 tensor SHA-256。
+
+ADR-011 的“Frame admission 不使用 letterbox”保持不变；这里的 letterbox 只属于模型输入预处理，并由
+独立 preprocess hash 标识。
+
+## 5. 故障与下游边界
+
+至少覆盖 stale frame、frame lineage、Pixel missing/hash、calibration、model/classes/binding hash、输入/
+输出 shape、provider、preprocess 和 inference fault。任一 fault 必须满足：
+
+```text
+successful_observation_count = 0
+world_state_count = 0
+action_spec_count = 0
+real_input_call_count = 0
+plan_suppressed = true
+```
+
+freshness 在预处理/推理前和成功发布前各复验一次；若推理期间越过 lease，整帧返回
+`frame_stale`，不得发布过期 Observation。
+
+pre-WorldState Event Tape 使用 `world_state_version=0`。本包不连接 `InputSink`、receiver、键鼠或游戏窗口；
+Legacy 继续独占真实输入。
+
+## 6. 非目标与晋级边界
+
+本包不引入 `onnxruntime`，不复制或发布模型，不声明 GPU/CPU parity、真实模型精度/性能、人工 detection
+truth、NMS/temporal confirmation、完整 Replay/Shadow 或 `G1-OBS-002=Completed`。真实 ONNX backend、
+provider fallback 验证、人工会话隔离 truth、P/R 和 Model Card 由后续 `G1-OBS-002B` / `G1-MDL-008`
+完成。
+
+本 ADR 随 `G1-OBS-002A` protected PR 与 current-main CI 通过后转为 Accepted；完整 G1 继续保持
+`In Progress`，G0 与 G1-FRM 已封证据保持不可变。
