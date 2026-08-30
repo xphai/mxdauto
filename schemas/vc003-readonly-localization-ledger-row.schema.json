@@ -1,0 +1,480 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.schemas.maple-automation.local/vc003-readonly-localization-ledger-row.schema.json",
+  "title": "VC-003 read-only localization ledger row",
+  "description": "A public hash-only bucket row or a restricted verifier row. The two representations are deliberately disjoint.",
+  "type": "object",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "externalRef": {
+      "type": "string",
+      "minLength": 11,
+      "pattern": "^external://[^\\\\\\r\\n]+$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "candidate",
+        "no_candidate",
+        "rejected",
+        "fault"
+      ]
+    },
+    "fullFrameSize": {
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "const": 1920
+        },
+        "height": {
+          "const": 1080
+        }
+      },
+      "additionalProperties": false
+    },
+    "fullFrameRect": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "const": 0
+        },
+        "y": {
+          "const": 0
+        },
+        "width": {
+          "const": 1920
+        },
+        "height": {
+          "const": 1080
+        }
+      },
+      "additionalProperties": false
+    },
+    "fullFrameGeometry": {
+      "type": "object",
+      "required": [
+        "source_size",
+        "content_rect",
+        "working_size"
+      ],
+      "properties": {
+        "source_size": {
+          "$ref": "#/$defs/fullFrameSize"
+        },
+        "content_rect": {
+          "$ref": "#/$defs/fullFrameRect"
+        },
+        "working_size": {
+          "$ref": "#/$defs/fullFrameSize"
+        }
+      },
+      "additionalProperties": false
+    },
+    "publicHash": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "row_kind",
+        "bucket_index",
+        "status",
+        "generation",
+        "frame_digest",
+        "pixel_digest",
+        "candidate_digest",
+        "evidence_digest",
+        "result_digest",
+        "row_digest"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "row_kind": {
+          "const": "public_hash_only"
+        },
+        "bucket_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "generation": {
+          "const": 0
+        },
+        "frame_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pixel_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "candidate_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "result_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "row_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sample_ordinal": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bucket_offset_ns": {
+          "type": "integer",
+          "minimum": 0,
+          "exclusiveMaximum": 3000000000
+        },
+        "selected": {
+          "const": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "candidate"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "candidate_digest": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "no_candidate",
+                  "rejected",
+                  "fault"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "candidate_digest": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "restrictedVerifier": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "row_kind",
+        "bucket_index",
+        "sample_id",
+        "status",
+        "generation",
+        "session_id",
+        "source_id",
+        "frame_id",
+        "source_sequence",
+        "source_provenance_id",
+        "frame_digest",
+        "pixel_digest",
+        "occurrence_artifact_sha256",
+        "evidence_digest",
+        "result_digest",
+        "artifact_ref",
+        "privacy_class",
+        "retention_class"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "row_kind": {
+          "const": "restricted_verifier"
+        },
+        "bucket_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99
+        },
+        "sample_id": {
+          "$ref": "#/$defs/id"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "generation": {
+          "const": 0
+        },
+        "session_id": {
+          "$ref": "#/$defs/id"
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "frame_id": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_provenance_id": {
+          "$ref": "#/$defs/id"
+        },
+        "frame_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pixel_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "occurrence_artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "candidate_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "result_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "row_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "observed_at_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "captured_at_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "received_at_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "device_fingerprint_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pixel_ref": {
+          "$ref": "#/$defs/externalRef"
+        },
+        "verifier_artifact_ref": {
+          "$ref": "#/$defs/externalRef"
+        },
+        "artifact_ref": {
+          "$ref": "#/$defs/externalRef"
+        },
+        "privacy_class": {
+          "const": "restricted"
+        },
+        "retention_class": {
+          "const": "candidate"
+        },
+        "working_candidate": {
+          "$ref": "#/$defs/workingCandidate"
+        },
+        "source_bbox": {
+          "$ref": "#/$defs/sourceRect"
+        },
+        "source_centroid": {
+          "$ref": "#/$defs/point"
+        },
+        "component_area": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bright_core_pixels": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "geometry": {
+          "$ref": "#/$defs/fullFrameGeometry"
+        },
+        "calibration_sha256": {
+          "const": "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "const": "candidate"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "candidate_digest",
+              "working_candidate"
+            ],
+            "properties": {
+              "candidate_digest": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "no_candidate",
+                  "rejected",
+                  "fault"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "candidate_digest": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "workingCandidate": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceRect": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "width": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "point": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/publicHash"
+    },
+    {
+      "$ref": "#/$defs/restrictedVerifier"
+    }
+  ]
+}
