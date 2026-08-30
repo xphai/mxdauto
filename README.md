@@ -1,6 +1,6 @@
 # Maple Automation Core
 
-> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002A` 已完成合并封存，`G1-OBS-002B` 已完成代码与外部资产 CPU smoke（模型不入仓），完整 `G1-OBS-002` 仍为 `In Progress`。002A 通过 [PR #17](https://github.com/xphai/mxdauto/pull/17)（source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`，PR run `33286071567` success，merge `1ccbceb79113a0322112b08d1a42a33dcacccad6`）进入 `main`；PR artifacts 的 SHA-256 前缀为 `g1-frame-source-b1=0cc18e...`、`frame-admission=6eee1f...`、`checkout=6a27b8...`、`ci-evidence=b7ca02...`、`build=ca6724...`、`quality=ee798f...`。main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1 暴露两项 capture-stress 时序偶发失败，attempt 2 对同一 merge commit 完整重跑并 `success`；attempt 2 `ci-evidence` digest 为 `sha256:6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 与真实输入闭环仍为 `In Progress`。
+> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002A` 已完成合并封存，`G1-OBS-002B` 已完成代码与外部资产 CPU smoke（模型不入仓），完整 `G1-OBS-002` 仍为 `In Progress`；`G1-LOC-003A` 已完成 code foundation，完整 `G1-LOC-003` 仍为 `In Progress`。002A 通过 [PR #17](https://github.com/xphai/mxdauto/pull/17)（source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`，PR run `33286071567` success，merge `1ccbceb79113a0322112b08d1a42a33dcacccad6`）进入 `main`；PR artifacts 的 SHA-256 前缀为 `g1-frame-source-b1=0cc18e...`、`frame-admission=6eee1f...`、`checkout=6a27b8...`、`ci-evidence=b7ca02...`、`build=ca6724...`、`quality=ee798f...`。main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1 暴露两项 capture-stress 时序偶发失败，attempt 2 对同一 merge commit 完整重跑并 `success`；attempt 2 `ci-evidence` digest 为 `sha256:6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`。OBS002B PR [#20](https://github.com/xphai/mxdauto/pull/20) required run [`33289661770`](https://github.com/xphai/mxdauto/actions/runs/33289661770) `success`，merge `9aff755f18d3bd48c77084cfaf10ea4df6344f69`，main outer run [`33290009677`](https://github.com/xphai/mxdauto/actions/runs/33290009677) `success`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 与真实输入闭环仍为 `In Progress`。
 
 ## 1. Core v2 目标与治理边界
 
@@ -80,7 +80,16 @@
 - 外部模型不入仓：model relative id 为 `weights/best_forest_v3.onnx`，SHA-256 为 `b279fc566c3d6f1411adedafcadb33fa48d7f2ef1a5289452bf9d5c9607004b4`；classes SHA-256 为 `07d524938046cff5c328f2b1b4c5b67847aae461172a954f6da19d6bf8954884`。
 - Windows CPython 3.12 ORT wheel SHA-256 为 `25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435`；真实 CPU smoke 连续 3 次的 raw ONNX output digest 均为 `2c6a6f02f1c2c3b59179097a6590194c3f130ca309c979b7bde8ee07b9de830e`，Observation `result_digest` 均为 `fb25433072da9ca88989427d977c873e7166d6e47bac6e737962d04225a0bf20`。
 - portable report 位于 `evidence/g1-obs-002b/g1-obs-002b-20260830-cpu.json`，绑定 source commit `672ec53327ea79f6ef3bd530f97a3006bd668aff`，report digest 为 `4379951ca0272bdf2e23ea37ec2a7602b92af8ac077450340924fa50582b64c6`。
+- 合并封存：PR [#20](https://github.com/xphai/mxdauto/pull/20) required run [`33289661770`](https://github.com/xphai/mxdauto/actions/runs/33289661770) `success`；merge commit [`9aff755f18d3bd48c77084cfaf10ea4df6344f69`](https://github.com/xphai/mxdauto/commit/9aff755f18d3bd48c77084cfaf10ea4df6344f69)；main outer run [`33290009677`](https://github.com/xphai/mxdauto/actions/runs/33290009677) `success`。
 - 输入审计保持 `input_owner=legacy`、`real_input_call_count=0`、`double_write_event_count=0`；本节完成不等于实机捕获或完整 `G1-OBS-002`。详见 [`docs/tactical/G1-OBS-002B-onnx-backend.md`](docs/tactical/G1-OBS-002B-onnx-backend.md)。
+
+### G1-LOC-003A（Completed：code foundation）
+
+- 本包只收口定位代码基础：版本化 `LocalizationTransform`（绑定 `map_fingerprint_sha256` 的 working pixel ↔ world affine 映射与逆变换）、带 map fingerprint/version 的不可变 `PlatformGraph`，以及独立匿名 `PlayerCandidate`/`PlayerAnchorSource`。平台归属同时受可配置的 vertical/horizontal distance 双阈值约束，任一阈值超限即 `unknown`。candidate 的 `pixel_digest` 必须与 `Observation.pixel_digest` 精确一致。
+- 纯函数 `resolve_player_location` 只消费上游 `ObservationResult` 与外部提供的 player candidate；它校验 observation/pixel lineage、freshness、generation、identity、map fingerprint、calibration/working size、固定会话内 source/transform/graph version 与 `as_of` 时间谱系和平台归属；失败请求也推进单调 clock fence，fault、unknown、ambiguous 或 degraded 均 fail-closed、抑制计划输出。
+- `PlayerAnchorSource.MINIMAP_YELLOW_MARKER` 目前只是 candidate 的来源标签；本包不执行 minimap yellow marker 的像素提取。确定性契约/序列化/边界回归位于 `tests/test_localization_transform.py`、`tests/test_localization_platform.py` 与 `tests/test_player_localizer.py`；46 个 localization tests 与 80 个相关契约 tests 已通过。
+- 状态严格限定为 `Completed (code foundation)`（本地 L1 代码与 deterministic tests）；完整 `G1-LOC-003` 仍为 `In Progress`。本包不构成真实 marker extraction、人工 truth、100 圈、实机 LOC、完整 LOC003/OBS/G1 或任何输入接管证据。
+- 输入审计保持 `input_owner=legacy`、Core v2 `real_input_call_count=0`、`double_write_event_count=0`。后续 `G1-LOC-003B` 将从 B2 accepted `FramePacket`/CAS 提取 minimap yellow marker 并做离线 3-run，再复用 VC-003 只读实机入口；期间不切换输入所有权。
 
 ### 当前阶段的输入边界
 
@@ -111,6 +120,7 @@
   - `F:\mxd\product\maple-automation-core\docs\CONTRIBUTING.md`
   - `F:\mxd\product\maple-automation-core\docs\templates\tactical-package.md`
   - `F:\mxd\product\maple-automation-core\docs\tactical\G1-OBS-002B-onnx-backend.md`
+  - `F:\mxd\product\maple-automation-core\docs\tactical\G1-LOC-003A-localization-foundation.md`
 
 新增/修改任何运行时行为时，必须更新：
 1. 对应 ADR 或补充变更说明；
@@ -155,6 +165,7 @@ python -m pytest --cov=maple_automation_core --cov-report=term-missing --cov-rep
 python tools/run_frame_admission_replay.py --runs 3 --fixture fixtures/g1/frame_admission_v1.json --schema schemas/frame-admission-report.schema.json --report evidence/ci-run/frame-admission-report.json
 python -m pip install --no-deps --require-hashes --requirement configs/g1-observation-requirements.lock
 python tools/run_observation_smoke.py --provider CPUExecutionProvider --model-root $env:MAPLE_MODEL_ROOT --classes-root $env:MAPLE_LEGACY_ROOT --core-root $env:MAPLE_CORE_ROOT --schema schemas/observation-runtime-report.schema.json --lock configs/g1-observation-requirements.lock --report evidence/g1-obs-002b/TARGET_EVIDENCE_ID.json
+python -m pytest tests/test_localization_transform.py tests/test_localization_platform.py tests/test_player_localizer.py
 ```
 
 上述命令与 `F:\mxd\product\maple-automation-core\.github\workflows\ci.yml` 的主体门禁一致。Observation smoke 只读取仓库外的受控 model/classes/config roots，报告不得包含 raw pixels 或绝对路径；CI 还在干净 checkout 上执行 `run_clean_smoke.py --mode checkout-regression`，并分别上传 checkout regression 与 G1 frame-admission 证据；静态 `--strict-g0` 校验继续只读取 sealed G0 packet。
@@ -184,4 +195,4 @@ ADR/战术包
 → G1-FRM-001B hardware/corpus evidence
 ```
 
-当前按 `G1-FRM-001（Completed） → G1-OBS-002A（Completed） → G1-OBS-002B（代码/外部资产烟测完成） → G1-LOC-003` 的依赖顺序实施；完整 `G1-OBS-002`、G1、G1 Gate 与真实输入闭环仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。
+当前按 `G1-FRM-001（Completed） → G1-OBS-002A（Completed） → G1-OBS-002B（代码/外部资产烟测完成） → G1-LOC-003A（code foundation） → G1-LOC-003B（marker extraction + offline 3-run） → G1-LOC-003` 的依赖顺序实施；完整 `G1-OBS-002`、`G1-LOC-003`、G1、G1 Gate 与真实输入闭环仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。
