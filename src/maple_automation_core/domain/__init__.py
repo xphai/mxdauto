@@ -28,9 +28,20 @@ from .frame import (
     SourceGeometry,
     SourceRect,
 )
+from .observation import (
+    WORKING_COORDINATE_SPACE,
+    Detection,
+    DetectionBox,
+    ModelBinding,
+    Observation,
+    ObservationFault,
+    ObservationFaultCode,
+    ObservationResult,
+)
 from .player_world import PlayerState, Visibility, WorldObservation, WorldState
 
 __all__ = [
+    "WORKING_COORDINATE_SPACE",
     "ActionHandle",
     "ActionKind",
     "ActionReference",
@@ -38,8 +49,15 @@ __all__ = [
     "ActionSpec",
     "ActionTermination",
     "CaptureHealth",
+    "Detection",
+    "DetectionBox",
     "FramePacket",
     "FrameSize",
+    "ModelBinding",
+    "Observation",
+    "ObservationFault",
+    "ObservationFaultCode",
+    "ObservationResult",
     "PixelCoordinate",
     "PlayerState",
     "SourceGeometry",

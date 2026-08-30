@@ -1,6 +1,6 @@
 # Maple Automation Core
 
-> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002` 已解锁但尚未开始实现。FrameSource 会签版通过 [Issue #13](https://github.com/xphai/mxdauto/issues/13)、[PR #15](https://github.com/xphai/mxdauto/pull/15)（merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success）进入 `main`；main outer run `33283646596`（attempt 1）已 `success`，`ci-evidence` artifact digest 为 `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。Candidate packet digest 为 `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 仍为 `In Progress`。
+> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002` 已解锁，当前进入 `G1-OBS-002A` 确定性基础实现。FrameSource 会签版通过 [Issue #13](https://github.com/xphai/mxdauto/issues/13)、[PR #15](https://github.com/xphai/mxdauto/pull/15)（merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success）进入 `main`；main outer run `33283646596`（attempt 1）已 `success`，`ci-evidence` artifact digest 为 `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。Candidate packet digest 为 `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 仍为 `In Progress`。
 
 ## 1. Core v2 目标与治理边界
 
@@ -64,6 +64,13 @@
 - 会签版收口：PR [#15](https://github.com/xphai/mxdauto/pull/15) merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success；main outer run `33283646596`（attempt 1）success，`ci-evidence` artifact digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`；Candidate packet digest `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。
 - Core v2 真实输入调用继续为 0；Legacy 继续作为唯一真实输入下发者。
 
+### G1-OBS-002A（In Progress）
+
+- 新增不可变 `ModelBinding`、`Detection`、`Observation`、有限故障码与互斥 `ObservationResult`；
+- 固定 Pixel V1 校验、crop/resize/ROI/letterbox、RGB float32 NCHW 与模型坐标逆投影；
+- 使用可注入 fake detector 验证 model/classes/config/preprocess/provider/shape 漂移的 fail-closed
+  行为；真实 ONNX、NMS、人工 truth、性能与完整 OBS Gate 留给后继包。
+
 ### 当前阶段的输入边界
 
 | 范围 | 当前规则 |
@@ -84,6 +91,8 @@
   - `F:\mxd\product\maple-automation-core\docs\adr\ADR-007-atomic-runtime-bundle.md`
   - `F:\mxd\product\maple-automation-core\docs\adr\ADR-010-ci-evidence-contract.md`
   - `F:\mxd\product\maple-automation-core\docs\adr\ADR-011-frame-admission-contract.md`
+  - `F:\mxd\product\maple-automation-core\docs\adr\ADR-012-frame-pixels-and-capture-source.md`
+  - `F:\mxd\product\maple-automation-core\docs\adr\ADR-013-observation-model-binding.md`
 - 发布清单：
   - `F:\mxd\product\maple-automation-core\schemas\runtime-manifest.schema.json`
 - 执行规程：
@@ -161,4 +170,4 @@ ADR/战术包
 → G1-FRM-001B hardware/corpus evidence
 ```
 
-当前按 `G1-FRM-001A（Completed） → G1-FRM-001B1（Completed） → G1-FRM-001B2（Completed） → G1-FRM-001（Completed） → G1-OBS-002（Unlocked / implementation not started）` 的依赖顺序实施；整体 G1 与 G1 Gate 仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。
+当前按 `G1-FRM-001（Completed） → G1-OBS-002A（In Progress） → G1-OBS-002B → G1-LOC-003` 的依赖顺序实施；整体 `G1-OBS-002`、G1 与 G1 Gate 仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。

@@ -1,7 +1,7 @@
 # Maple Automation Core v2 战略路线图（G-1 → G6）
 
 > **状态截止**：2026-08-30（Asia/Shanghai）
-> **当前判定**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。G0 Candidate source commit 为 [`7da29f4cfae0bd984b00c394b78e637088a7e452`](https://github.com/xphai/mxdauto/commit/7da29f4cfae0bd984b00c394b78e637088a7e452)，sealed packet commit 为 [`04c794c59eb98af6e739415e1ecb72a335795bb9`](https://github.com/xphai/mxdauto/commit/04c794c59eb98af6e739415e1ecb72a335795bb9)，G0 packet 保持不可变。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002` 已解锁但尚未开始实现，整体 G1 仍为 `In Progress`。
+> **当前判定**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。G0 Candidate source commit 为 [`7da29f4cfae0bd984b00c394b78e637088a7e452`](https://github.com/xphai/mxdauto/commit/7da29f4cfae0bd984b00c394b78e637088a7e452)，sealed packet commit 为 [`04c794c59eb98af6e739415e1ecb72a335795bb9`](https://github.com/xphai/mxdauto/commit/04c794c59eb98af6e739415e1ecb72a335795bb9)，G0 packet 保持不可变。完整 `G1-FRM-001` 已完成；`G1-OBS-002` 已解锁，当前进入 `G1-OBS-002A` 确定性基础实现；整体 G1 仍为 `In Progress`。
 > **B1/B2 当前绑定**：`G1-FRM-001B1=Completed`；B2 使用经 PR [#7](https://github.com/xphai/mxdauto/pull/7)～[#10](https://github.com/xphai/mxdauto/pull/10) 现场契约加固后的 protected source [`37e57b9662fa3d061e840d4b9c86ab89efe24f2f`](https://github.com/xphai/mxdauto/commit/37e57b9662fa3d061e840d4b9c86ab89efe24f2f)、main run [`33256230132`](https://github.com/xphai/mxdauto/actions/runs/33256230132) 与 wheel SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f`。300 秒 VC-003 smoke、300-sample corpus、3-run replay、Event Tape/CAS/provenance/privacy/zero-input 及 Candidate metadata/full-root verification 已技术通过；初始 packaging PR [#11](https://github.com/xphai/mxdauto/pull/11) 已合并为 [`72c3ad081db33d083fdcd5a5e0f62e73f886c233`](https://github.com/xphai/mxdauto/commit/72c3ad081db33d083fdcd5a5e0f62e73f886c233)，outer main run [`33258468278`](https://github.com/xphai/mxdauto/actions/runs/33258468278) 成功。会签版 Candidate packet digest 为 `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`；[PR #15](https://github.com/xphai/mxdauto/pull/15) merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success；main outer run `33283646596`（attempt 1）success，`ci-evidence` artifact digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。`G1-FRM-001B2` 与完整 `G1-FRM-001` 已完成，Core v2 real input calls=0，`input_owner=legacy`。
 > **FrameSource Gate 审计入口**：完整矩阵已建立于 [`docs/gates/G1-FRM-001-GATE-CHARTER.md`](gates/G1-FRM-001-GATE-CHARTER.md)，六类真实会签已登记并批准于 [Issue #13](https://github.com/xphai/mxdauto/issues/13)。PR #15、protected merge 与 main outer run 已完成最终封存。
 > **战略与 Gate 负责人**：**5.6Sol Ultra**（GPT-5.6 Sol / Ultra；下文简称 **Sol-U**）
@@ -187,7 +187,7 @@ rollback_release_id
 |---|---|---|---|
 | G-1 | 主线、范围、Pilot、所有权封存 | **Strategic PASS；文档已封存** | 允许在唯一主线执行 G0 战术包 |
 | G0 | Git/CI/契约/Bundle/最小证据流水线 | **PASS** | G1 Ready；真实输入仍为 0 |
-| G1 | 确定性 Replay、感知/WorldState、完整 Shadow | **进行中：G1-FRM-001（001A/001B1/001B2/完整 FrameSource Completed；G1-OBS-002 Unlocked / implementation not started）** | 允许进入 G1-OBS-002 实施；真实输入仍为 0 |
+| G1 | 确定性 Replay、感知/WorldState、完整 Shadow | **进行中：G1-FRM-001 Completed；G1-OBS-002A In Progress** | Observation 基础正在实施；真实输入仍为 0 |
 | G2 | ActionController、Supervisor、receiver dry-run、故障安全 | **未开始** | 具备提交 Canary Gate 的资格；真实输入默认仍为 0 |
 | G3 | 单图、单档案、单 Bundle 的有界 Canary | **未开始** | 仅认证窗口内的 Core v2 独占输入权 |
 | G4 | 单图 Certified，5 次独立 4 小时会话 | **未开始** | Pilot 范围内的常态 Core v2 输入权 |
@@ -289,7 +289,7 @@ rollback_release_id
 | ID | 工作与输出 | 依赖 | 模型分工 | 当前状态 |
 |---|---|---|---|---|
 | G1-FRM-001 | `FrameSource` adapter、最新帧策略、内容区/ROI 校准、陈旧/断序/画幅变化检测 | G0 PASS | Sol-U 契约；Luna-M 实现 | **Completed**：001A、001B1、001B2 及组织会签已完成；PR #15 merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success；main outer run `33283646596` attempt 1 success |
-| G1-OBS-002 | 采集→标准化→检测 adapter；统一部署 ONNX、classes、input size、thresholds | G1-FRM、Pilot Bundle | Sol-U 晋级规则；Luna-M 实现 | **Unlocked；implementation not started** |
+| G1-OBS-002 | 采集→标准化→检测 adapter；统一部署 ONNX、classes、input size、thresholds | G1-FRM、Pilot Bundle | Sol-U 晋级规则；Luna-M 实现 | **In Progress**：002A 契约、确定性 preprocess 与 fake adapter 正在实施；真实 ONNX/evaluation 在 002B |
 | G1-LOC-003 | 玩家身份、地图/平台坐标、置信度和未知态；所有变换携带版本 | G1-OBS | Sol-U 不变量；Luna-M 实现 | 未开始 |
 | G1-WST-004 | 纯函数式 WorldState reducer、clock/randomness 注入、状态版本与 provenance | G1-OBS、LOC | Sol-U 契约；Luna-M 实现 | 未开始 |
 | G1-PLN-005 | Pilot 静态路线 Planner，仅输出 `ActionSpec`；无输入 adapter 依赖 | G1-WST | Sol-U 范围；Luna-M 实现 | 未开始 |
@@ -325,6 +325,16 @@ B1 的 canonical protected-main 绑定如下：
 - wheel：`maple_automation_core-0.1.0-py3-none-any.whl`，131,432 bytes，SHA-256 `62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f`；
 - sdist：`maple_automation_core-0.1.0.tar.gz`，201,845 bytes，SHA-256 `a6c7264629eb9a989c32a0ebe01f51359b90ff5cc999f4731c1855451d856706`；
 - post-merge audit：493 tests、required `quality` success、checkout regression、installed-wheel smoke、G1 frame-admission/frame-source evidence 和 build artifacts 全部通过。
+
+### G1-OBS-002A 当前范围
+
+`G1-OBS-002A` 只建立从 fresh `FramePacket` 到类型化 Observation 的确定性基础：ADR-013
+领域契约、DEC-001 crop/ROI/model-letterbox、Pixel/模型/classes/config/preprocess/provider/shape
+绑定、fake detector 与 fail-closed `ObservationResult`。它不引入 ONNX runtime，不复制模型，不执行
+NMS/temporal、人工 truth、P/R、GPU/CPU parity、完整 Replay/Shadow 或输入连接。
+
+完成 002A 只允许进入真实 backend/evaluation 的 `G1-OBS-002B`；完整 `G1-OBS-002` 和 G1 Gate
+继续 `In Progress`，`input_owner=legacy` 与 Core v2 real input calls=0 不变。
 
 ### 退出门禁
 
@@ -607,13 +617,14 @@ Fixture/Contract → Golden Replay → Shadow → bounded Canary → Certified
 2. **Luna-M / G1-FRM-001A（已完成）**：PR #3 已合并，feature source `7cca4154a38e8bca29b917aa3c5abcc43a51391d` 以 merge `b30ddedb1f05945e68fb348b221cdfa123e83c59` 进入主线，并绑定 PR run `33225384485`、main run `33225488599`；Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / zero input），checkout smoke 20/20，5 artifact groups。
 3. **Luna-M / G1-FRM-001B1（已完成）**：原始 PR #5 后由 PR #7～#10 完成现场契约与 Candidate verifier 加固；B2 canonical source=`37e57b9662fa3d061e840d4b9c86ab89efe24f2f`、main run=`33256230132`、wheel SHA-256=`62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f`。
 4. **Luna-M + QA/现场 / G1-FRM-001B2（已完成）**：300 秒 VC-003 smoke 为 8,999 successful / 4,499 admitted、29.996666 / 14.996666 FPS；4-session/300-sample corpus、3-run deterministic replay、4 条 Event Tape、full CAS/provenance/privacy/zero-input 与 Candidate verifier 均 PASS。PR #11、packaging commit `72c3ad0...` 与 outer main run `33258468278` 已闭环；Issue #13 六角色会签完成；PR #15 merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success；main outer run `33283646596` attempt 1 success，`ci-evidence` digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。Candidate packet digest `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。
-5. **后续依赖链**：`G1-FRM-001（Completed）` → `G1-OBS-002（Unlocked / implementation not started）` → G1-LOC-003 → G1-WST-004 → G1-RPL-006 → G1-SHD-007；全程保持 Core v2 真实输入为 0。
+5. **Luna-M / G1-OBS-002A（进行中）**：Observation/ModelBinding/Fault、确定性 preprocess、fake detector 与 fail-closed fault matrix；不含真实 ONNX/evaluation。
+6. **后续依赖链**：`G1-OBS-002A` → `G1-OBS-002B` → G1-LOC-003 → G1-WST-004 → G1-RPL-006 → G1-SHD-007；全程保持 Core v2 真实输入为 0。
 
 ---
 
 ## 16. 文档一致性与表述规则
 
-1. `README.md`、ADR、`CONTRIBUTING.md` 与本路线图统一使用：**G0 PASS / G1 In Progress；G1-FRM-001 Completed；G1-OBS-002 Unlocked；Legacy 当前独占真实输入；G3 才是首次有界接管**。
+1. `README.md`、ADR、`CONTRIBUTING.md` 与本路线图统一使用：**G0 PASS / G1 In Progress；G1-FRM-001 Completed；G1-OBS-002A In Progress；Legacy 当前独占真实输入；G3 才是首次有界接管**。
 2. `runtime-manifest.example.json` 始终称为 schema fixture；只有绑定真实资产 hash、真实 commit 和真实报告 ID 的 manifest 才称 Candidate Bundle。
 3. “CI passed”需同时给出 remote、run ID、attempt、head/packet commit、source commit、metadata status 和 artifact；workflow conclusion=`success` 但 metadata=`failed` 的 run 必须隔离。
 4. “G0 Replay smoke passed”只描述当前 synthetic fixture；G1 Replay ready 仍需完整录像 corpus、人工 truth/split 和感知/WorldState 链。
