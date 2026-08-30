@@ -1,6 +1,6 @@
 # ADR-013：Observation、模型绑定与确定性预处理契约
 
-**状态**：提议（Proposed / implementation in progress）
+**状态**：已接受（Accepted）
 
 **日期**：2026-08-30
 
@@ -103,5 +103,24 @@ truth、NMS/temporal confirmation、完整 Replay/Shadow 或 `G1-OBS-002=Complet
 provider fallback 验证、人工会话隔离 truth、P/R 和 Model Card 由后续 `G1-OBS-002B` / `G1-MDL-008`
 完成。
 
-本 ADR 随 `G1-OBS-002A` protected PR 与 current-main CI 通过后转为 Accepted；完整 G1 继续保持
-`In Progress`，G0 与 G1-FRM 已封证据保持不可变。
+本 ADR 已随 `G1-OBS-002A` protected PR 合并并接受（Accepted）：PR [#17](https://github.com/xphai/mxdauto/pull/17)、
+source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`、PR run
+[`33286071567`](https://github.com/xphai/mxdauto/actions/runs/33286071567) `success`，merge commit
+`1ccbceb79113a0322112b08d1a42a33dcacccad6`。
+
+PR artifacts（SHA-256 前缀）如下：
+
+| artifact | digest 前缀 |
+|---|---|
+| `g1-frame-source-b1` | `0cc18e...` |
+| `frame-admission` | `6eee1f...` |
+| `checkout` | `6a27b8...` |
+| `ci-evidence` | `b7ca02...` |
+| `build` | `ca6724...` |
+| `quality` | `ee798f...` |
+
+合并后 main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1
+暴露两项 capture-stress 时序偶发失败并已隔离；attempt 2 对同一 merge commit 完整重跑并 `success`，
+`ci-evidence` artifact digest 为 `sha256:6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`。
+该 outer verification 已闭环；完整 `G1-OBS-002`、整体 G1 与 G1 Gate 继续保持
+`In Progress`，`real_input_call_count=0`、`input_owner=legacy` 不变。

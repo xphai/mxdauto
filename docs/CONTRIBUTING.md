@@ -4,16 +4,17 @@
 
 ## 0. 当前阶段的硬边界
 
-截至 2026-08-30，仓库处于 **G-1 Strategic PASS / G0 PASS / G1 In Progress**；`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 已完成，当前工作包为 `G1-OBS-002A` 确定性基础：
+截至 2026-08-30，仓库处于 **G-1 Strategic PASS / G0 PASS / G1 In Progress**；`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 已完成，`G1-OBS-002A` 确定性基础已完成合并封存：
 
 - Core v2 任务的允许输出限定为不可变帧/状态、动作计划和 dry-run 结果；G0 packet 已封存，G1 FrameSource 已完成离线 admission、真实硬件/corpus 与 Candidate evidence 的闭环；
 - Core v2 不得调用真实 `InputSink`、键盘、receiver 或游戏窗口；
 - Legacy 保持唯一真实输入下发权；
 - Legacy 仅接受阻塞缺陷修复和迁移桥接，不接受新的控制逻辑；
-- 完整 `G1-FRM-001` 已完成；`G1-OBS-002A` 正在实现领域契约、确定性预处理与 fake detector 适配器，真实 ONNX/评估、LOC/WST/Planner/Shadow 仍待后续包。
+- 完整 `G1-FRM-001` 已完成；`G1-OBS-002A` 已完成领域契约、确定性预处理与 fake detector 适配器，真实 ONNX/评估、LOC/WST/Planner/Shadow 仍待后续包；完整 `G1-OBS-002` 仍为 `In Progress`。
 - 未经 Stage Gate 批准，不得宣称 Canary、Certified 或 Core v2 接管已经开始。
 - 当前可绑定远端事实为 run [`33204844985`](https://github.com/xphai/mxdauto/actions/runs/33204844985)，最终 sealed packet 的 successor 复验为 run [`33205169227`](https://github.com/xphai/mxdauto/actions/runs/33205169227)；失败运行统一登记在 `evidence/failures/failure-index.json`。
 - G1 FrameSource 会签版已通过 [Issue #13](https://github.com/xphai/mxdauto/issues/13) 与 [PR #15](https://github.com/xphai/mxdauto/pull/15) 合并（merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success）；main outer run `33283646596`（attempt 1）success，`ci-evidence` artifact digest 为 `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`；Candidate packet digest 为 `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。
+- `G1-OBS-002A` 合并封存已绑定 [PR #17](https://github.com/xphai/mxdauto/pull/17)、source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`、PR run `33286071567` `success` 与 merge `1ccbceb79113a0322112b08d1a42a33dcacccad6`；PR artifacts（SHA-256 前缀）为 `g1-frame-source-b1=0cc18e...`、`frame-admission=6eee1f...`、`checkout=6a27b8...`、`ci-evidence=b7ca02...`、`build=ca6724...`、`quality=ee798f...`。main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1 的两项 capture-stress 时序偶发失败已隔离，attempt 2 对同一 merge commit 完整重跑并 `success`；attempt 2 `ci-evidence` digest 为 `sha256:6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`。
 - `main protected=true`；required `quality` strict、PR review、管理员约束、linear history、conversation resolution 已启用，force-push/delete 已关闭；[PR #1](https://github.com/xphai/mxdauto/pull/1) 已通过 required `quality` 并 protected squash merge，G0 PASS 已生效。
 
 当前战略事实源：
@@ -105,7 +106,7 @@ PR 描述直接引用战术包，并至少包含：
 - G0 只放行可复现契约、schema、静态质量和 dry-run/Shadow 准备；它不放行真实输入接管。
 - G0 的评审清单和当前状态以 `docs/gates/G0-GATE-CHARTER.md` 为准；本地测试数、workflow 文件或示例 manifest 均不单独产生 G0 PASS。
 - G0 minimal synthetic Replay/Shadow/clean smoke 不等价于 G1；进入 G1 后必须扩展固定录像 corpus、人工 truth/split、完整感知/WorldState/Planner 和 Shadow taxonomy。
-- G1-FRM-001A、G1-FRM-001B1 与 G1-FRM-001B2 已共同关闭完整 `G1-FRM-001`；当前进入 `G1-OBS-002A`，其工程完成只推进 Observation 基础，不等于完整 `G1-OBS-002` 或 G1 PASS。
+- G1-FRM-001A、G1-FRM-001B1 与 G1-FRM-001B2 已共同关闭完整 `G1-FRM-001`；`G1-OBS-002A` 已完成合并封存，只推进 Observation 基础，不等于完整 `G1-OBS-002` 或 G1 PASS；真实 input calls 继续为 0。
 - Canary/Certified 需要独立 Stage Gate、现场 session、故障注入和回退演练；CI 绿灯本身不授予这些权限。
 
 ## 6. 完成定义（DoD）

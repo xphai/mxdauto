@@ -1,6 +1,6 @@
 # Maple Automation Core
 
-> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002` 已解锁，当前进入 `G1-OBS-002A` 确定性基础实现。FrameSource 会签版通过 [Issue #13](https://github.com/xphai/mxdauto/issues/13)、[PR #15](https://github.com/xphai/mxdauto/pull/15)（merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success）进入 `main`；main outer run `33283646596`（attempt 1）已 `success`，`ci-evidence` artifact digest 为 `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。Candidate packet digest 为 `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 仍为 `In Progress`。
+> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002A` 已完成合并封存，完整 `G1-OBS-002` 仍为 `In Progress`。002A 通过 [PR #17](https://github.com/xphai/mxdauto/pull/17)（source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`，PR run `33286071567` success，merge `1ccbceb79113a0322112b08d1a42a33dcacccad6`）进入 `main`；PR artifacts 的 SHA-256 前缀为 `g1-frame-source-b1=0cc18e...`、`frame-admission=6eee1f...`、`checkout=6a27b8...`、`ci-evidence=b7ca02...`、`build=ca6724...`、`quality=ee798f...`。main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1 暴露两项 capture-stress 时序偶发失败，attempt 2 对同一 merge commit 完整重跑并 `success`；attempt 2 `ci-evidence` digest 为 `sha256:6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 仍为 `In Progress`。
 
 ## 1. Core v2 目标与治理边界
 
@@ -64,12 +64,15 @@
 - 会签版收口：PR [#15](https://github.com/xphai/mxdauto/pull/15) merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success；main outer run `33283646596`（attempt 1）success，`ci-evidence` artifact digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`；Candidate packet digest `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。
 - Core v2 真实输入调用继续为 0；Legacy 继续作为唯一真实输入下发者。
 
-### G1-OBS-002A（In Progress）
+### G1-OBS-002A（Completed）
 
 - 新增不可变 `ModelBinding`、`Detection`、`Observation`、有限故障码与互斥 `ObservationResult`；
 - 固定 Pixel V1 校验、crop/resize/ROI/letterbox、RGB float32 NCHW 与模型坐标逆投影；
 - 使用可注入 fake detector 验证 model/classes/config/preprocess/provider/shape 漂移的 fail-closed
   行为；真实 ONNX、NMS、人工 truth、性能与完整 OBS Gate 留给后继包。
+- 合并封存：PR [#17](https://github.com/xphai/mxdauto/pull/17)，source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`，PR run `33286071567` success，merge commit `1ccbceb79113a0322112b08d1a42a33dcacccad6`。
+- PR artifacts（SHA-256 前缀）：`g1-frame-source-b1=0cc18e...`、`frame-admission=6eee1f...`、`checkout=6a27b8...`、`ci-evidence=b7ca02...`、`build=ca6724...`、`quality=ee798f...`。
+- 合并后 main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1 因两项 capture-stress 时序偶发失败而隔离；attempt 2 对同一 merge commit 完整重跑并 `success`。attempt 2 artifacts（SHA-256）：`g1-frame-source-b1=43d4f7a4735c6c151876a0d668aea4309679baa75ea2a8dab02e601194f0c922`、`frame-admission=82f8199ad80e0eab8c2f8ca04e225376f683152be983b23d31dac6d4c310c9ea`、`checkout=68db7194d87a072b9559364b204791dcbd9804be6073d45a83fee0204549f2d3`、`ci-evidence=6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`、`build=d6b92239401aefe5625addcd028788831f36a546b225d8471d41f3dbe787e7b3`、`quality=e369a9e70bf3475170cc086fbd308e19c40cc41b4b89ce998cfaa4f4581fa421`。
 
 ### 当前阶段的输入边界
 
@@ -170,4 +173,4 @@ ADR/战术包
 → G1-FRM-001B hardware/corpus evidence
 ```
 
-当前按 `G1-FRM-001（Completed） → G1-OBS-002A（In Progress） → G1-OBS-002B → G1-LOC-003` 的依赖顺序实施；整体 `G1-OBS-002`、G1 与 G1 Gate 仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。
+当前按 `G1-FRM-001（Completed） → G1-OBS-002A（Completed） → G1-OBS-002B → G1-LOC-003` 的依赖顺序实施；完整 `G1-OBS-002`、G1 与 G1 Gate 仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。
