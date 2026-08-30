@@ -1,6 +1,6 @@
 # Maple Automation Core
 
-> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002A` 已完成合并封存，`G1-OBS-002B` 已完成代码与外部资产 CPU smoke（模型不入仓），完整 `G1-OBS-002` 仍为 `In Progress`；`G1-LOC-003A` 已完成 code foundation，完整 `G1-LOC-003` 仍为 `In Progress`。002A 通过 [PR #17](https://github.com/xphai/mxdauto/pull/17)（source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`，PR run `33286071567` success，merge `1ccbceb79113a0322112b08d1a42a33dcacccad6`）进入 `main`；PR artifacts 的 SHA-256 前缀为 `g1-frame-source-b1=0cc18e...`、`frame-admission=6eee1f...`、`checkout=6a27b8...`、`ci-evidence=b7ca02...`、`build=ca6724...`、`quality=ee798f...`。main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1 暴露两项 capture-stress 时序偶发失败，attempt 2 对同一 merge commit 完整重跑并 `success`；attempt 2 `ci-evidence` digest 为 `sha256:6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`。OBS002B PR [#20](https://github.com/xphai/mxdauto/pull/20) required run [`33289661770`](https://github.com/xphai/mxdauto/actions/runs/33289661770) `success`，merge `9aff755f18d3bd48c77084cfaf10ea4df6344f69`，main outer run [`33290009677`](https://github.com/xphai/mxdauto/actions/runs/33290009677) `success`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 与真实输入闭环仍为 `In Progress`。
+> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002A` 已完成合并封存，`G1-OBS-002B` 已完成代码与外部资产 CPU smoke（模型不入仓），完整 `G1-OBS-002` 仍为 `In Progress`；`G1-LOC-003A` 已完成 code foundation，`G1-LOC-003B` 已完成 marker extraction 与固定 B2 corpus 离线 3-run，下一阶段为 VC-003 只读定位验证，完整 `G1-LOC-003` 仍为 `In Progress`。002A 通过 [PR #17](https://github.com/xphai/mxdauto/pull/17)（source commit `645d3a52d8e2e1364054ad4149f7815feeee733d`，PR run `33286071567` success，merge `1ccbceb79113a0322112b08d1a42a33dcacccad6`）进入 `main`；PR artifacts 的 SHA-256 前缀为 `g1-frame-source-b1=0cc18e...`、`frame-admission=6eee1f...`、`checkout=6a27b8...`、`ci-evidence=b7ca02...`、`build=ca6724...`、`quality=ee798f...`。main outer run [`33286521402`](https://github.com/xphai/mxdauto/actions/runs/33286521402) attempt 1 暴露两项 capture-stress 时序偶发失败，attempt 2 对同一 merge commit 完整重跑并 `success`；attempt 2 `ci-evidence` digest 为 `sha256:6d1147807a1600069b1a7731803f39b9777ef97772132ac172e09e7314469471`。OBS002B PR [#20](https://github.com/xphai/mxdauto/pull/20) required run [`33289661770`](https://github.com/xphai/mxdauto/actions/runs/33289661770) `success`，merge `9aff755f18d3bd48c77084cfaf10ea4df6344f69`，main outer run [`33290009677`](https://github.com/xphai/mxdauto/actions/runs/33290009677) `success`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 与真实输入闭环仍为 `In Progress`。
 
 ## 1. Core v2 目标与治理边界
 
@@ -89,7 +89,15 @@
 - 纯函数 `resolve_player_location` 只消费上游 `ObservationResult` 与外部提供的 player candidate；它校验 observation/pixel lineage、freshness、generation、identity、map fingerprint、calibration/working size、固定会话内 source/transform/graph version 与 `as_of` 时间谱系和平台归属；失败请求也推进单调 clock fence，fault、unknown、ambiguous 或 degraded 均 fail-closed、抑制计划输出。
 - `PlayerAnchorSource.MINIMAP_YELLOW_MARKER` 目前只是 candidate 的来源标签；本包不执行 minimap yellow marker 的像素提取。确定性契约/序列化/边界回归位于 `tests/test_localization_transform.py`、`tests/test_localization_platform.py` 与 `tests/test_player_localizer.py`；46 个 localization tests 与 80 个相关契约 tests 已通过。
 - 状态严格限定为 `Completed (code foundation)`（本地 L1 代码与 deterministic tests）；完整 `G1-LOC-003` 仍为 `In Progress`。本包不构成真实 marker extraction、人工 truth、100 圈、实机 LOC、完整 LOC003/OBS/G1 或任何输入接管证据。
-- 输入审计保持 `input_owner=legacy`、Core v2 `real_input_call_count=0`、`double_write_event_count=0`。后续 `G1-LOC-003B` 将从 B2 accepted `FramePacket`/CAS 提取 minimap yellow marker 并做离线 3-run，再复用 VC-003 只读实机入口；期间不切换输入所有权。
+- 输入审计保持 `input_owner=legacy`、Core v2 `real_input_call_count=0`、`double_write_event_count=0`。后续 `G1-LOC-003B` 已完成 B2 accepted `FramePacket`/CAS marker extraction 与离线 3-run；下一项为 VC-003 只读定位验证，期间不切换输入所有权。
+
+### G1-LOC-003B（Completed：marker extraction + offline 3-run）
+
+- 已落地冻结的 `1920×1080` BGR8 minimap marker 配置、fail-closed yellow-marker extractor、portable replay schema/verifier 与只读 CLI；extractor 绑定 B2 accepted FramePacket/CAS、session/source/frame/time/generation、calibration、pixel digest 和 Event Tape/ledger 来源。
+- 在 B2 固定 300-sample corpus 上连续回放 3 次：每次均为 `194 detected / 6 no_marker / 100 rejected / 0 fault`，三次 run digest 均为 `479bce453813472bab54ae110e9014bba0103f6fb97f6f0337dd2cfc7146f66e`，`deterministic=true`、`execution_valid=true`、`status=PASS`。
+- portable report 的 semantic digest 为 `9528f117200bfcb24d3723a081e83e4889f273322c798fef6fd62cfc14a361ff`，artifact SHA-256 为 `37076a1937fa10ce317c4899a43470dfcce9dd7c155f6a0efa8ef089f0efc4d5`；source commit 为 `58f20f314733b2c1791665f37fc0fe7c80e009a7`，证据入口为 [`docs/tactical/G1-LOC-003B-minimap-marker.md`](docs/tactical/G1-LOC-003B-minimap-marker.md)。
+- `truth_scope=frame_ingestion_only`：本包不主张 marker 准确率、人工 truth、world/platform 定位质量、100 圈或实机 LOC。它只关闭 marker extraction + offline 3-run，并允许进入 VC-003 只读定位验证；完整 `G1-LOC-003` 继续为 `In Progress`。
+- 输入审计保持 `input_owner=legacy`、Core v2 `real_input_call_count=0`、`double_write_event_count=0`；未连接 Planner、InputSink、receiver、键盘、鼠标或窗口写入。
 
 ### 当前阶段的输入边界
 
@@ -121,6 +129,7 @@
   - `F:\mxd\product\maple-automation-core\docs\templates\tactical-package.md`
   - `F:\mxd\product\maple-automation-core\docs\tactical\G1-OBS-002B-onnx-backend.md`
   - `F:\mxd\product\maple-automation-core\docs\tactical\G1-LOC-003A-localization-foundation.md`
+  - `F:\mxd\product\maple-automation-core\docs\tactical\G1-LOC-003B-minimap-marker.md`
 
 新增/修改任何运行时行为时，必须更新：
 1. 对应 ADR 或补充变更说明；
@@ -195,4 +204,4 @@ ADR/战术包
 → G1-FRM-001B hardware/corpus evidence
 ```
 
-当前按 `G1-FRM-001（Completed） → G1-OBS-002A（Completed） → G1-OBS-002B（代码/外部资产烟测完成） → G1-LOC-003A（code foundation） → G1-LOC-003B（marker extraction + offline 3-run） → G1-LOC-003` 的依赖顺序实施；完整 `G1-OBS-002`、`G1-LOC-003`、G1、G1 Gate 与真实输入闭环仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。
+当前按 `G1-FRM-001（Completed） → G1-OBS-002A（Completed） → G1-OBS-002B（代码/外部资产烟测完成） → G1-LOC-003A（code foundation Completed） → G1-LOC-003B（marker extraction + offline 3-run Completed） → VC-003 只读定位验证 → G1-LOC-003` 的依赖顺序实施；完整 `G1-OBS-002`、`G1-LOC-003`、G1、G1 Gate 与真实输入闭环仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。

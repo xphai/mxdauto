@@ -152,14 +152,14 @@ InputSink、receiver、键盘、鼠标、游戏窗口和 Legacy 输入所有权�
 - [x] 46 个 localization tests 与 80 个相关契约 tests 已通过；
 - [x] 输入审计保持 `input_owner=legacy`、Core v2 real input=0、double-write=0；
 - [x] 状态只关闭 `Completed (code foundation)`，完整 `G1-LOC-003` 仍 `In Progress`；
-- [ ] `G1-LOC-003B` marker extraction、离线 3-run 与 VC-003 只读实机入口（后续任务）；
+- [x] `G1-LOC-003B` marker extraction 与离线 3-run 已由后续包完成；VC-003 只读实机入口仍待执行；
 - [ ] 人工 truth、100 圈、实机 LOC、完整 LOC/OBS/G1 Gate（后续任务）。
 
-## 10. 后续任务：G1-LOC-003B
+## 10. 后续任务状态：G1-LOC-003B
 
-1. 从 B2 accepted `FramePacket`/CAS 读取并提取 minimap yellow marker；保存 candidate 的来源、frame/CAS/pixel digest 与 lineage，不复制外部 raw asset。
-2. 在固定离线输入上执行 3-run，比较 marker、candidate、transform/platform match 和 resolver digest；任何差异进入独立 evidence，不覆盖 B2 report。
-3. 离线 3-run 通过后，复用 VC-003 read-only 实机入口验证 LOC；维持 `input_owner=legacy`、Core v2
+1. [完成] 从 B2 accepted `FramePacket`/CAS 读取并提取 minimap yellow marker；保存 candidate 的来源、frame/CAS/pixel digest 与 lineage，不复制外部 raw asset。
+2. [完成] 在固定 300-sample 输入上执行 3-run；结果与独立 evidence 见 [`G1-LOC-003B`](G1-LOC-003B-minimap-marker.md)，未覆盖 B2 report。
+3. [下一项] 复用 VC-003 read-only 实机入口验证 LOC；维持 `input_owner=legacy`、Core v2
    real input=0、double-write=0，并在单独 Gate 下评估是否扩展证据范围。
 
 ## 11. 最终报告
@@ -169,7 +169,7 @@ InputSink、receiver、键盘、鼠标、游戏窗口和 Legacy 输入所有权�
 变更：版本化 affine/platform graph（vertical/horizontal 双阈值）/独立匿名 player anchor（pixel digest lineage）/纯 fail-closed resolver 与 deterministic tests
 测试：46 个 localization tests 与 80 个相关契约 tests 已通过
 证据：本地 L1 code foundation；上游 OBS002B PR #20 / required run 33289661770 / merge 9aff755f18d3bd48c77084cfaf10ea4df6344f69 / main outer run 33290009677
-风险：marker extraction、人工 truth、100 圈、实机 LOC、完整 LOC-003/OBS/G1 仍待后续任务
+风险：marker extraction/offline 3-run 已由 003B 完成；人工 truth、100 圈、实机 LOC、完整 LOC-003/OBS/G1 仍待后续任务
 回滚：未接线，不改变 Legacy 输入所有权；三组 deterministic tests 可复验
-后续任务：G1-LOC-003B
+后续任务：VC-003 read-only localization
 ```
