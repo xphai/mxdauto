@@ -983,6 +983,9 @@ def test_report_verifier_checks_input_type_and_alias_digest_binding(
         verify_capture_pressure_report(candidate)
 
     valid_fake = base["vc003_fake_lifecycle"]
-    monkeypatch.setattr(stress, "_run_vc003_fake_lifecycle", lambda _timeout: {})
-    with pytest.raises(CapturePressureError, match="recomputed"):
-        stress._verify_vc003_fake_lifecycle(valid_fake, 0.2)  # type: ignore[arg-type]
+
+    def unexpected_recomputation(_timeout: float) -> dict[str, object]:
+        raise AssertionError("fake lifecycle verification must not rerun worker threads")
+
+    monkeypatch.setattr(stress, "_run_vc003_fake_lifecycle", unexpected_recomputation)
+    stress._verify_vc003_fake_lifecycle(valid_fake, 0.2)  # type: ignore[arg-type]
