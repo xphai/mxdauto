@@ -5,6 +5,12 @@ from .observation_adapter import (
     DetectorOutput,
     ObservationAdapter,
 )
+from .onnx_backend import (
+    DEFAULT_ONNX_BACKEND_CONFIG,
+    OnnxBackendConfig,
+    OnnxBackendError,
+    OnnxDetectorBackend,
+)
 from .preprocess import (
     PILOT_PREPROCESS_CONFIG,
     PREPROCESS_VERSION,
@@ -18,12 +24,16 @@ from .preprocess import (
 )
 
 __all__ = [
+    "DEFAULT_ONNX_BACKEND_CONFIG",
     "PILOT_PREPROCESS_CONFIG",
     "PREPROCESS_VERSION",
     "DetectorBackend",
     "DetectorOutput",
     "NormalizedRoi",
     "ObservationAdapter",
+    "OnnxBackendConfig",
+    "OnnxBackendError",
+    "OnnxDetectorBackend",
     "PreprocessConfig",
     "PreprocessError",
     "PreprocessResult",
