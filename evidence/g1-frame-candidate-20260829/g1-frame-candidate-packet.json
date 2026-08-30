@@ -151,8 +151,8 @@
       "restricted": true,
       "retention_class": "persistent",
       "role": "privacy_audit",
-      "sha256": "ffcf6660aa3c55cbc2d55468a2aec97704388763615a6ad8b5af1d4402aac449",
-      "size_bytes": 1371
+      "sha256": "1cd232f10406a9357cce8d7be1416c5f26bace81d141fbbc5f0354306b295f25",
+      "size_bytes": 1370
     },
     {
       "artifact_id": "provenance_audit",
@@ -283,7 +283,7 @@
     "privacy_audit": {
       "artifact_id": "privacy_audit",
       "role": "privacy_audit",
-      "sha256": "ffcf6660aa3c55cbc2d55468a2aec97704388763615a6ad8b5af1d4402aac449"
+      "sha256": "1cd232f10406a9357cce8d7be1416c5f26bace81d141fbbc5f0354306b295f25"
     },
     "provenance_audit": {
       "artifact_id": "provenance_audit",
@@ -330,7 +330,7 @@
     "Raw Pixel CAS and visual-review contact sheets remain external/private and are intentionally excluded from the repository packet."
   ],
   "overall_g1_state": "In Progress",
-  "packet_digest": "90a791279a5a1195b819cd0a4a0afbae75bd35b89870c8fce3b0a8bb978cb38f",
+  "packet_digest": "4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73",
   "packet_id": "g1-frame-candidate-20260829",
   "packet_type": "g1_frame_candidate",
   "schema_version": "1.0.0",
