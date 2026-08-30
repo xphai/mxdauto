@@ -25,6 +25,8 @@
     "measurement_seconds": 300,
     "bucket_count": 100,
     "bucket_seconds": 3,
+    "target_admission_hz": 15.0,
+    "poll_timeout_seconds": 0.05,
     "bucket_clock": "FramePacket.received_at_ns",
     "bucket_boundary": "half_open",
     "generation": 0
@@ -63,8 +65,8 @@
   "marker": {
     "extractor": "MinimapMarkerExtractor",
     "extractor_artifact_sha256": "508b309fce0988a2b0c1e7f4b2ab13a4702a969be5f0175950cb9f779c18a651",
-    "base_config_raw_sha256": "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79",
-    "base_config_semantic_sha256": "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22aa",
+    "base_config_raw_sha256": "2d77fae38f22386a2ab1465a1c837d2b935f26c020c3a10ffd17f086ae8306b5",
+    "base_config_semantic_sha256": "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a",
     "calibration_sha256": "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549",
     "roi": {
       "x": 309,
@@ -159,7 +161,7 @@
     },
     "base_marker_config_raw": {
       "kind": "loc003b_marker_config_artifact",
-      "expected_sha256": "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79",
+      "expected_sha256": "2d77fae38f22386a2ab1465a1c837d2b935f26c020c3a10ffd17f086ae8306b5",
       "external_ref": "external://g1-loc-003b/configs/g1-loc-003b-minimap-marker.json"
     },
     "base_marker_config_semantic": {

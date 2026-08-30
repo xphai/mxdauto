@@ -12,7 +12,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
+import subprocess
 import sys
 from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
@@ -63,7 +65,7 @@ CHAIN = "VC003Source->accepted FramePacket/CAS->MinimapMarkerExtractor->working-
 B2_PACKET_SHA256 = "4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73"
 EXTRACTOR_SHA256 = "508b309fce0988a2b0c1e7f4b2ab13a4702a969be5f0175950cb9f779c18a651"
 MARKER_CONFIG_SEMANTIC_SHA256 = "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a"
-MARKER_CONFIG_RAW_SHA256 = "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79"
+MARKER_CONFIG_RAW_SHA256 = "2d77fae38f22386a2ab1465a1c837d2b935f26c020c3a10ffd17f086ae8306b5"
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 PIXEL_REF_RE = re.compile(r"^external://[^/]+/[^/]+/[^/]+/([a-f0-9]{64})$")
@@ -114,9 +116,24 @@ def _reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
+def _lexical_safe_path(value: Path | str) -> Path:
+    candidate = Path(os.path.abspath(Path(value).expanduser()))
+    for component in (*reversed(candidate.parents), candidate):
+        try:
+            if component.is_symlink() or bool(
+                getattr(component.lstat(), "st_file_attributes", 0) & 0x400
+            ):
+                raise VC003VerificationError(
+                    "artifact path must not contain symlinks/reparse points"
+                )
+        except FileNotFoundError:
+            continue
+    return candidate
+
+
 def load_strict_json(path: Path | str) -> dict[str, Any]:
-    target = Path(path).expanduser().resolve()
-    if target.is_symlink() or not target.is_file():
+    target = _lexical_safe_path(path)
+    if not target.is_file():
         raise VC003VerificationError("JSON artifact is not a regular file")
     try:
         value = json.loads(
@@ -136,8 +153,8 @@ def _canonical_digest(value: object) -> str:
 
 
 def sha256_file(path: Path | str) -> str:
-    target = Path(path).expanduser().resolve()
-    if target.is_symlink() or not target.is_file():
+    target = _lexical_safe_path(path)
+    if not target.is_file():
         raise VC003VerificationError("artifact is not a regular file")
     digest = hashlib.sha256()
     with target.open("rb") as stream:
@@ -152,9 +169,23 @@ def _sha(value: object, name: str) -> str:
     return value
 
 
+def _git_head() -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    value = completed.stdout.strip().casefold()
+    if completed.returncode != 0 or COMMIT_RE.fullmatch(value) is None:
+        raise VC003VerificationError("current source commit is unavailable")
+    return value
+
+
 def _strict_jsonl(path: Path | str) -> tuple[list[dict[str, Any]], bytes]:
-    target = Path(path).expanduser().resolve()
-    if target.is_symlink() or not target.is_file():
+    target = _lexical_safe_path(path)
+    if not target.is_file():
         raise VC003VerificationError("JSONL artifact is not a regular file")
     raw = target.read_bytes()
     if raw and not raw.endswith(b"\n"):
@@ -212,6 +243,12 @@ def _config_bindings(config: Mapping[str, Any]) -> dict[str, dict[str, str]]:
 
 
 def _semantic_digest(key: str, path: Path) -> str:
+    if key == "upstream_b2_packet":
+        payload = load_strict_json(path)
+        declared = payload.get("packet_digest")
+        if isinstance(declared, str) and SHA256_RE.fullmatch(declared):
+            return declared
+        raise VC003VerificationError("upstream B2 packet has no valid packet_digest")
     if key == "loc003b_report_semantic":
         payload = load_strict_json(path)
         declared = payload.get("report_digest")
@@ -477,11 +514,50 @@ def _private_row_errors(
             "external://"
         ):
             errors.append(f"private_artifact_ref:{bucket}")
+        if row.get("privacy_class") != "restricted" or row.get("retention_class") != "candidate":
+            errors.append(f"private_retention:{bucket}")
+        if not isinstance(row.get("source_provenance_id"), str) or not row["source_provenance_id"]:
+            errors.append(f"private_provenance:{bucket}")
+        occurrence_digest = row.get("occurrence_artifact_sha256")
+        if not isinstance(occurrence_digest, str) or SHA256_RE.fullmatch(occurrence_digest) is None:
+            errors.append(f"private_occurrence_digest:{bucket}")
         digest = _private_pixel_digest(row)
         if digest is None:
             errors.append(f"private_pixel_ref:{bucket}")
         elif digest != public.get("pixel_digest"):
             errors.append(f"private_pixel_digest:{bucket}")
+        identity = (
+            row.get("session_id"),
+            row.get("source_id"),
+            row.get("frame_id"),
+            row.get("captured_at_ns"),
+            row.get("received_at_ns"),
+        )
+        if (
+            digest is not None
+            and isinstance(identity[0], str)
+            and isinstance(identity[1], str)
+            and isinstance(identity[2], int)
+            and isinstance(identity[3], int)
+            and isinstance(identity[4], int)
+        ):
+            expected_frame = _frame_identity_digest(
+                session_id=identity[0],
+                source_id=identity[1],
+                frame_id=identity[2],
+                captured_at_ns=identity[3],
+                admitted_at_ns=identity[4],
+                pixel_digest_value=digest,
+            )
+            if (
+                row.get("frame_digest") != expected_frame
+                or public.get("frame_digest") != expected_frame
+            ):
+                errors.append(f"private_frame_identity_digest:{bucket}")
+            if row.get("source_sequence") != identity[2]:
+                errors.append(f"private_source_sequence:{bucket}")
+        else:
+            errors.append(f"private_frame_identity:{bucket}")
         for name in ("frame_digest", "evidence_digest", "result_digest"):
             if not isinstance(row.get(name), str) or SHA256_RE.fullmatch(row[name]) is None:
                 errors.append(f"private_{name}_format:{bucket}")
@@ -546,12 +622,17 @@ def _rerun_errors(
     if cas_root is None:
         return ["private_cas_missing"]
     try:
-        store = PixelStore(Path(cas_root).expanduser().resolve())
+        root = _lexical_safe_path(cas_root)
+        if not root.is_dir():
+            raise VC003VerificationError("private CAS root is not a directory")
+        store = PixelStore(root)
         marker_cache: dict[tuple[str, str, str], MinimapMarkerExtractor] = {}
+        expected_pixel_digests: set[str] = set()
         for bucket, row in sorted(private_rows.items()):
             pixel = _private_pixel_digest(row)
             if pixel is None:
                 continue
+            expected_pixel_digests.add(pixel)
             try:
                 data = store.read(pixel, FULL_FRAME_PIXEL_SPEC)
                 if pixel_digest(FULL_FRAME_PIXEL_SPEC, data) != pixel:
@@ -560,6 +641,29 @@ def _rerun_errors(
                 artifact = store.artifact(pixel)
                 if artifact.pixel_digest != pixel:
                     errors.append(f"cas_artifact:{bucket}")
+                    continue
+                provenance = row.get("source_provenance_id")
+                session = row.get("session_id")
+                sequence = row.get("source_sequence")
+                if (
+                    not isinstance(provenance, str)
+                    or not isinstance(session, str)
+                    or not isinstance(sequence, int)
+                ):
+                    errors.append(f"cas_occurrence_identity:{bucket}")
+                    continue
+                occurrence = store.occurrence(
+                    pixel,
+                    source_provenance_id=provenance,
+                    session_id=session,
+                    source_sequence=sequence,
+                )
+                if (
+                    occurrence.privacy_class != "restricted"
+                    or occurrence.retention_class != "candidate"
+                    or occurrence.artifact_sha256 != row.get("occurrence_artifact_sha256")
+                ):
+                    errors.append(f"cas_occurrence:{bucket}")
                     continue
             except Exception as exc:
                 errors.append(f"cas_missing:{bucket}:{type(exc).__name__}")
@@ -597,6 +701,27 @@ def _rerun_errors(
                     errors.append(f"rerun_candidate_digest:{bucket}")
             except Exception as exc:
                 errors.append(f"rerun_error:{bucket}:{type(exc).__name__}")
+        root = _lexical_safe_path(cas_root)
+        occurrence_files = [
+            path for path in root.rglob("*.json") if path.parent.name.endswith(".occurrences")
+        ]
+        object_metadata = [
+            path for path in root.rglob("*.json") if not path.parent.name.endswith(".occurrences")
+        ]
+        raw_objects = [
+            path
+            for path in root.rglob("*")
+            if path.is_file()
+            and path.name != ".pixel-store.lock"
+            and path.suffix == ""
+            and re.fullmatch(r"[a-f0-9]{62}", path.name) is not None
+        ]
+        if len(occurrence_files) != BUCKET_COUNT:
+            errors.append("cas_occurrence_count")
+        if len(object_metadata) != len(expected_pixel_digests):
+            errors.append("cas_object_metadata_count")
+        if len(raw_objects) != len(expected_pixel_digests):
+            errors.append("cas_raw_object_count")
     except Exception as exc:
         errors.append(f"cas_root:{type(exc).__name__}")
     return errors
@@ -627,6 +752,25 @@ def _accepted_ledger_errors(
         for name in ("pixel_digest", "frame_digest"):
             if not isinstance(row.get(name), str) or SHA256_RE.fullmatch(row[name]) is None:
                 errors.append(f"accepted_ledger_{name}:{index}")
+        if (
+            isinstance(row.get("session_id"), str)
+            and isinstance(row.get("source_id"), str)
+            and isinstance(row.get("frame_id"), int)
+            and isinstance(row.get("captured_at_ns"), int)
+            and isinstance(row.get("received_at_ns"), int)
+            and isinstance(row.get("pixel_digest"), str)
+            and SHA256_RE.fullmatch(row["pixel_digest"]) is not None
+        ):
+            expected_frame = _frame_identity_digest(
+                session_id=row["session_id"],
+                source_id=row["source_id"],
+                frame_id=row["frame_id"],
+                captured_at_ns=row["captured_at_ns"],
+                admitted_at_ns=row["received_at_ns"],
+                pixel_digest_value=row["pixel_digest"],
+            )
+            if row.get("frame_digest") != expected_frame:
+                errors.append(f"accepted_ledger_frame_identity_digest:{index}")
     for index, row in enumerate(rows):
         if row.get("status") not in {None, "accepted"}:
             errors.append(f"accepted_ledger_status:{index}")
@@ -650,11 +794,25 @@ def _accepted_ledger_errors(
         errors.append("accepted_ledger_lineage_digest")
     # Derive the bucket origin from the selected rows and require one common
     # origin.  This makes the first-accepted check independent of report text.
-    origins = {
-        int(row["received_at_ns"]) - bucket * BUCKET_DURATION_NS
-        for bucket, row in private_rows.items()
-        if isinstance(row.get("received_at_ns"), int)
-    }
+    public_rows = report.get("public_selected_rows")
+    public_by_bucket = (
+        {
+            row.get("bucket_index"): row
+            for row in public_rows
+            if isinstance(public_rows, list) and isinstance(row, Mapping)
+        }
+        if isinstance(public_rows, list)
+        else {}
+    )
+    origins: set[int] = set()
+    for bucket, row in private_rows.items():
+        received = row.get("received_at_ns")
+        public = public_by_bucket.get(bucket)
+        offset = public.get("bucket_offset_ns") if isinstance(public, Mapping) else None
+        if isinstance(received, int) and isinstance(offset, int):
+            origins.add(received - bucket * BUCKET_DURATION_NS - offset)
+        else:
+            errors.append(f"bucket_origin_fields:{bucket}")
     if len(origins) != 1:
         errors.append("bucket_origin_inconsistent")
         return errors
@@ -770,7 +928,110 @@ def _strict_structure_errors(report: Mapping[str, Any]) -> list[str]:
     return errors
 
 
-def verify_report(
+def _public_report_privacy_errors(report: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    banned_keys = {
+        "raw_bytes",
+        "pixels",
+        "mask",
+        "absolute_path",
+        "device_original_id",
+        "working_candidate",
+        "source_bbox",
+        "source_centroid",
+        "private_cas_path",
+    }
+
+    def walk(value: object, path: str) -> None:
+        if isinstance(value, Mapping):
+            for key, child in value.items():
+                key_text = str(key)
+                if key_text.casefold() in banned_keys:
+                    errors.append(f"privacy_banned_key:{path}.{key_text}")
+                walk(child, f"{path}.{key_text}")
+        elif isinstance(value, list | tuple):
+            for index, child in enumerate(value):
+                walk(child, f"{path}[{index}]")
+        elif isinstance(value, bytes | bytearray | memoryview):
+            errors.append(f"privacy_raw_bytes:{path}")
+        elif isinstance(value, str):
+            if (
+                value.startswith("/")
+                or value.startswith("\\\\")
+                or (len(value) >= 3 and value[1] == ":" and value[2] in "\\/")
+            ):
+                errors.append(f"privacy_absolute_path:{path}")
+            if re.search(r"(?i)(?:USB\\|VID_[0-9A-F]{4}|PID_[0-9A-F]{4})", value):
+                errors.append(f"privacy_raw_device_id:{path}")
+
+    walk(report, "report")
+    return errors
+
+
+def _strict_config_errors(config: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    expected_window = {
+        "warmup_seconds": 30,
+        "measurement_seconds": 300,
+        "bucket_count": BUCKET_COUNT,
+        "bucket_seconds": 3,
+        "target_admission_hz": 15.0,
+        "poll_timeout_seconds": 0.05,
+        "bucket_clock": "FramePacket.received_at_ns",
+        "bucket_boundary": "half_open",
+        "generation": GENERATION,
+    }
+    if config.get("measurement_window") != expected_window:
+        errors.append("config_measurement_window")
+    marker = config.get("marker")
+    if not isinstance(marker, Mapping):
+        errors.append("config_marker")
+    else:
+        expected_marker = {
+            "extractor_artifact_sha256": EXTRACTOR_SHA256,
+            "base_config_raw_sha256": MARKER_CONFIG_RAW_SHA256,
+            "base_config_semantic_sha256": MARKER_CONFIG_SEMANTIC_SHA256,
+            "calibration_sha256": FULL_FRAME_CALIBRATION_SHA256,
+        }
+        for key, value in expected_marker.items():
+            if marker.get(key) != value:
+                errors.append(f"config_marker_{key}")
+        base = marker.get("base_config")
+        try:
+            parsed = MinimapMarkerConfig.from_dict(base)
+            if parsed.digest != MARKER_CONFIG_SEMANTIC_SHA256:
+                errors.append("config_marker_semantic")
+        except Exception:
+            errors.append("config_marker_base")
+    if config.get("input_policy") != {
+        "input_owner": "legacy",
+        "real_input_enabled": False,
+        "real_input_call_count": 0,
+        "core_v2_real_input_call_count": 0,
+        "double_write_event_count": 0,
+    }:
+        errors.append("config_input_policy")
+    output = config.get("output_policy")
+    if not isinstance(output, Mapping) or any(
+        output.get(key) != value
+        for key, value in {
+            "public_row_kind": "hash_only",
+            "public_selected_row_count": BUCKET_COUNT,
+            "one_row_per_bucket": True,
+            "allow_duplicate_pixel_digest": True,
+            "include_coordinates": False,
+            "include_raw_bytes": False,
+            "include_absolute_paths": False,
+            "include_device_original_id": False,
+        }.items()
+    ):
+        errors.append("config_output_policy")
+    if config.get("run_specific_audits") is not True:
+        errors.append("config_run_specific_audits")
+    return errors
+
+
+def _verify_report_impl(
     report: Mapping[str, Any] | Path | str,
     *,
     config_path: Path | str = CONFIG_PATH,
@@ -798,7 +1059,7 @@ def verify_report(
     errors: list[str] = []
     report_path: Path | None = None
     if isinstance(report, str | Path):
-        report_path = Path(report).expanduser().resolve()
+        report_path = _lexical_safe_path(report)
         try:
             payload = load_strict_json(report_path)
         except Exception as exc:
@@ -816,11 +1077,13 @@ def verify_report(
     errors.extend(_schema_errors(report_value, Path(schema_path)))
     errors.extend(_report_digest_errors(report_value))
     errors.extend(_strict_structure_errors(report_value))
+    errors.extend(_public_report_privacy_errors(report_value))
 
     config: Mapping[str, Any] | None = None
     try:
         config = load_strict_json(config_path)
         config_bindings = _config_bindings(config)
+        errors.extend(_strict_config_errors(config))
         if report_value.get("config_sha256") != sha256_file(config_path):
             errors.append("config_digest")
         if report_value.get("expected_bindings") != config_bindings:
@@ -836,9 +1099,12 @@ def verify_report(
     except Exception as exc:
         errors.append(f"config_invalid:{type(exc).__name__}")
         config_bindings = {}
+    effective_source_commit = (
+        _git_head() if expected_source_commit is None else expected_source_commit.casefold()
+    )
     if (
-        expected_source_commit is not None
-        and report_value.get("source_commit") != expected_source_commit
+        COMMIT_RE.fullmatch(effective_source_commit) is None
+        or report_value.get("source_commit") != effective_source_commit
     ):
         errors.append("source_commit_expected")
     rows_errors, public_rows = _public_row_errors(report_value.get("public_selected_rows"))
@@ -964,6 +1230,15 @@ def verify_report(
     return errors
 
 
+def verify_report(*args: Any, **kwargs: Any) -> list[str]:
+    """Fail closed with structured errors for every malformed input shape."""
+
+    try:
+        return _verify_report_impl(*args, **kwargs)
+    except Exception as exc:
+        return [f"verifier_structure:{type(exc).__name__}"]
+
+
 def verify_vc003_readonly_localization(*args: Any, **kwargs: Any) -> list[str]:
     return verify_report(*args, **kwargs)
 
@@ -981,8 +1256,8 @@ def _parse_bindings(values: Iterable[str]) -> dict[str, Path]:
         name, value = raw.split("=", 1)
         if not name or name in result:
             raise VC003VerificationError("binding names must be unique")
-        path = Path(value).expanduser().resolve()
-        if path.is_symlink() or not path.is_file():
+        path = _lexical_safe_path(value)
+        if not path.is_file():
             raise VC003VerificationError("binding path is not a regular file")
         result[name] = path
     return result
@@ -1031,7 +1306,7 @@ def main(argv: list[str] | None = None) -> int:
             ("device_environment", args.device_environment),
         ):
             if value is not None:
-                paths[key] = value.expanduser().resolve()
+                paths[key] = _lexical_safe_path(value)
         expected: dict[str, str] = {}
         for key, value in (
             ("wheel", args.expected_wheel_sha256),

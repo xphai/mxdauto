@@ -17,7 +17,7 @@ LEDGER_SCHEMA_PATH = PROJECT_ROOT / "schemas" / "vc003-readonly-localization-led
 B2_PACKET = "4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73"
 LOC003B_RAW = "37076a1937fa10ce317c4899a43470dfcce9dd7c155f6a0efa8ef089f0efc4d5"
 LOC003B_SEMANTIC = "9528f117200bfcb24d3723a081e83e4889f273322c798fef6fd62cfc14a361ff"
-MARKER_RAW = "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79"
+MARKER_RAW = "2d77fae38f22386a2ab1465a1c837d2b935f26c020c3a10ffd17f086ae8306b5"
 MARKER_SEMANTIC = "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a"
 CALIBRATION = "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549"
 EXTRACTOR = "508b309fce0988a2b0c1e7f4b2ab13a4702a969be5f0175950cb9f779c18a651"
@@ -331,6 +331,8 @@ def test_config_freezes_full_frame_live_window_and_expected_bindings() -> None:
         "measurement_seconds": 300,
         "bucket_count": 100,
         "bucket_seconds": 3,
+        "target_admission_hz": 15.0,
+        "poll_timeout_seconds": 0.05,
         "bucket_clock": "FramePacket.received_at_ns",
         "bucket_boundary": "half_open",
         "generation": 0,
@@ -383,12 +385,16 @@ def test_draft202012_accepts_report_and_both_ledger_row_variants(
         "source_id": "capture-card-primary",
         "frame_id": 0,
         "source_sequence": 0,
+        "source_provenance_id": "vc003-live",
         "frame_digest": _digest("frame", 0),
+        "pixel_digest": _digest("pixel", 0),
+        "occurrence_artifact_sha256": _digest("occurrence", 0),
         "candidate_digest": _digest("candidate", 0),
         "evidence_digest": _digest("evidence", 0),
         "result_digest": _digest("result", 0),
         "artifact_ref": "external://vc003/restricted-verifier-rows.jsonl",
         "privacy_class": "restricted",
+        "retention_class": "candidate",
         "working_candidate": {"x": 123.5, "y": 456.25},
         "source_bbox": {"x": 309, "y": 238, "width": 10, "height": 10},
         "source_centroid": [314.0, 243.0],

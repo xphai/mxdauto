@@ -38,6 +38,8 @@ def test_runner_parser_keeps_production_window_and_requires_private_outputs(runn
         [
             "--report",
             "report.json",
+            "--accepted-ledger",
+            "accepted.jsonl",
             "--private-cas-root",
             "cas",
             "--private-rows",
@@ -47,6 +49,7 @@ def test_runner_parser_keeps_production_window_and_requires_private_outputs(runn
         ]
     )
     assert args.report == Path("report.json")
+    assert args.accepted_ledger == Path("accepted.jsonl")
     assert args.private_cas_root == Path("cas")
     assert args.private_rows == Path("rows.jsonl")
     assert not hasattr(args, "warmup_seconds")
@@ -84,6 +87,82 @@ def test_runner_short_window_is_only_available_to_injected_test_path(
     assert report["status"] == "FAIL"
 
 
+def test_runner_real_clock_branch_passes_the_frozen_read_timeout(
+    runner: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen_timeouts: list[float] = []
+
+    class FakeIntegration:
+        def __init__(self, *_args: Any, thresholds: Any, **_kwargs: Any) -> None:
+            self.thresholds = thresholds
+            self.selector = SimpleNamespace(selected=())
+            self.rows: tuple[Any, ...] = ()
+            self.results: tuple[Any, ...] = ()
+
+        def poll(self, *, timeout_s: float) -> tuple[Any, None]:
+            seen_timeouts.append(timeout_s)
+            admission = SimpleNamespace(
+                accepted=False,
+                packet=None,
+                status=runner.FrameAdmissionStatus.NO_FRAME,
+                event=SimpleNamespace(observed_at_ns=0),
+            )
+            return admission, None
+
+        def validate(self, **_kwargs: Any) -> Any:
+            return SimpleNamespace(valid=True)
+
+    monotonic_ns_values = iter((0, 0, 0, 1_000_000_000))
+    source = SimpleNamespace(
+        is_running=False,
+        start=lambda: None,
+        stop=lambda: None,
+        negotiated_facts=None,
+    )
+    monkeypatch.setattr(runner, "VC003LiveMarkerRunner", FakeIntegration)
+    monkeypatch.setattr(runner.time, "monotonic_ns", lambda: next(monotonic_ns_values))
+    monkeypatch.setattr(runner.time, "monotonic", lambda: 0.0)
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+
+    runner.run_measurement(
+        source=source,
+        source_config=VC003SourceConfig(session_id="test-session"),
+        warmup_seconds=0,
+        measurement_seconds=1,
+        source_commit="a" * 40,
+        config=runner.load_strict_json(runner.CONFIG_PATH),
+        config_sha256=runner.sha256_file(runner.CONFIG_PATH),
+    )
+
+    assert seen_timeouts == [runner.POLL_TIMEOUT_SECONDS]
+
+
+def test_runner_cleans_up_after_source_start_failure(runner: Any) -> None:
+    stopped: list[bool] = []
+
+    def fail_start() -> None:
+        raise RuntimeError("synthetic start failure")
+
+    source = SimpleNamespace(
+        is_running=False,
+        start=fail_start,
+        stop=lambda: stopped.append(True),
+    )
+
+    with pytest.raises(RuntimeError, match="synthetic start failure"):
+        runner.run_measurement(
+            source=source,
+            source_config=VC003SourceConfig(session_id="test-session"),
+            warmup_seconds=0,
+            measurement_seconds=0,
+            source_commit="a" * 40,
+            config=runner.load_strict_json(runner.CONFIG_PATH),
+            config_sha256=runner.sha256_file(runner.CONFIG_PATH),
+        )
+
+    assert stopped == [True]
+
+
 def test_runner_writer_is_canonical_single_lf_and_atomic(tmp_path: Path, runner: Any) -> None:
     output = tmp_path / "nested" / "report.json"
     payload = {"z": [2, 1], "a": "value"}
@@ -92,6 +171,65 @@ def test_runner_writer_is_canonical_single_lf_and_atomic(tmp_path: Path, runner:
 
     assert output.read_bytes() == runner.canonical_json(payload) + b"\n"
     assert list(output.parent.glob(f".{output.name}.*.tmp")) == []
+
+
+def test_frozen_config_and_default_bindings_pass_preflight(runner: Any) -> None:
+    config = runner.load_strict_json(runner.CONFIG_PATH)
+    runner._production_config(config)
+    extractor = Path(runner.inspect.getsourcefile(runner.MinimapMarkerExtractor))
+    paths = {
+        "upstream_b2_packet": runner.DEFAULT_B2_PACKET_PATH,
+        "loc003b_report_raw": runner.DEFAULT_LOC003B_REPORT_PATH,
+        "base_marker_config_raw": runner.DEFAULT_MARKER_CONFIG_PATH,
+        "calibration": runner.DEFAULT_B2_PROVENANCE_PATH,
+        "extractor": extractor,
+        "wheel": runner.DEFAULT_WHEEL_PATH,
+        "dependency_lock": runner.DEFAULT_LOCK_PATH,
+        "device_environment": runner.DEFAULT_B2_PROVENANCE_PATH,
+    }
+    expected = {
+        "wheel": runner.EXPECTED_B2_WHEEL_SHA256,
+        "dependency_lock": runner.EXPECTED_B2_LOCK_SHA256,
+        "device_environment": runner.EXPECTED_B2_DEVICE_ENV_SHA256,
+    }
+
+    assert runner.verify_external_bindings(config, paths, expected=expected) == []
+
+
+def test_device_preflight_binds_the_named_physical_instance(
+    runner: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    instance_id = r"USB\VID_345F&PID_2131&MI_00\6&1D3088&0&0000"
+    alternative = (
+        r"@device_pnp_\\?\usb#vid_345f&pid_2131&mi_00#6&1d3088&0&0000"
+        r"#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
+    )
+    monkeypatch.setattr(
+        runner,
+        "_enumerate_dshow_video_devices",
+        lambda: [("Other Camera", "other"), ("VC-003 Video", alternative)],
+    )
+
+    index, digest = runner._preflight_device("VC-003 Video", instance_id)
+
+    assert index == 1
+    assert digest == runner.hash_physical_device_fingerprint(instance_id)
+
+
+def test_cleanup_rejects_a_residual_capture_worker(runner: Any) -> None:
+    source = SimpleNamespace(
+        status=lambda: SimpleNamespace(
+            residual_worker_count=1,
+            lifecycle="stopped",
+            error=None,
+            accounting_holds=True,
+        )
+    )
+
+    cleanup = runner._cleanup_payload(source, stop_ok=True, private_released=True)
+
+    assert cleanup["status"] == "FAIL"
+    assert cleanup["residual_thread_count"] == 1
 
 
 def test_read_only_pixel_store_has_no_write_surface(tmp_path: Path, runner: Any) -> None:
@@ -132,3 +270,26 @@ def test_verifier_does_not_trust_report_status(verifier: Any) -> None:
     errors = verifier.verify_report(report, require_external_bindings=False)
     assert errors
     assert "private_rows_missing" in errors
+
+
+def test_verifier_malformed_nested_shape_fails_closed(verifier: Any) -> None:
+    errors = verifier.verify_report(
+        {"scope": "G1-LOC-003C", "lineage": "malformed"},
+        require_external_bindings=False,
+    )
+
+    assert len(errors) == 1
+    assert errors[0].startswith("verifier_structure:")
+
+
+def test_runner_rejects_symlinked_binding(tmp_path: Path, runner: Any) -> None:
+    target = tmp_path / "target.json"
+    target.write_text("{}\n", encoding="utf-8")
+    link = tmp_path / "link.json"
+    try:
+        link.symlink_to(target)
+    except OSError:
+        pytest.skip("symlink creation is unavailable on this host")
+
+    with pytest.raises(runner.VC003RunError, match="symlinks/reparse"):
+        runner._require_file(link, "fixture")

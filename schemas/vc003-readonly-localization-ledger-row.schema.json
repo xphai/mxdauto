@@ -221,10 +221,15 @@
         "source_id",
         "frame_id",
         "source_sequence",
+        "source_provenance_id",
         "frame_digest",
+        "pixel_digest",
+        "occurrence_artifact_sha256",
         "evidence_digest",
         "result_digest",
-        "artifact_ref"
+        "artifact_ref",
+        "privacy_class",
+        "retention_class"
       ],
       "properties": {
         "schema_version": {
@@ -261,7 +266,16 @@
           "type": "integer",
           "minimum": 0
         },
+        "source_provenance_id": {
+          "$ref": "#/$defs/id"
+        },
         "frame_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pixel_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "occurrence_artifact_sha256": {
           "$ref": "#/$defs/sha256"
         },
         "candidate_digest": {
@@ -309,6 +323,9 @@
         },
         "privacy_class": {
           "const": "restricted"
+        },
+        "retention_class": {
+          "const": "candidate"
         },
         "working_candidate": {
           "$ref": "#/$defs/workingCandidate"

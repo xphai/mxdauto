@@ -376,7 +376,7 @@
           "const": "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a"
         },
         "base_config_raw_sha256": {
-          "const": "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79"
+          "const": "2d77fae38f22386a2ab1465a1c837d2b935f26c020c3a10ffd17f086ae8306b5"
         },
         "calibration_sha256": {
           "const": "bde680518546eaef708f190a7087b5d7b6623a1b744826d5e9565d63d2c5d549"
@@ -1100,7 +1100,7 @@
             {
               "properties": {
                 "expected_sha256": {
-                  "const": "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79"
+                  "const": "2d77fae38f22386a2ab1465a1c837d2b935f26c020c3a10ffd17f086ae8306b5"
                 }
               }
             }

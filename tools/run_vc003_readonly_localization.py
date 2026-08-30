@@ -16,6 +16,7 @@ overrides.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as _datetime
 import hashlib
 import inspect
@@ -40,16 +41,19 @@ from maple_automation_core.capture.frame_source import (  # noqa: E402
     FrameAdmissionResult,
     FrameAdmissionStatus,
     FrameSourceConfig,
+    canonical_calibration_sha256,
 )
 from maple_automation_core.capture.pixel_store import (  # noqa: E402
+    CaptureSourceProvenance,
     PixelStore,
     canonical_json,
+    hash_physical_device_fingerprint,
 )
 from maple_automation_core.capture.vc003_source import (  # noqa: E402
     NegotiatedCaptureFacts,
+    OpenCVCaptureBackend,
     VC003Source,
     VC003SourceConfig,
-    make_opencv_backend,
 )
 from maple_automation_core.localization.minimap_marker import (  # noqa: E402
     MinimapMarkerConfig,
@@ -64,6 +68,7 @@ from maple_automation_core.replay.vc003_live_marker import (  # noqa: E402
     FULL_FRAME_PIXEL_SPEC,
     GENERATION,
     MAX_AGE_NS,
+    CapacityOneMemoryCAS,
     ReadOnlyPixelStore,
     VC003LiveMarkerRunner,
     VC003LiveMarkerThresholds,
@@ -104,6 +109,9 @@ TIMESTAMP_ORIGIN = "host_monotonic_post_retrieve"
 CLOCK_DOMAIN = "monotonic"
 PIXEL_DIGEST_DOMAIN = "MAPLE_PIXEL_V1"
 CHAIN = "VC003Source->accepted FramePacket/CAS->MinimapMarkerExtractor->working-space candidate"
+DEVICE_INSTANCE_ENV = "VC003_DEVICE_INSTANCE_ID"
+TARGET_ADMISSION_HZ = 15.0
+POLL_TIMEOUT_SECONDS = 0.05
 SCOPE_EXCLUDED = [
     "ObservationResult",
     "affine",
@@ -122,11 +130,12 @@ SCOPE_EXCLUDED = [
 B2_PACKET_SHA256 = "4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73"
 LOC003B_REPORT_SHA256 = "37076a1937fa10ce317c4899a43470dfcce9dd7c155f6a0efa8ef089f0efc4d5"
 LOC003B_REPORT_DIGEST = "9528f117200bfcb24d3723a081e83e4889f273322c798fef6fd62cfc14a361ff"
-MARKER_CONFIG_RAW_SHA256 = "50c39babefe3d704a2d98bc10d845f08a07119ca39328db170618c4681088b79"
+MARKER_CONFIG_RAW_SHA256 = "2d77fae38f22386a2ab1465a1c837d2b935f26c020c3a10ffd17f086ae8306b5"
 MARKER_CONFIG_SEMANTIC_SHA256 = "47936cf77e46ebc62fd3d6dae241237307ebb370fd81a197745486812c58f22a"
 EXTRACTOR_SHA256 = "508b309fce0988a2b0c1e7f4b2ab13a4702a969be5f0175950cb9f779c18a651"
 EXPECTED_B2_WHEEL_SHA256 = "62b3b2f362a60087dffadb1d5529c4d7a27440adf61a28d30b685c7cda3b273f"
 EXPECTED_B2_LOCK_SHA256 = "1aa30d122b50bb938545bcfc2f50e4d3ba789c473c30e3b6806a73cad38957a9"
+EXPECTED_B2_DEVICE_ENV_SHA256 = "b21f9f0bdb9e15ba389aa7de7152a9434e4ebbe7ac7d77ad67cc4e75a8a40898"
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 
@@ -137,6 +146,106 @@ class VC003RunError(RuntimeError):
 
 class Clock(Protocol):
     def __call__(self) -> int: ...
+
+
+class ControlledOpenCVBackend:
+    """OpenCV backend whose physical-device pin is supplied by preflight."""
+
+    def __init__(
+        self,
+        config: VC003SourceConfig,
+        *,
+        fingerprint_sha256: str,
+        probe_every_property_reads: int = 300,
+    ) -> None:
+        self.inner = OpenCVCaptureBackend(config)
+        self._fingerprint = _require_sha(fingerprint_sha256, "device fingerprint")
+        self._facts: NegotiatedCaptureFacts | None = None
+        self._property_reads = 0
+        self._probe_every = probe_every_property_reads
+
+    @property
+    def device_name(self) -> str:
+        return self.inner.device_name
+
+    @property
+    def device_fingerprint_sha256(self) -> str:
+        return self._fingerprint
+
+    @property
+    def backend_name(self) -> str:
+        return self.inner.backend_name
+
+    @property
+    def negotiated_facts(self) -> NegotiatedCaptureFacts | None:
+        self._property_reads += 1
+        if self._facts is None or self._property_reads % self._probe_every == 0:
+            self._facts = self.inner.negotiated_facts
+        return self._facts
+
+    def start(self) -> None:
+        self.inner.start()
+        self._facts = self.inner.negotiated_facts
+
+    def read(self) -> Any | None:
+        return self.inner.read()
+
+    def stop(self) -> None:
+        self.inner.stop()
+
+
+def _normalize_device_identity(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", value.casefold())
+
+
+def _enumerate_dshow_video_devices() -> list[tuple[str, str]]:
+    """Return DirectShow video names and alternative IDs without persisting them."""
+
+    completed = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-list_devices", "true", "-f", "dshow", "-i", "dummy"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+        timeout=15,
+    )
+    lines = (completed.stderr + "\n" + completed.stdout).splitlines()
+    devices: list[tuple[str, str]] = []
+    pending_name: str | None = None
+    for line in lines:
+        match = re.search(r'"([^"]+)" \(video\)\s*$', line)
+        if match is not None:
+            pending_name = match.group(1)
+            continue
+        if pending_name is None:
+            continue
+        alternative = re.search(r'Alternative name "([^"]+)"', line)
+        if alternative is not None:
+            devices.append((pending_name, alternative.group(1)))
+            pending_name = None
+    if not devices:
+        raise VC003RunError("DirectShow device enumeration returned no video devices")
+    return devices
+
+
+def _preflight_device(device_name: str, raw_instance_id: str) -> tuple[int, str]:
+    """Resolve one named DirectShow device and bind its de-identified fingerprint."""
+
+    if not raw_instance_id:
+        raise VC003RunError(f"{DEVICE_INSTANCE_ENV} is required and is never persisted")
+    matches = [
+        (index, alternative)
+        for index, (name, alternative) in enumerate(_enumerate_dshow_video_devices())
+        if name == device_name
+    ]
+    if len(matches) != 1:
+        raise VC003RunError("DirectShow selector must resolve exactly one VC-003 video device")
+    index, alternative = matches[0]
+    normalized_raw = _normalize_device_identity(raw_instance_id)
+    if not normalized_raw or normalized_raw not in _normalize_device_identity(alternative):
+        raise VC003RunError("DirectShow device identity does not match the pinned instance ID")
+    return index, hash_physical_device_fingerprint(raw_instance_id)
 
 
 def _reject_constant(value: str) -> object:
@@ -152,11 +261,24 @@ def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
+def _lexical_safe_path(value: Path | str) -> Path:
+    candidate = Path(os.path.abspath(Path(value).expanduser()))
+    for component in (*reversed(candidate.parents), candidate):
+        try:
+            if component.is_symlink() or bool(
+                getattr(component.lstat(), "st_file_attributes", 0) & 0x400
+            ):
+                raise VC003RunError("artifact path must not contain symlinks/reparse points")
+        except FileNotFoundError:
+            continue
+    return candidate
+
+
 def load_strict_json(path: Path | str) -> dict[str, Any]:
     """Load one UTF-8 JSON object, rejecting duplicates and non-finite values."""
 
-    target = Path(path).expanduser().resolve()
-    if target.is_symlink() or not target.is_file():
+    target = _lexical_safe_path(path)
+    if not target.is_file():
         raise VC003RunError(f"JSON artifact must be an existing regular file: {target}")
     try:
         text = target.read_text(encoding="utf-8")
@@ -177,8 +299,8 @@ def _canonical_digest(value: object) -> str:
 
 
 def sha256_file(path: Path | str) -> str:
-    target = Path(path).expanduser().resolve()
-    if target.is_symlink() or not target.is_file():
+    target = _lexical_safe_path(path)
+    if not target.is_file():
         raise VC003RunError(f"artifact must be an existing regular file: {target}")
     digest = hashlib.sha256()
     with target.open("rb") as stream:
@@ -245,15 +367,15 @@ def _validate_checkout(
 
 
 def _require_file(value: Path | str, name: str) -> Path:
-    target = Path(value).expanduser().resolve()
-    if target.is_symlink() or not target.is_file():
+    target = _lexical_safe_path(value)
+    if not target.is_file():
         raise VC003RunError(f"{name} must be an existing regular file: {target}")
     return target
 
 
 def _require_dir(value: Path | str, name: str) -> Path:
-    target = Path(value).expanduser().resolve()
-    if target.is_symlink() or not target.is_dir():
+    target = _lexical_safe_path(value)
+    if not target.is_dir():
         raise VC003RunError(f"{name} must be an existing directory: {target}")
     return target
 
@@ -267,7 +389,7 @@ def _utc_timestamp() -> str:
 
 
 def _write_atomic_bytes(path: Path | str, payload: bytes) -> None:
-    target = Path(path).expanduser().resolve()
+    target = _lexical_safe_path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
@@ -328,6 +450,62 @@ def _format_from_facts(
     }
 
 
+def _build_live_provenance(
+    source_config: VC003SourceConfig,
+    device_environment: Mapping[str, Any],
+    *,
+    device_fingerprint_sha256: str,
+    source_commit: str,
+    dependency_lock_sha256: str,
+    source_artifact_sha256: str,
+) -> CaptureSourceProvenance:
+    """Rebind measured B2 facts to this exact live session and tool revision."""
+
+    expected_fingerprint = device_environment.get("physical_device_fingerprint_sha256")
+    if expected_fingerprint != device_fingerprint_sha256:
+        raise VC003RunError("current device fingerprint does not match the pinned environment")
+    negotiated = device_environment.get("negotiated")
+    backend_version = device_environment.get("backend_version")
+    if not isinstance(negotiated, Mapping) or not isinstance(backend_version, str):
+        raise VC003RunError("device environment lacks measured negotiated facts")
+    source_config_sha256 = hashlib.sha256(canonical_json(source_config.to_dict())).hexdigest()
+    calibration_sha256 = canonical_calibration_sha256(
+        source_config.geometry,
+        source_config.transform_version,
+    )
+    if calibration_sha256 != FULL_FRAME_CALIBRATION_SHA256:
+        raise VC003RunError("source calibration is not the frozen full-frame calibration")
+    return CaptureSourceProvenance(
+        requested=_format_from_facts(None, source_config),
+        negotiated=dict(negotiated),
+        backend=source_config.backend,
+        timestamp_origin=TIMESTAMP_ORIGIN,
+        upstream_queue=str(device_environment.get("upstream_queue", "unknown")),
+        physical_device_fingerprint_sha256=device_fingerprint_sha256,
+        input_owner="legacy",
+        real_input_enabled=False,
+        real_input_call_count=0,
+        source_id=source_config.source_id,
+        session_id=source_config.session_id,
+        backend_version=backend_version,
+        tool_artifact_sha256=sha256_file(Path(__file__)),
+        dependency_lock_sha256=dependency_lock_sha256,
+        source_artifact_sha256=source_artifact_sha256,
+        source_commit=source_commit,
+        config_sha256=source_config_sha256,
+        calibration_sha256=calibration_sha256,
+    )
+
+
+def _require_fresh_private_cas(root: Path) -> None:
+    """Require an empty, run-specific selected-occurrence CAS directory."""
+
+    if root.is_symlink() or not root.is_dir():
+        raise VC003RunError("private CAS root must be a real directory")
+    if any(root.iterdir()):
+        raise VC003RunError("private CAS root must be empty for a new LOC-003C run")
+
+
 def _config_bindings(config: Mapping[str, Any]) -> dict[str, dict[str, str]]:
     raw = config.get("expected_bindings")
     if not isinstance(raw, Mapping):
@@ -374,6 +552,12 @@ def _binding_paths_from_args(args: argparse.Namespace) -> dict[str, Path]:
 
 
 def _semantic_binding_digest(key: str, path: Path) -> str:
+    if key == "upstream_b2_packet":
+        payload = load_strict_json(path)
+        declared = payload.get("packet_digest")
+        if isinstance(declared, str) and SHA256_RE.fullmatch(declared):
+            return declared
+        raise VC003RunError("upstream B2 packet has no valid packet_digest")
     if key == "loc003b_report_semantic":
         payload = load_strict_json(path)
         declared = payload.get("report_digest")
@@ -444,8 +628,17 @@ def verify_external_bindings(
 
 
 def _frame_digest(packet: object) -> str:
-    body = packet.to_dict() if callable(getattr(packet, "to_dict", None)) else packet
-    return _canonical_digest(body)
+    item = cast(Any, packet)
+    return _canonical_digest(
+        {
+            "session_id": item.session_id,
+            "source_id": item.source_id,
+            "frame_id": item.frame_id,
+            "captured_at_ns": item.captured_at_ns,
+            "admitted_at_ns": item.received_at_ns,
+            "pixel_digest": item.content_hash,
+        }
+    )
 
 
 def _result_status(result: object) -> str:
@@ -535,7 +728,10 @@ def _private_row(
         "source_id": str(row.source_id),
         "frame_id": int(row.frame_id),
         "source_sequence": int(row.source_sequence),
+        "source_provenance_id": str(row.source_provenance_id),
         "frame_digest": public["frame_digest"],
+        "pixel_digest": str(row.pixel_digest),
+        "occurrence_artifact_sha256": str(row.artifact_sha256),
         "candidate_digest": public["candidate_digest"],
         "evidence_digest": public["evidence_digest"],
         "result_digest": public["result_digest"],
@@ -546,6 +742,7 @@ def _private_row(
         "verifier_artifact_ref": artifact_ref,
         "artifact_ref": artifact_ref,
         "privacy_class": "restricted",
+        "retention_class": "candidate",
         "row_digest": public["row_digest"],
     }
     if device_digest is not None:
@@ -645,17 +842,36 @@ def _make_privacy(run_index: int) -> dict[str, Any]:
 
 def _cleanup_payload(source: object, stop_ok: bool, private_released: bool) -> dict[str, Any]:
     residual = 0
-    thread = getattr(source, "thread", None)
-    if callable(thread):
-        value = thread()
-        residual = int(value is not None and getattr(value, "is_alive", lambda: False)())
+    lifecycle: str | None = None
+    source_error: str | None = None
+    accounting_holds = True
+    status_method = getattr(source, "status", None)
+    if callable(status_method):
+        try:
+            status = status_method()
+            residual = int(getattr(status, "residual_worker_count", 0))
+            lifecycle_value = getattr(status, "lifecycle", None)
+            lifecycle = lifecycle_value if isinstance(lifecycle_value, str) else None
+            error_value = getattr(status, "error", None)
+            source_error = error_value if isinstance(error_value, str) else None
+            accounting_holds = bool(getattr(status, "accounting_holds", False))
+        except Exception:
+            stop_ok = False
+    else:
+        thread = getattr(source, "thread", None)
+        if thread is not None and callable(getattr(thread, "is_alive", None)):
+            residual = int(thread.is_alive())
+    lifecycle_ok = lifecycle in {None, "created", "stopped"}
+    cleanup_ok = (
+        stop_ok and residual == 0 and lifecycle_ok and source_error is None and accounting_holds
+    )
     return {
-        "status": "PASS" if stop_ok and residual == 0 else "FAIL",
-        "capture_stopped": stop_ok,
+        "status": "PASS" if cleanup_ok else "FAIL",
+        "capture_stopped": stop_ok and lifecycle_ok,
         "residual_thread_count": residual,
         "residual_child_count": 0,
         "private_artifacts_released": private_released,
-        "cleanup_failure_count": 0 if stop_ok else 1,
+        "cleanup_failure_count": 0 if cleanup_ok else 1,
     }
 
 
@@ -670,6 +886,8 @@ def _production_config(config: Mapping[str, Any]) -> None:
         "measurement_seconds": 300,
         "bucket_count": BUCKET_COUNT,
         "bucket_seconds": BUCKET_SECONDS,
+        "target_admission_hz": 15.0,
+        "poll_timeout_seconds": 0.05,
         "bucket_clock": "FramePacket.received_at_ns",
         "bucket_boundary": "half_open",
         "generation": GENERATION,
@@ -704,6 +922,55 @@ def _production_config(config: Mapping[str, Any]) -> None:
             raise VC003RunError(f"VC003 capture config field {key!r} is not frozen")
     if config.get("scope_excluded") != SCOPE_EXCLUDED:
         raise VC003RunError("VC003 scope_excluded is not frozen")
+    marker = config.get("marker")
+    if not isinstance(marker, Mapping):
+        raise VC003RunError("VC003 marker config is missing")
+    expected_marker = {
+        "extractor": "MinimapMarkerExtractor",
+        "extractor_artifact_sha256": EXTRACTOR_SHA256,
+        "base_config_raw_sha256": MARKER_CONFIG_RAW_SHA256,
+        "base_config_semantic_sha256": MARKER_CONFIG_SEMANTIC_SHA256,
+        "calibration_sha256": FULL_FRAME_CALIBRATION_SHA256,
+        "roi": {"x": 309, "y": 238, "width": 97, "height": 113},
+        "bucket_clock": "FramePacket.received_at_ns",
+        "bucket_boundary": "half_open",
+        "working_space_candidate": True,
+        "resolver_invoked": False,
+        "accuracy_evaluated": False,
+    }
+    for key, value in expected_marker.items():
+        if marker.get(key) != value:
+            raise VC003RunError(f"VC003 marker config field {key!r} is not frozen")
+    base_marker = marker.get("base_config")
+    if not isinstance(base_marker, Mapping):
+        raise VC003RunError("VC003 marker base_config is missing")
+    parsed_marker = MinimapMarkerConfig.from_dict(base_marker)
+    if parsed_marker.digest != MARKER_CONFIG_SEMANTIC_SHA256:
+        raise VC003RunError("VC003 marker semantic digest is not frozen")
+    expected_input = {
+        "input_owner": "legacy",
+        "real_input_enabled": False,
+        "real_input_call_count": 0,
+        "core_v2_real_input_call_count": 0,
+        "double_write_event_count": 0,
+    }
+    if config.get("input_policy") != expected_input:
+        raise VC003RunError("VC003 zero-input policy is not frozen")
+    expected_output = {
+        "public_row_kind": "hash_only",
+        "public_selected_row_count": BUCKET_COUNT,
+        "one_row_per_bucket": True,
+        "allow_duplicate_pixel_digest": True,
+        "include_coordinates": False,
+        "include_raw_bytes": False,
+        "include_absolute_paths": False,
+        "include_device_original_id": False,
+    }
+    if (
+        config.get("output_policy") != expected_output
+        or config.get("run_specific_audits") is not True
+    ):
+        raise VC003RunError("VC003 output/privacy policy is not frozen")
 
 
 def _build_report(
@@ -776,6 +1043,9 @@ def _build_report(
         failures.append("marker_fault_threshold")
     if not all(row["selected"] is True for row in public_rows):
         failures.append("public_row_not_selected")
+    lineage_valid = bool(getattr(integration.validate(require_complete=False), "valid", False))
+    if not lineage_valid:
+        failures.append("lineage_invalid")
     cleanup_payload = dict(
         cleanup or _cleanup_payload(source, True, private_rows_sha256 is not None)
     )
@@ -834,7 +1104,7 @@ def _build_report(
             "rejected_count": len(admissions) - accepted_count,
             "status_counts": status_counts,
             "accepted_frame_ledger_sha256": accepted_ledger,
-            "cas_lineage_verified": True,
+            "cas_lineage_verified": lineage_valid,
             "accepted_cas_count": len(rows),
             "accepted_packet_count": accepted_count,
             "max_accepted_age_ns": max(
@@ -944,9 +1214,7 @@ def _build_report(
             "selector_error_count": int("selector_incomplete" in failures),
             "marker_error_count": marker_counts.get("fault", 0),
             "timing_error_count": int(measurement_end_ns < measurement_start_ns),
-            "lineage_error_count": int(
-                not bool(getattr(integration.validate(require_complete=False), "valid", False))
-            ),
+            "lineage_error_count": int(not lineage_valid),
             "privacy_error_count": 0,
             "cleanup_error_count": int(cleanup_payload.get("status") != "PASS"),
             "total_count": len(failure_codes),
@@ -995,11 +1263,13 @@ def run_measurement(
     source_config: VC003SourceConfig | FrameSourceConfig | None = None,
     marker_config: MinimapMarkerConfig | None = None,
     retained_store: PixelStore | None = None,
+    memory_cas: CapacityOneMemoryCAS | None = None,
     clock: Clock | None = None,
     warmup_seconds: int = 30,
     measurement_seconds: int = 300,
     measurement_start_ns: int | None = None,
-    poll_interval_s: float = 0.001,
+    target_admission_hz: float = TARGET_ADMISSION_HZ,
+    poll_timeout_seconds: float = POLL_TIMEOUT_SECONDS,
     max_iterations: int = 2_000_000,
     run_index: int = 1,
     config: Mapping[str, Any] | None = None,
@@ -1023,6 +1293,18 @@ def run_measurement(
         raise VC003RunError("warmup_seconds must be a non-negative integer")
     if type(measurement_seconds) is not int or measurement_seconds < 0:
         raise VC003RunError("measurement_seconds must be a non-negative integer")
+    if (
+        isinstance(target_admission_hz, bool)
+        or not isinstance(target_admission_hz, int | float)
+        or target_admission_hz <= 0
+    ):
+        raise VC003RunError("target_admission_hz must be positive")
+    if (
+        isinstance(poll_timeout_seconds, bool)
+        or not isinstance(poll_timeout_seconds, int | float)
+        or poll_timeout_seconds < 0
+    ):
+        raise VC003RunError("poll_timeout_seconds must be non-negative")
     if max_iterations <= 0:
         raise VC003RunError("max_iterations must be positive")
     now: Clock = time.monotonic_ns if clock is None else clock
@@ -1060,13 +1342,6 @@ def run_measurement(
         candidate_device = getattr(source, "device_fingerprint_sha256", None)
         if isinstance(candidate_device, str) and SHA256_RE.fullmatch(candidate_device):
             device_fingerprint_sha256 = candidate_device
-    # The optional explicit timestamp is the run anchor.  Warm-up samples are
-    # admitted before the selector origin; they can never define bucket zero.
-    anchor = int(now() if measurement_start_ns is None else measurement_start_ns)
-    if anchor < 0:
-        raise VC003RunError("measurement_start_ns must be non-negative")
-    start = anchor + warmup_seconds * 1_000_000_000
-    end = start + measurement_seconds * 1_000_000_000
     thresholds = VC003LiveMarkerThresholds(
         bucket_count=BUCKET_COUNT,
         bucket_duration_ns=BUCKET_DURATION_NS,
@@ -1077,38 +1352,76 @@ def run_measurement(
         FixedBucketSelector,  # local to keep API bridge optional
     )
 
-    selector = FixedBucketSelector(start_at_ns=start)
-    integration = VC003LiveMarkerRunner(
-        source,
-        source_config=source_config,
-        marker_config=marker,
-        retained_store=retained_store,
-        selector=selector,
-        thresholds=thresholds,
-        clock=now,
-    )
-    admissions: list[FrameAdmissionResult] = []
     started_here = False
+    is_running = getattr(source, "is_running", False)
+    if callable(is_running):
+        is_running = is_running()
+    if callable(getattr(source, "start", None)) and not bool(is_running):
+        try:
+            source.start()
+        except Exception:
+            # A backend may have allocated a handle or worker before its
+            # start routine reports failure.  Give it one fail-closed cleanup
+            # opportunity without masking the original startup exception.
+            with contextlib.suppress(Exception):
+                source.stop()
+            raise
+        started_here = True
+    # Production anchors warm-up only after the capture source is fully open.
+    # An explicit anchor remains available solely for deterministic tests.
+    anchor = int(now() if measurement_start_ns is None else measurement_start_ns)
+    if anchor < 0:
+        raise VC003RunError("measurement_start_ns must be non-negative")
+    start = anchor + warmup_seconds * 1_000_000_000
+    end = start + measurement_seconds * 1_000_000_000
+    selector = FixedBucketSelector(start_at_ns=start)
+    try:
+        integration = VC003LiveMarkerRunner(
+            source,
+            source_config=source_config,
+            marker_config=marker,
+            pixel_store=memory_cas,
+            retained_store=retained_store,
+            memory_cas=memory_cas,
+            selector=selector,
+            thresholds=thresholds,
+            clock=now,
+        )
+    except Exception:
+        if started_here and callable(getattr(source, "stop", None)):
+            with contextlib.suppress(Exception):
+                source.stop()
+        raise
+    admissions: list[FrameAdmissionResult] = []
     stop_ok = True
     try:
-        is_running = getattr(source, "is_running", False)
-        if callable(is_running):
-            is_running = is_running()
-        if callable(getattr(source, "start", None)) and not bool(is_running):
-            source.start()
-            started_here = True
         # Admit warm-up frames through the same source/adapter path.  The
         # fixed selector origin keeps them out of the selected 100 buckets.
         iterations = 0
+        poll_period_s = 1.0 / float(target_admission_hz)
+        next_poll_wall = time.monotonic()
         while iterations < max_iterations:
             current = int(now())
             if current >= end:
                 break
-            admission, _ = integration.poll(now_ns=current)
-            admissions.append(admission)
+            if clock is None:
+                delay = next_poll_wall - time.monotonic()
+                if delay > 0:
+                    time.sleep(delay)
+                if int(now()) >= end:
+                    break
+                # VC003LiveMarkerRunner samples the admission clock after the
+                # blocking read, eliminating captured>received races.
+                admission, _ = integration.poll(timeout_s=float(poll_timeout_seconds))
+                next_poll_wall += poll_period_s
+                if next_poll_wall < time.monotonic() - poll_period_s:
+                    next_poll_wall = time.monotonic()
+            else:
+                admission, _ = integration.poll(now_ns=current, timeout_s=0.0)
+            observed_at_ns = admission.event.observed_at_ns
+            if start <= observed_at_ns < end:
+                admissions.append(admission)
             iterations += 1
-            if clock is None and poll_interval_s and current < end:
-                time.sleep(min(max(0.0, poll_interval_s), 0.01))
             # A finite injected source may return no frames forever.  Let the
             # fake clock decide completion; real time is bounded by end.
         if iterations >= max_iterations:
@@ -1143,7 +1456,7 @@ def run_measurement(
     private_sha: str | None = None
     private_count = 0
     if private_rows_path is not None:
-        target = Path(private_rows_path).expanduser().resolve()
+        target = _lexical_safe_path(private_rows_path)
         _write_jsonl(target, private_rows)
         private_sha = sha256_file(target)
         private_count = len(private_rows)
@@ -1211,6 +1524,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--accepted-frame-ledger",
         dest="accepted_ledger",
         type=Path,
+        required=True,
         help="Restricted accepted-frame ledger JSONL used by the independent verifier.",
     )
     parser.add_argument(
@@ -1267,14 +1581,13 @@ def main(argv: list[str] | None = None) -> int:
         config_path = _require_file(args.config, "config")
         config = load_strict_json(config_path)
         _production_config(config)
-        report_path = Path(args.report).expanduser().resolve()
+        report_path = _lexical_safe_path(args.report)
         private_cas_root = _require_dir(args.private_cas_root, "private CAS root")
-        private_rows_path = Path(args.private_rows).expanduser().resolve()
-        ledger_path = None if args.ledger is None else Path(args.ledger).expanduser().resolve()
+        _require_fresh_private_cas(private_cas_root)
+        private_rows_path = _lexical_safe_path(args.private_rows)
+        ledger_path = None if args.ledger is None else _lexical_safe_path(args.ledger)
         accepted_ledger_path = (
-            None
-            if args.accepted_ledger is None
-            else Path(args.accepted_ledger).expanduser().resolve()
+            None if args.accepted_ledger is None else _lexical_safe_path(args.accepted_ledger)
         )
         binding_paths = _binding_paths_from_args(args)
         binding_paths.setdefault("upstream_b2_packet", DEFAULT_B2_PACKET_PATH)
@@ -1296,25 +1609,56 @@ def main(argv: list[str] | None = None) -> int:
             expected_external["device_environment"] = _require_sha(
                 args.expected_device_env_sha256, "--expected-device-env-sha256"
             )
-        elif "device_environment" in binding_paths:
-            expected_external["device_environment"] = sha256_file(
-                binding_paths["device_environment"]
+        elif args.device_environment is None:
+            expected_external["device_environment"] = EXPECTED_B2_DEVICE_ENV_SHA256
+        else:
+            raise VC003RunError(
+                "a custom --device-environment requires --expected-device-env-sha256"
             )
         binding_errors = verify_external_bindings(config, binding_paths, expected=expected_external)
+        if binding_errors:
+            raise VC003RunError("external binding preflight failed: " + ",".join(binding_errors))
+        raw_device_id = os.environ.get(DEVICE_INSTANCE_ENV, "")
+        device_index, device_digest = _preflight_device("VC-003 Video", raw_device_id)
         source_config = VC003SourceConfig(
             source_id="capture-card-primary",
             session_id=f"vc003-live-{int(time.time())}",
             clock_domain="monotonic",
             transform_version="capture-v1",
             device_name="VC-003 Video",
-            device_index=0,
+            device_index=device_index,
             backend="dshow",
             width=1920,
             height=1080,
             fps=30.0,
             pixel_format="mjpg",
         )
-        source = VC003Source(source_config, backend_factory=make_opencv_backend)
+        device_environment_path = binding_paths.get("device_environment")
+        if device_environment_path is None:
+            raise VC003RunError("device environment binding is required")
+        device_environment = load_strict_json(device_environment_path)
+        provenance = _build_live_provenance(
+            source_config,
+            device_environment,
+            device_fingerprint_sha256=device_digest,
+            source_commit=source_commit,
+            dependency_lock_sha256=expected_external["dependency_lock"],
+            source_artifact_sha256=expected_external["wheel"],
+        )
+        live_cas = CapacityOneMemoryCAS()
+
+        def backend_factory(bound_config: VC003SourceConfig) -> ControlledOpenCVBackend:
+            return ControlledOpenCVBackend(
+                bound_config,
+                fingerprint_sha256=device_digest,
+            )
+
+        source = VC003Source(
+            source_config,
+            backend_factory=backend_factory,
+            pixel_store=live_cas,
+            provenance=provenance,
+        )
         retained_store = PixelStore(private_cas_root)
         # The production window is fixed by _production_config; this call is
         # deliberately not parameterised by CLI timing values.
@@ -1344,23 +1688,15 @@ def main(argv: list[str] | None = None) -> int:
                     "retention_class": retention,
                 }
             )
-        device_digest = None
-        provenance_value = binding_paths.get("device_environment")
-        if provenance_value is not None:
-            try:
-                provenance = load_strict_json(provenance_value)
-                raw_device = provenance.get("physical_device_fingerprint_sha256")
-                if isinstance(raw_device, str) and SHA256_RE.fullmatch(raw_device):
-                    device_digest = raw_device
-            except VC003RunError:
-                device_digest = None
         report = run_measurement(
             source=source,
             source_config=source_config,
             retained_store=retained_store,
+            memory_cas=live_cas,
             warmup_seconds=30,
             measurement_seconds=300,
-            poll_interval_s=source_config.poll_interval_s,
+            target_admission_hz=TARGET_ADMISSION_HZ,
+            poll_timeout_seconds=POLL_TIMEOUT_SECONDS,
             config=config,
             config_sha256=sha256_file(config_path),
             source_commit=source_commit,
@@ -1370,6 +1706,22 @@ def main(argv: list[str] | None = None) -> int:
             device_fingerprint_sha256=device_digest,
             binding_errors=binding_errors,
             external_artifacts=external_artifacts,
+        )
+        if accepted_ledger_path is None:
+            raise VC003RunError("accepted ledger path is required")
+        report["artifacts"].append(
+            {
+                "artifact_id": "vc003-accepted-frame-ledger",
+                "role": "accepted_frame_ledger",
+                "external_ref": _external_ref(
+                    accepted_ledger_path,
+                    "accepted-frame-ledger",
+                ),
+                "sha256": sha256_file(accepted_ledger_path),
+                "size_bytes": accepted_ledger_path.stat().st_size,
+                "privacy_class": "public_hash_only",
+                "retention_class": "candidate",
+            }
         )
         if ledger_path is not None:
             _write_jsonl(
