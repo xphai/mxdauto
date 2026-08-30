@@ -3,7 +3,7 @@
 > **状态截止**：2026-08-30
 > **战略负责人**：5.6Sol Ultra  
 > **战术包负责人**：5.6 Luna max  
-> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（完整 `G1-FRM-001`=`Completed`；`G1-OBS-002A`=`Completed`；`G1-OBS-002B` 代码/外部资产烟测=`Completed`；完整 `G1-OBS-002`=`In Progress`）
+> **当前阶段**：G-1 战略封存完成；G0=`PASS`；G1=`In Progress`（完整 `G1-FRM-001`=`Completed`；`G1-OBS-002A`=`Completed`；`G1-OBS-002B` 代码/外部资产烟测=`Completed`；`G1-LOC-003A`=`Completed (code foundation)`；完整 `G1-OBS-002`/`G1-LOC-003`=`In Progress`）
 
 ## 1. 用途与来源
 
@@ -22,6 +22,7 @@
 | 状态 | 含义 |
 |---|---|
 | `DONE-L0/L1` | 设计或本地实现存在；只支持该等级结论 |
+| `DONE-L1-CODE-FOUNDATION` | 定位代码基础与 deterministic tests 已落地；不等价于 marker extraction、人工 truth、实机 LOC 或完整需求 Gate |
 | `DONE-L2-CODE-SMOKE` | 代码与仓库外受控资产 smoke 已通过；不等价于现场捕获、模型质量或对应 Gate |
 | `CANDIDATE` | 有 Legacy/离线资产可迁移，尚未通过 Core v2 对应 Gate |
 | `PARTIAL-DATA` | 具备部分图片/视频，完整状态或失败样本仍缺 |
@@ -37,9 +38,9 @@
 | REQ-ENV-001 | 双机 Windows 环境：控制端采集/决策，游戏端 receiver | `COLLECTION_ANALYSIS.md` §2/§4/§8 | G2、G3、G6 | 控制端 clean report、游戏端无 Python receiver clean report、租约/双写审计、双机安装矩阵 | Legacy 曾以 `10.66.0.1 → 10.66.0.2:27183` 联通；Core v2 receiver/HIL/clean 报告为空 | `CANDIDATE` |
 | REQ-CAP-001 | VC-003 采集卡、`1920×1080` 输入、内容区 `1366×768` | `REQUIREMENTS_CONFIRMED.md` §1/§5；`COLLECTION_ANALYSIS.md` §5/§6 | G1、G3、G4 | FrameSource contract、geometry hash、断序/陈旧/画幅故障 Replay、现场 FPS/失败率 | B2 canonical source `37e57b9662fa3d061e840d4b9c86ab89efe24f2f`、wheel `62b3b2f3...b273f`；300 秒 hardware PASS（8,999 capture / 4,499 admitted，29.996666 / 14.996666 FPS），300 unique corpus、full CAS/provenance/privacy/zero-input 与 Candidate verifier PASS。Issue #13 六角色批准；PR #15 / merge `fe29a4c...` / PR run `33283195258` / main outer run `33283646596` 已绑定，完整 FrameSource 已完成；G3/G4 现场要求仍待后续 Gate | `PARTIAL-G1-FRM` |
 | REQ-UI-001 | 目标客户端模板隔离；桌面坐标经内容矩形转为 `1366×768` 归一化坐标 | `REQUIREMENTS_CONFIRMED.md` §1/§5 | G1、G5 | Profile/模板 manifest、geometry/calibration hash、窗口偏移 Replay、每 workflow UI fixture | 已合并的 `G1-FRM-001A` 固定 `1920×1080 → [277,167,1366,768] → 1296×700` 并生成 geometry/calibration identity；真实窗口偏移与 UI/rune workflow 仍待后续包 | `PARTIAL-G1-FRM` + `PARTIAL-DATA` |
-| REQ-CV-001 | YOLO monster 检测，ONNX 优先，GPU 推理并保留 CPU 回退，类别/阈值/ROI 可追溯 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G4 | Model Card、人工真值会话隔离 split、部署 ONNX P/R、PT/ONNX 差、GPU/CPU parity、负样本、Replay/Shadow | `G1-OBS-002A=Completed`；`G1-OBS-002B` 已完成 fail-closed ONNX backend 与外部 model/classes hash 绑定，CPU `3` 次 smoke 的 raw output/result digest 一致；model relative id=`weights/best_forest_v3.onnx`，model/classes SHA 已记录于 `docs/tactical/G1-OBS-002B-onnx-backend.md`；人工 truth、NMS、P/R、GPU/CPU parity 与完整 Replay/Shadow 仍为空 | `DONE-L2-CODE-SMOKE` / runtime `CANDIDATE` |
+| REQ-CV-001 | YOLO monster 检测，ONNX 优先，GPU 推理并保留 CPU 回退，类别/阈值/ROI 可追溯 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G4 | Model Card、人工真值会话隔离 split、部署 ONNX P/R、PT/ONNX 差、GPU/CPU parity、负样本、Replay/Shadow | `G1-OBS-002A=Completed`；`G1-OBS-002B` 已完成 fail-closed ONNX backend 与外部 model/classes hash 绑定，CPU `3` 次 smoke 的 raw output/result digest 一致；PR #20 required run `33289661770` success、merge `9aff755f18d3bd48c77084cfaf10ea4df6344f69`、main outer run `33290009677` success；model relative id=`weights/best_forest_v3.onnx`，model/classes SHA 已记录于 `docs/tactical/G1-OBS-002B-onnx-backend.md`；人工 truth、NMS、P/R、GPU/CPU parity 与完整 Replay/Shadow 仍为空 | `DONE-L2-CODE-SMOKE` / runtime `CANDIDATE` |
 | REQ-CV-002 | 模型加载失败时抑制动作并记录原因 | `REQUIREMENTS_CONFIRMED.md` §3 | G1、G2 | 模型缺失/hash/class/input mismatch 故障 fixture；WorldState unknown；ActionSpec 数为 0；FaultEvent | `G1-OBS-002A=Completed` 的有限 fault 与 `plan_suppressed=true` 保持；002B 对外部 model/classes/provider/shape 继续 fail-closed；WorldState/Event Tape/Action 下游证据仍待后继包 | `DONE-L2-CODE-SMOKE` / downstream `MISSING` |
-| REQ-LOC-001 | 本人位置、地图/平台坐标和时序一致性 | 原始自动打怪需求；`COLLECTION_ANALYSIS.md` §6 | G1、G4 | 人工 truth、坐标变换版本、4 个定位边界回归、100 圈、身份切换 0 | Core v2 有坐标/WorldState 契约；Legacy cache 最近可见 4 个投影失败节点，后续完整报告为空 | `DONE-L1 contract` / runtime `MISSING` |
+| REQ-LOC-001 | 本人位置、地图/平台坐标和时序一致性 | 原始自动打怪需求；`COLLECTION_ANALYSIS.md` §6 | G1、G4 | 人工 truth、坐标变换版本、4 个定位边界回归、100 圈、身份切换 0 | `G1-LOC-003A` 已提供绑定 map fingerprint 的版本化 affine transform、map/platform graph（vertical/horizontal 双阈值）、独立匿名 player anchor（`pixel_digest` 必须与 `Observation.pixel_digest` 精确一致）、纯 fail-closed resolver 与 deterministic contract tests；固定 session 内 source/transform/graph version 与 `as_of` 时间谱系为 fail-closed 不变量，失败请求也推进 clock fence；`PlayerAnchorSource.MINIMAP_YELLOW_MARKER` 仅为来源标签。真实 marker extraction、人工 truth、100 圈、实机 LOC、完整 `G1-LOC-003`/OBS/G1 仍待 `003B` 及后续 Gate；输入保持 `input_owner=legacy`、Core v2 real input=0、double-write=0 | `DONE-L1-CODE-FOUNDATION` / full requirement `In Progress` |
 | REQ-FUN-001 | 自动移动与打怪 | `REQUIREMENTS_CONFIRMED.md` §2/§4 | G1→G4 | Golden plan、Shadow diff、Action lifecycle、Canary、5×4h session、本人误攻击 0 | DEC-001 冻结方向键、`attack=a`、`jump=alt`；只有 Action 数据类型，无 Planner/Controller/现场 | `MISSING` |
 | REQ-FUN-002 | 自动补 HP/MP | `REQUIREMENTS_CONFIRMED.md` §2/§4；`MEDIA_REVIEW.md` §1/§3F | G4 | 静态 ROI truth、服药前后动态 fixture、cooldown/失败谓词、Replay/Canary/field | 多档 HP/MP 静态截图已有；服药动态样本仍缺；DEC-001 冻结 Insert/Delete | `PARTIAL-DATA` |
 | REQ-FUN-003 | 自动组队 | `REQUIREMENTS_CONFIRMED.md` §2；`MEDIA_REVIEW.md` §3B | G5 | 创建前/后、已组队、不可用、退出/重建 fixture；workflow deadline；Replay/Shadow/Canary | 只有部分队伍页面；完整成功态与退出/重建资料仍缺 | `DEFERRED-G5` + `PARTIAL-DATA` |
@@ -68,7 +69,7 @@
 |---|---|---|
 | G-1 | Pilot、匿名 Profile、输入所有权、原始范围映射 | **战略封存完成**：ADR-004、DEC-001 和本矩阵已形成 |
 | G0 | REQ-SAFE-002、OBS-002、PRI-001、REL-001、REL-002 的最小证据链 | **PASS**：工程/失败链、branch protection、required `quality`、PR #1、Owner countersign 与 main post-merge run 已闭环 |
-| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：完整 `G1-FRM-001`、`G1-OBS-002A` 已 Completed；`G1-OBS-002B` 代码/外部资产 CPU smoke 已完成；人工 truth/evaluation、LOC/WST/Planner/完整 Shadow 仍待完成 |
+| G1 | CAP-001、UI-001、CV-001/002、LOC-001、FUN-001 的 Replay/Shadow | **In Progress**：完整 `G1-FRM-001`、`G1-OBS-002A` 已 Completed；`G1-OBS-002B` 代码/外部资产 CPU smoke 已完成并由 PR #20 required run `33289661770`、merge `9aff755f18d3bd48c77084cfaf10ea4df6344f69`、main outer run `33290009677` 绑定；`G1-LOC-003A` 仅 Completed (code foundation)；人工 truth/evaluation、003B marker/offline 3-run、LOC/WST/Planner/完整 Shadow 仍待完成 |
 | G2 | INP-001/002/003、SAFE-001/002、NFR-001 的 simulator/HIL | 未开始 |
 | G3 | FUN-001 + 输入租约的单图有界现场 | 未开始；Core v2 现场 session 为 0 |
 | G4 | Pilot 打怪、HP/MP、安全、4 小时 Certified | 未开始 |
@@ -98,6 +99,13 @@ G0 的完整决策以 `docs/gates/G0-GATE-CHARTER.md` 为准。关闭缺口时�
 | G1-FRM-001B2 | source `37e57b9...` 的 300 秒 VC-003 smoke、4-session/300-sample corpus、3-run replay、4 Event Tapes、CAS/provenance/privacy/zero-input 与会签版 G1 Frame Candidate packet | packaging PR #11 / P=`72c3ad0...` / outer run `33258468278`；Issue #13 六角色批准；PR #15 / merge `fe29a4c...` / main outer run `33283646596` success；`ci-evidence` digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c` | `Completed`，真实输入 0 |
 | G1-OBS-002A | Observation/Detection/ModelBinding/Fault 契约；Pixel V1→crop/resize→ROI/letterbox；fake detector、provider/shape/hash fail-closed 与 working-space 逆投影 | 真实 ONNX runtime、NMS/temporal、人工 truth、P/R、GPU/CPU parity、Replay/Shadow 与完整 OBS Gate | `Completed`，真实输入 0 |
 | G1-OBS-002B | fail-closed ONNX backend、外部 model/classes/runtime hash 绑定、CPU observation smoke | 人工 truth/Model Card、NMS/temporal、P/R、GPU/CPU parity、完整 Replay/Shadow、WorldState/Planner 与实机捕获 | `Completed`（代码/外部资产烟测），真实输入 0 |
+
+### G1-LOC-003A 追踪与 003B 后续
+
+- `G1-LOC-003A` 的可追踪范围是绑定 map fingerprint 的版本化 affine transform、不可变 platform graph（vertical/horizontal 双阈值）、独立匿名 player anchor（含 pixel digest lineage）、纯 fail-closed resolver 与 deterministic tests；pixel digest 必须精确匹配 Observation，固定 session 内 source/transform/graph version 与 `as_of` 时间谱系失配即 fail-closed，失败请求也推进 clock fence；证据等级为本地 `L1` code foundation，46 个 localization tests 与 80 个相关契约 tests 已通过。
+- `G1-LOC-003A` 的完成状态只关闭上述代码基础，不关闭真实 minimap yellow marker extraction、人工 truth、100 圈、实机 LOC、完整 `G1-LOC-003`、完整 `G1-OBS-002` 或整体 G1。
+- `G1-LOC-003B`：从 B2 accepted `FramePacket`/CAS 提取 minimap yellow marker，完成离线 3-run 后，再复用 VC-003 只读实机入口；全程维持 `input_owner=legacy`、Core v2 real input=0、double-write=0。
+- 代码与回归入口：`src/maple_automation_core/localization/`、`tests/test_localization_transform.py`、`tests/test_localization_platform.py`、`tests/test_player_localizer.py`；详细战术包见 [`docs/tactical/G1-LOC-003A-localization-foundation.md`](tactical/G1-LOC-003A-localization-foundation.md)。
 
 `G1-FRM-001` 的完整审计矩阵见
 [`docs/gates/G1-FRM-001-GATE-CHARTER.md`](gates/G1-FRM-001-GATE-CHARTER.md)。组织会签入口
