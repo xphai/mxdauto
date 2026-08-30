@@ -188,6 +188,7 @@
     "extractor_config_digest",
     "as_of_offset_ns",
     "as_of_ns",
+    "generation",
     "timing_strategy",
     "sample_order_digest",
     "sample_count",
@@ -228,6 +229,11 @@
       "minimum": 0,
       "description": "Compatibility alias for as_of_offset_ns."
     },
+    "generation": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Deterministic detector generation bound to every sample."
+    },
     "timing_strategy": {
       "const": "observed_at_ns=ledger_received_at_ns_or_ledger_admitted_at_ns_or_event_recorded_at_ns;effective_now_ns=observed_at_ns+as_of_offset_ns;as_of_ns_alias=as_of_offset_ns"
     },
@@ -238,6 +244,10 @@
     "execution_valid": {"type": "boolean"},
     "status": {"enum": ["PASS", "FAIL"]},
     "event_tape_digest": {"$ref": "#/$defs/sha256"},
+    "event_tape_index_artifact_digest": {
+      "anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}],
+      "description": "Raw canonical event-tape index artifact SHA-256; optional for contract_fixture."
+    },
     "accepted_ledger_digest": {"$ref": "#/$defs/sha256"},
     "calibration_artifact_digest": {"$ref": "#/$defs/sha256"},
     "zero_input_audit_artifact_digest": {"$ref": "#/$defs/sha256"},
@@ -263,6 +273,18 @@
     "report_digest": {"$ref": "#/$defs/sha256"}
   },
   "allOf": [
+    {
+      "if": {
+        "properties": {"verification_profile": {"const": "b2_gate"}},
+        "required": ["verification_profile"]
+      },
+      "then": {
+        "required": ["event_tape_index_artifact_digest"],
+        "properties": {
+          "event_tape_index_artifact_digest": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    },
     {
       "if": {
         "properties": {"deterministic": {"const": true}, "execution_valid": {"const": true}},

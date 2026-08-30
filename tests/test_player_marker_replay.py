@@ -4,7 +4,7 @@ import copy
 import json
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
@@ -17,7 +17,11 @@ from maple_automation_core.localization.minimap_marker import (
     MinimapMarkerConfig,
     MinimapMarkerExtractor,
 )
-from maple_automation_core.replay.frame_corpus import canonical_digest, load_strict_json
+from maple_automation_core.replay.frame_corpus import (
+    canonical_digest,
+    load_strict_json,
+    public_privacy_summary,
+)
 from maple_automation_core.replay.player_marker import (
     PLAYER_MARKER_REPLAY_LIMITATIONS,
     PlayerMarkerExtraction,
@@ -76,6 +80,21 @@ def _replay_inputs(
         "transform_version": "synthetic-v1",
         "max_age_ns": 100_000,
     }
+    # The replay contract binds calibration to truth derivation metadata.  The
+    # shared corpus helper intentionally starts with a zero placeholder, so
+    # make this local contract fixture internally consistent before replay.
+    truths: list[dict[str, object]] = []
+    for sample in payload["samples"]:
+        truth_path = truth_root / sample["truth_path"]
+        truth = load_strict_json(truth_path)
+        truth["derivation"]["calibration_sha256"] = calibration["calibration_sha256"]
+        truth["record_digest"] = canonical_digest(truth, omit=("record_digest",))
+        _write_json(truth_path, truth)
+        sample["truth_sha256"] = sha256(truth_path.read_bytes()).hexdigest()
+        truths.append(truth)
+    payload["privacy_summary"] = public_privacy_summary(payload, truths)
+    payload["corpus_digest"] = canonical_digest(payload, omit=("corpus_digest",))
+    _write_json(manifest, payload)
     audit: dict[str, object] = {
         "core_v2_real_input_call_count": 0,
         "double_write_event_count": 0,
@@ -95,8 +114,29 @@ def _replay_inputs(
         "window_write_count": 0,
     }
     audit["report_digest"] = canonical_digest(audit, omit=("report_digest",))
+    event_tapes = _make_tapes(manifest, truth_root)
+    index: dict[str, object] = {
+        "schema_version": "1.0.0",
+        "source_commit": payload["source_commit"],
+        "corpus_digest": payload["corpus_digest"],
+        "event_count": len(event_tapes),
+        "tapes": [
+            {
+                "path": tape.name,
+                "session_id": load_strict_json(truth_root / sample["truth_path"])["session_id"],
+                "sha256": sha256(tape.read_bytes()).hexdigest(),
+                "size_bytes": tape.stat().st_size,
+            }
+            for tape, sample in zip(event_tapes, payload["samples"], strict=True)
+        ],
+        "index_digest": "",
+    }
+    index["index_digest"] = canonical_digest(index, omit=("index_digest",))
+    event_tape_index = truth_root / "event-tape-index.json"
+    _write_json(event_tape_index, index)
     return {
-        "event_tapes": _make_tapes(manifest, truth_root),
+        "event_tapes": event_tapes,
+        "event_tape_index": event_tape_index,
         "accepted_frame_ledger": rows,
         "calibration": calibration,
         "zero_input_audit": audit,
@@ -119,6 +159,7 @@ def _runner(
         truth_root=truth_root,
         cas_root=cas_root,
         event_tapes=inputs.pop("event_tapes"),
+        event_tape_index=inputs.pop("event_tape_index"),
         extractor=extractor,
         replay_source_commit="c" * 40,
         config={"detector": "injected-v1"},
@@ -200,6 +241,12 @@ def test_three_runs_use_real_frame_packet_and_skip_wrong_size_before_extractor(
         as_of_offset_ns=10_000,
         sample_order=["sample-0", "sample-1", "sample-2"],
     )
+    with pytest.raises(PlayerMarkerReplayError):
+        verify_player_marker_replay_report(
+            report,
+            expected_verification_profile="contract_fixture",
+            expected_event_tape_digest="0" * 64,
+        )
 
 
 def test_actual_minimap_extractor_is_compatible_with_replay_contract(tmp_path: Path) -> None:
@@ -301,6 +348,80 @@ def test_missing_extractor_and_missing_b2_inputs_fail_closed(tmp_path: Path) -> 
         )
 
 
+def test_same_size_rogue_calibration_is_bound_to_truth(tmp_path: Path) -> None:
+    manifest, truth_root, cas_root = _make_fixture(tmp_path)
+    rogue = copy.deepcopy(_replay_inputs(manifest, truth_root)["calibration"])
+    assert isinstance(rogue, dict)
+    rogue_geometry = copy.deepcopy(rogue["geometry"])
+    rogue_geometry["content_rect"]["width"] = 1
+    rogue["geometry"] = rogue_geometry
+    rogue["calibration_sha256"] = canonical_calibration_sha256(
+        SourceGeometry.from_dict(rogue_geometry),
+        rogue["transform_version"],
+    )
+    with pytest.raises(PlayerMarkerReplayError):
+        _runner(manifest, truth_root, cas_root, lambda frame: None, calibration=rogue)
+
+
+def test_split_event_tape_session_is_rejected(tmp_path: Path) -> None:
+    manifest, truth_root, cas_root = _make_fixture(tmp_path)
+    inputs = _replay_inputs(manifest, truth_root)
+    tapes = inputs["event_tapes"]
+    assert isinstance(tapes, list)
+    split = truth_root / "split-session.jsonl"
+    split.write_bytes(tapes[0].read_bytes())
+    with pytest.raises(PlayerMarkerReplayError):
+        _runner(
+            manifest,
+            truth_root,
+            cas_root,
+            lambda frame: None,
+            event_tapes=(tapes[0], split, *tapes[1:]),
+            event_tape_index=None,
+        )
+
+
+def test_event_tape_index_requires_canonical_json_file(tmp_path: Path) -> None:
+    manifest, truth_root, cas_root = _make_fixture(tmp_path)
+    inputs = _replay_inputs(manifest, truth_root)
+    index_path = inputs["event_tape_index"]
+    assert isinstance(index_path, Path)
+    index_path.write_bytes(index_path.read_bytes() + b"\n")
+    with pytest.raises(PlayerMarkerReplayError):
+        PlayerMarkerReplayRunner(
+            manifest,
+            verification_profile="contract_fixture",
+            truth_root=truth_root,
+            cas_root=cas_root,
+            event_tapes=inputs["event_tapes"],
+            event_tape_index=index_path,
+            extractor=lambda frame: None,
+            replay_source_commit="c" * 40,
+            config={"detector": "injected-v1"},
+            extractor_artifact_digest="d" * 64,
+            accepted_frame_ledger=inputs["accepted_frame_ledger"],
+            calibration=inputs["calibration"],
+            zero_input_audit=inputs["zero_input_audit"],
+            as_of_offset_ns=inputs["as_of_offset_ns"],
+        )
+
+
+def test_contract_fixture_may_omit_event_tape_index(tmp_path: Path) -> None:
+    manifest, truth_root, cas_root = _make_fixture(tmp_path)
+    report = _runner(
+        manifest,
+        truth_root,
+        cas_root,
+        lambda frame: None,
+        event_tape_index=None,
+    ).run_three_times()
+    assert report.event_tape_index_artifact_digest is None
+    assert "event_tape_index_artifact_digest" not in report.to_dict()
+    verify_player_marker_replay_report(report)
+    schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+    assert list(Draft202012Validator(schema).iter_errors(report.to_dict())) == []
+
+
 def test_stateful_extractor_produces_fail_report_and_verifier_rejects_it(tmp_path: Path) -> None:
     manifest, truth_root, cas_root = _make_fixture(tmp_path)
     state = 0
@@ -386,6 +507,25 @@ def test_declared_result_digest_cannot_hide_serialized_result_drift(tmp_path: Pa
     report = _runner(manifest, truth_root, cas_root, extractor).run_three_times()
     assert report.status == "FAIL"
     assert report.execution_valid is False
+    assert "execution_invalid" in report.execution_faults
+
+
+def test_hidden_detector_result_without_recomputable_body_is_invalid(tmp_path: Path) -> None:
+    manifest, truth_root, cas_root = _make_fixture(tmp_path)
+
+    class HiddenResult:
+        status = "detected"
+        candidate: ClassVar[dict[str, str]] = {"id": "hidden"}
+
+    report = _runner(
+        manifest,
+        truth_root,
+        cas_root,
+        lambda frame: HiddenResult(),
+    ).run_three_times()
+    assert report.status == "FAIL"
+    assert report.execution_valid is False
+    assert report.runs[0].samples[0].detector_result_digest is None
     assert "execution_invalid" in report.execution_faults
 
 
