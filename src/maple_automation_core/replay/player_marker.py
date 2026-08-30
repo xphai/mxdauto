@@ -462,14 +462,10 @@ class PlayerMarkerReplaySample:
             ensure_time_ns(self.observed_at_ns, "observed_at_ns")
         if self.observed_at_ns is None:
             if self.effective_now_ns is not None:
-                raise PlayerMarkerReplayError(
-                    "effective_now_ns requires observed_at_ns"
-                )
+                raise PlayerMarkerReplayError("effective_now_ns requires observed_at_ns")
         else:
             if self.effective_now_ns is None:
-                raise PlayerMarkerReplayError(
-                    "observed samples require effective_now_ns"
-                )
+                raise PlayerMarkerReplayError("observed samples require effective_now_ns")
             ensure_time_ns(self.effective_now_ns, "effective_now_ns")
             if self.effective_now_ns != self.observed_at_ns + offset:
                 raise PlayerMarkerReplayError(
@@ -728,9 +724,7 @@ def _recompute_replay_semantics(
         for item in first_samples
     )
     wrong_size = (
-        tuple(expected_wrong_size)
-        if expected_wrong_size is not None
-        else inferred_wrong_size
+        tuple(expected_wrong_size) if expected_wrong_size is not None else inferred_wrong_size
     )
     deterministic = all(run.samples == first_samples for run in runs[1:])
     execution_valid = True
@@ -750,12 +744,8 @@ def _recompute_replay_semantics(
                 and sample.detector_config_digest != extractor_config_digest
             ):
                 binding_valid = False
-            if (
-                as_of_offset_ns is not None
-                and (
-                    sample.as_of_offset_ns != as_of_offset_ns
-                    or sample.as_of_ns != as_of_offset_ns
-                )
+            if as_of_offset_ns is not None and (
+                sample.as_of_offset_ns != as_of_offset_ns or sample.as_of_ns != as_of_offset_ns
             ):
                 binding_valid = False
             if generation is not None and sample.generation != generation:
@@ -809,8 +799,10 @@ def _verified_manifest_shape(
     raw_samples = data.get("samples")
     if not isinstance(raw_samples, Sequence) or isinstance(raw_samples, str) or not raw_samples:
         raise PlayerMarkerReplayError("manifest samples must be a non-empty array")
-    root = truth_root if truth_root is not None else (
-        None if manifest_path is None else manifest_path.parent
+    root = (
+        truth_root
+        if truth_root is not None
+        else (None if manifest_path is None else manifest_path.parent)
     )
     order: list[str] = []
     wrong_size: list[bool] = []
@@ -868,9 +860,7 @@ def _verified_manifest_shape(
                     _sha256(source.get("artifact_sha256"), "manifest source.artifact_sha256")
                 )
     if require_single_live_source and len(live_source_ids) != 1:
-        raise PlayerMarkerReplayError(
-            "b2_gate manifest must have exactly one live_session source"
-        )
+        raise PlayerMarkerReplayError("b2_gate manifest must have exactly one live_session source")
     return order, tuple(wrong_size), tuple(sorted(live_artifacts))
 
 
@@ -997,10 +987,7 @@ class PlayerMarkerReplayReport:
             raise PlayerMarkerReplayError("report status is unsupported")
         if self.verification_profile not in PLAYER_MARKER_REPLAY_PROFILES:
             raise PlayerMarkerReplayError("verification_profile is unsupported")
-        if (
-            self.verification_profile == "b2_gate"
-            and self.event_tape_index_artifact_digest is None
-        ):
+        if self.verification_profile == "b2_gate" and self.event_tape_index_artifact_digest is None:
             raise PlayerMarkerReplayError(
                 "b2_gate report requires event_tape_index_artifact_digest"
             )
@@ -1059,9 +1046,7 @@ class PlayerMarkerReplayReport:
                     or sample.as_of_ns != offset
                     or sample.generation != self.generation
                 ):
-                    raise PlayerMarkerReplayError(
-                        "sample timing/generation is not report-bound"
-                    )
+                    raise PlayerMarkerReplayError("sample timing/generation is not report-bound")
         semantic = _recompute_replay_semantics(
             self.runs,
             expected_wrong_size=None,
@@ -1179,9 +1164,8 @@ class PlayerMarkerReplayReport:
             "runs",
             "report_digest",
         }
-        if (
-            not expected_keys.issubset(data)
-            or set(data).difference(expected_keys | {"event_tape_index_artifact_digest"})
+        if not expected_keys.issubset(data) or set(data).difference(
+            expected_keys | {"event_tape_index_artifact_digest"}
         ):
             raise PlayerMarkerReplayError("report keys are not exact")
         if (
@@ -1316,9 +1300,7 @@ class PlayerMarkerReplayConfig:
         if self.accepted_frame_ledger is None and self.accepted_ledger is not None:
             object.__setattr__(self, "accepted_frame_ledger", self.accepted_ledger)
         calibration_values = [
-            value
-            for value in (self.calibration, self.calibration_artifact)
-            if value is not None
+            value for value in (self.calibration, self.calibration_artifact) if value is not None
         ]
         if len(calibration_values) > 1:
             raise PlayerMarkerReplayError("provide one calibration input")
@@ -1482,9 +1464,7 @@ class PlayerMarkerReplayRunner:
             if event_tapes is not None and event_tape_paths is not None:
                 raise PlayerMarkerReplayError("provide event_tapes or event_tape_paths, not both")
             index_values = [
-                value
-                for value in (event_tape_index, event_tape_index_path)
-                if value is not None
+                value for value in (event_tape_index, event_tape_index_path) if value is not None
             ]
             if len(index_values) > 1:
                 raise PlayerMarkerReplayError("provide one event-tape index input")
@@ -1507,9 +1487,7 @@ class PlayerMarkerReplayRunner:
             if len(calibration_values) > 1:
                 raise PlayerMarkerReplayError("provide one calibration input")
             audit_values = [
-                value
-                for value in (zero_input_audit, zero_input_audit_path)
-                if value is not None
+                value for value in (zero_input_audit, zero_input_audit_path) if value is not None
             ]
             if len(audit_values) > 1:
                 raise PlayerMarkerReplayError("provide one zero-input audit input")
@@ -1639,9 +1617,7 @@ class PlayerMarkerReplayRunner:
                     truth_root=truth_root,
                     cas_root=cas_root,
                     profile=(
-                        "b2_gate"
-                        if self.config.verification_profile == "b2_gate"
-                        else "b1_fixture"
+                        "b2_gate" if self.config.verification_profile == "b2_gate" else "b1_fixture"
                     ),
                 )
             else:
@@ -1678,9 +1654,7 @@ class PlayerMarkerReplayRunner:
             session_id = _portable_id(sample.get("session_id"), f"samples[{index}].session_id")
             sequence = sample.get("sequence")
             if type(sequence) is not int:
-                raise PlayerMarkerReplayError(
-                    f"samples[{index}].sequence must be an integer >= 0"
-                )
+                raise PlayerMarkerReplayError(f"samples[{index}].sequence must be an integer >= 0")
             ensure_non_negative_int(sequence, f"samples[{index}].sequence")
             digest = _sha256(sample.get("pixel_digest"), f"samples[{index}].pixel_digest")
             truth_path_value = sample.get("truth_path")
@@ -1807,9 +1781,7 @@ class PlayerMarkerReplayRunner:
             session_id = _portable_id(
                 tape["session_id"], f"event_tape_index.tapes[{index}].session_id"
             )
-            digest = _sha256(
-                tape["sha256"], f"event_tape_index.tapes[{index}].sha256"
-            )
+            digest = _sha256(tape["sha256"], f"event_tape_index.tapes[{index}].sha256")
             size_bytes = tape["size_bytes"]
             ensure_positive_int(size_bytes, f"event_tape_index.tapes[{index}].size_bytes")
             if relative in seen_paths or session_id in seen_sessions:
@@ -1827,9 +1799,7 @@ class PlayerMarkerReplayRunner:
             # validate the tape metadata and session binding below instead.
             configured_paths: set[Path] | None = None
         else:
-            configured_paths = {
-                path.expanduser().resolve(strict=False) for path in configured
-            }
+            configured_paths = {path.expanduser().resolve(strict=False) for path in configured}
             indexed_paths = {
                 (index_path.parent / Path(relative)).resolve(strict=False)
                 for relative, _session, _digest, _size in indexed
@@ -2052,9 +2022,7 @@ class PlayerMarkerReplayRunner:
                 derivation.get("transform_version") != self._calibration.transform_version
                 or derivation.get("calibration_sha256") != self._calibration.calibration_sha256
             ):
-                raise PlayerMarkerReplayError(
-                    "calibration does not match corpus truth derivation"
-                )
+                raise PlayerMarkerReplayError("calibration does not match corpus truth derivation")
 
     @staticmethod
     def _strict_json_line(line: str, line_number: int) -> Mapping[str, Any]:
@@ -2096,9 +2064,7 @@ class PlayerMarkerReplayRunner:
             try:
                 text = raw.decode("utf-8")
             except UnicodeDecodeError as exc:
-                raise PlayerMarkerReplayError(
-                    "accepted-frame ledger is not UTF-8"
-                ) from exc
+                raise PlayerMarkerReplayError("accepted-frame ledger is not UTF-8") from exc
             for line_number, line in enumerate(text.splitlines(), 1):
                 if not line.strip():
                     raise PlayerMarkerReplayError("accepted-frame ledger contains a blank line")
@@ -2228,9 +2194,7 @@ class PlayerMarkerReplayRunner:
                 # Historical video samples have no capture-clock ledger row;
                 # their Event Tape recorded_at_ns is the explicit fallback.
                 if is_live:
-                    raise PlayerMarkerReplayError(
-                        "b2_gate live accepted sample lacks a ledger row"
-                    )
+                    raise PlayerMarkerReplayError("b2_gate live accepted sample lacks a ledger row")
                 continue
             if (
                 row["source_id"] != sample.source_id
@@ -2240,10 +2204,7 @@ class PlayerMarkerReplayRunner:
                 or row["source_height"] != sample.spec.height
             ):
                 raise PlayerMarkerReplayError("accepted-frame ledger/sample binding mismatch")
-            if (
-                "max_age_ns" in row
-                and row["max_age_ns"] != self._calibration.max_age_ns
-            ):
+            if "max_age_ns" in row and row["max_age_ns"] != self._calibration.max_age_ns:
                 raise PlayerMarkerReplayError(
                     "accepted-frame ledger max_age_ns disagrees with calibration"
                 )
@@ -2255,21 +2216,33 @@ class PlayerMarkerReplayRunner:
                     raise PlayerMarkerReplayError(
                         "b2_gate live matched ledger row must be retained"
                     )
+                # These identify the original capture-CAS occurrence.  The
+                # corpus truth records a later import-CAS occurrence, so the
+                # two provenance/artifact digests are intentionally distinct.
                 for field in ("source_provenance_id", "pixel_artifact_sha256"):
-                    row_digest = _sha256(row.get(field), f"ledger.{field}")
-                    if row_digest != sample.sample.get(field) or row_digest != sample.truth.get(
-                        field
-                    ):
-                        raise PlayerMarkerReplayError(
-                            f"b2_gate ledger {field} does not match corpus truth"
-                        )
+                    _sha256(row.get(field), f"ledger.{field}")
 
         if self.config.verification_profile == "b2_gate":
+            ledger_provenance_ids: set[str] = set()
             for (session_id, _source_sequence), ledger_row in self._ledger_rows.items():
                 if (session_id, ledger_row["source_id"]) not in live_pairs:
                     raise PlayerMarkerReplayError(
                         "b2_gate ledger row is outside manifest live sessions"
                     )
+                ledger_provenance_ids.add(
+                    _sha256(
+                        ledger_row.get("source_provenance_id"),
+                        "ledger.source_provenance_id",
+                    )
+                )
+                _sha256(
+                    ledger_row.get("pixel_artifact_sha256"),
+                    "ledger.pixel_artifact_sha256",
+                )
+            if len(ledger_provenance_ids) != 1:
+                raise PlayerMarkerReplayError(
+                    "b2_gate ledger must use one capture provenance identity"
+                )
         if accepted_count < 1:
             raise PlayerMarkerReplayError("manifest has no accepted samples")
 
@@ -2285,9 +2258,7 @@ class PlayerMarkerReplayRunner:
             store = getattr(self.extractor, "pixel_store", getattr(self.extractor, "cas", None))
             if not callable(getattr(store, "read", None)):
                 raise PlayerMarkerReplayError("b2_gate extractor must use a read-only pixel store")
-            if callable(getattr(store, "write", None)) or callable(
-                getattr(store, "put", None)
-            ):
+            if callable(getattr(store, "write", None)) or callable(getattr(store, "put", None)):
                 raise PlayerMarkerReplayError("b2_gate extractor pixel store must be read-only")
         elif method is not None and not callable(method):
             raise PlayerMarkerReplayError("extractor.extract must be callable")
@@ -2318,9 +2289,10 @@ class PlayerMarkerReplayRunner:
         actual_digest = _digest(actual_value)
         declared_digest = getattr(extractor_config, "digest", None)
         if declared_digest is not None:
-            if not isinstance(declared_digest, str) or _SHA256_RE.fullmatch(
-                declared_digest
-            ) is None:
+            if (
+                not isinstance(declared_digest, str)
+                or _SHA256_RE.fullmatch(declared_digest) is None
+            ):
                 raise PlayerMarkerReplayError("extractor config digest is invalid")
             if declared_digest != actual_digest:
                 raise PlayerMarkerReplayError("extractor config digest is not recomputable")
@@ -2465,9 +2437,7 @@ class PlayerMarkerReplayRunner:
         }
         for key, expected in event_bindings.items():
             if key in event.payload and event.payload[key] != expected:
-                raise PlayerMarkerReplayError(
-                    f"accepted Event Tape {key} binding mismatch"
-                )
+                raise PlayerMarkerReplayError(f"accepted Event Tape {key} binding mismatch")
         _ = self._pixel_bytes(sample)
         health = CaptureHealth(
             session_id=sample.session_id,
@@ -2557,8 +2527,7 @@ class PlayerMarkerReplayRunner:
             )
         parameters = signature.parameters
         accepts_var_kwargs = any(
-            parameter.kind is inspect.Parameter.VAR_KEYWORD
-            for parameter in parameters.values()
+            parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters.values()
         )
         kwargs: dict[str, object] = {}
         if accepts_var_kwargs or "now_ns" in parameters:
@@ -2621,15 +2590,11 @@ class PlayerMarkerReplayRunner:
             try:
                 result_body = to_dict()
             except (TypeError, ValueError, AttributeError, RuntimeError, KeyError) as exc:
-                raise PlayerMarkerReplayError(
-                    "detector result to_dict() failed"
-                ) from exc
+                raise PlayerMarkerReplayError("detector result to_dict() failed") from exc
 
         if len(declared) > 1 and any(value != declared[0] for value in declared[1:]):
             raise PlayerMarkerReplayError("detector result exposes conflicting digests")
-        declared_digest = (
-            None if not declared else _sha256(declared[0], "detector_result_digest")
-        )
+        declared_digest = None if not declared else _sha256(declared[0], "detector_result_digest")
         if isinstance(result_body, Mapping):
             result_body = {
                 key: value
@@ -2639,9 +2604,7 @@ class PlayerMarkerReplayRunner:
         body = _strict_json(result_body, "detector result")
         recomputed = _digest(body)
         if declared_digest is not None and declared_digest != recomputed:
-            raise PlayerMarkerReplayError(
-                "detector result digest does not match serialized result"
-            )
+            raise PlayerMarkerReplayError("detector result digest does not match serialized result")
         return recomputed
 
     @staticmethod
@@ -2691,9 +2654,7 @@ class PlayerMarkerReplayRunner:
         if declared:
             values = [_sha256(value, name) for name, value in declared]
             if any(value != values[0] for value in values[1:]):
-                raise PlayerMarkerReplayError(
-                    "detector state digest declarations conflict"
-                )
+                raise PlayerMarkerReplayError("detector state digest declarations conflict")
             return values[0]
         return _digest({"state": _STATeless_DIGEST})
 
@@ -2815,7 +2776,7 @@ class PlayerMarkerReplayRunner:
                 effective_now_ns=binding.effective_now_ns,
                 observed_at_ns=binding.observed_at_ns,
                 generation=binding.generation,
-        )
+            )
         try:
             detector_result_digest = self._declared_result_digest(raw_result)
         except (
@@ -2846,8 +2807,7 @@ class PlayerMarkerReplayRunner:
                 status = _status_token(raw_result["status"])
                 candidate = None
             elif any(
-                key in raw_result
-                for key in ("candidate", "candidate_digest", "evidence", "fault")
+                key in raw_result for key in ("candidate", "candidate_digest", "evidence", "fault")
             ):
                 status = "detected"
                 candidate = None
@@ -3077,16 +3037,12 @@ class PlayerMarkerReplayRunner:
             if as_of_offset_ns is not None:
                 ensure_time_ns(as_of_offset_ns, "as_of_offset_ns")
             requested_offset = (
-                as_of_offset_ns
-                if as_of_offset_ns is not None
-                else cast(int, as_of_ns)
+                as_of_offset_ns if as_of_offset_ns is not None else cast(int, as_of_ns)
             )
             if as_of_ns not in (None, 0) and as_of_offset_ns not in (None, as_of_ns):
                 raise PlayerMarkerReplayError("as_of_ns must equal as_of_offset_ns")
             if requested_offset != self.config.as_of_offset_ns:
-                raise PlayerMarkerReplayError(
-                    "as_of_offset_ns does not match configured replay"
-                )
+                raise PlayerMarkerReplayError("as_of_offset_ns does not match configured replay")
         self._execution_faults.clear()
         runs = tuple(self._run_once(index) for index in range(1, repetitions + 1))
         semantic = _recompute_replay_semantics(
@@ -3248,9 +3204,7 @@ def verify_player_marker_replay_report(
         if manifest is None:
             raise PlayerMarkerReplayError("b2_gate verification requires a canonical manifest")
         if not isinstance(manifest, str | Path):
-            raise PlayerMarkerReplayError(
-                "b2_gate verification requires a canonical manifest file"
-            )
+            raise PlayerMarkerReplayError("b2_gate verification requires a canonical manifest file")
         if expected_verification_profile is None:
             raise PlayerMarkerReplayError(
                 "b2_gate verification requires expected verification_profile"
@@ -3308,11 +3262,7 @@ def verify_player_marker_replay_report(
             ensure_time_ns(as_of_offset_ns, "as_of_offset_ns")
         if as_of_ns not in (None, 0) and as_of_offset_ns not in (None, as_of_ns):
             raise PlayerMarkerReplayError("as_of_ns must equal as_of_offset_ns")
-        requested_offset = (
-            as_of_offset_ns
-            if as_of_offset_ns is not None
-            else cast(int, as_of_ns)
-        )
+        requested_offset = as_of_offset_ns if as_of_offset_ns is not None else cast(int, as_of_ns)
         if report.as_of_offset_ns != requested_offset:
             raise PlayerMarkerReplayError("report as_of_offset_ns mismatch")
     expected_ids = [item.sample_id for item in report.runs[0].samples]
