@@ -1,6 +1,6 @@
 # Maple Automation Core
 
-> **当前阶段（2026-08-29）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A` 已完成合并收口，完整 `G1-FRM-001` 与 G1 Gate 仍为 `In Progress`。实现绑定 PR [#3](https://github.com/xphai/mxdauto/pull/3)、feature source [`7cca4154a38e8bca29b917aa3c5abcc43a51391d`](https://github.com/xphai/mxdauto/commit/7cca4154a38e8bca29b917aa3c5abcc43a51391d) 与 merge [`b30ddedb1f05945e68fb348b221cdfa123e83c59`](https://github.com/xphai/mxdauto/commit/b30ddedb1f05945e68fb348b221cdfa123e83c59)。PR run `33225384485`、main run `33225488599` 均通过；149 tests、91.38% coverage，Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / Core v2 real input=0），main frame digest `1c4948afc636ffba45b1f4a769ec7ee3d6d5ea15f09b2b1f9596faa43f837a7d`，checkout smoke 20/20，5 artifact groups。G0 sealed packet 保持原有不可变事实；完整 G1 仍需 VC-003 read-only adapter、真实 corpus、压力与硬件 smoke 后收口，Legacy 保持唯一真实输入下发权。
+> **当前阶段（2026-08-30）**：**G-1 Strategic PASS / G0 PASS / G1 In Progress**。`G1-FRM-001A`、`G1-FRM-001B1`、`G1-FRM-001B2` 与完整 `G1-FRM-001` 均已完成；`G1-OBS-002` 已解锁但尚未开始实现。FrameSource 会签版通过 [Issue #13](https://github.com/xphai/mxdauto/issues/13)、[PR #15](https://github.com/xphai/mxdauto/pull/15)（merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success）进入 `main`；main outer run `33283646596`（attempt 1）已 `success`，`ci-evidence` artifact digest 为 `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`。Candidate packet digest 为 `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。G0 sealed packet 保持原有不可变事实；Core v2 real input calls=0，`input_owner=legacy`，整体 G1 仍为 `In Progress`。
 
 ## 1. Core v2 目标与治理边界
 
@@ -56,11 +56,12 @@
 - G0 seal 校验与当前 checkout regression 分开运行，当前 wheel/report 绑定实际 `HEAD`，不重写 G0 packet。
 - 合并收口：PR [#3](https://github.com/xphai/mxdauto/pull/3)，feature source `7cca4154a38e8bca29b917aa3c5abcc43a51391d`，merge `b30ddedb1f05945e68fb348b221cdfa123e83c59`；PR run `33225384485`、main run `33225488599`。
 - 绑定结果：149 tests、91.38% coverage；Frame Admission `PASS`（3 runs / 15 scenarios / 32 events / zero input），main frame digest `1c4948afc636ffba45b1f4a769ec7ee3d6d5ea15f09b2b1f9596faa43f837a7d`；checkout smoke 20/20，5 artifact groups。
-- `G1-FRM-001A` 完成不产生 G1 PASS，也不提前启动 `G1-OBS-002`；完整 `G1-FRM-001` 继续 `In Progress`。
+- `G1-FRM-001A` 完成时不产生 G1 PASS，也不提前启动 `G1-OBS-002`；随后 B2 会签收口已完成完整 `G1-FRM-001`，整体 G1 仍为 `In Progress`。
 
-### G1-FRM-001（In Progress）
+### G1-FRM-001（Completed）
 
-- 后继 `G1-FRM-001B` 保留 VC-003 read-only adapter、content-addressed raw pixels、真实 corpus/truth、并发压力、5 分钟硬件 smoke、source provenance 与新的 G1 Candidate packet 缺口。
+- `G1-FRM-001B2` 已完成：VC-003 read-only adapter、content-addressed raw pixels、真实 corpus/truth、并发压力、300 秒硬件 smoke、source provenance 与 G1 Candidate packet 均已封存；Issue #13 六个精确角色均为 `approved`。
+- 会签版收口：PR [#15](https://github.com/xphai/mxdauto/pull/15) merge `fe29a4ce5a8a98c49c85382f083d8429bfee2c38`，PR run `33283195258` success；main outer run `33283646596`（attempt 1）success，`ci-evidence` artifact digest `sha256:9e51d97d858e7432fe85be36fdaeefe7859dd2f4dc5f36ac6e81513d6885fb1c`；Candidate packet digest `4e21973f66fd5c4480c1417d1509a0e21069551d728bf02607319008cbf74f73`。
 - Core v2 真实输入调用继续为 0；Legacy 继续作为唯一真实输入下发者。
 
 ### 当前阶段的输入边界
@@ -160,4 +161,4 @@ ADR/战术包
 → G1-FRM-001B hardware/corpus evidence
 ```
 
-当前按 `G1-FRM-001A（Completed） → G1-FRM-001B → G1-OBS-002` 的依赖顺序实施；完整 `G1-FRM-001` 与 G1 Gate 保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。
+当前按 `G1-FRM-001A（Completed） → G1-FRM-001B1（Completed） → G1-FRM-001B2（Completed） → G1-FRM-001（Completed） → G1-OBS-002（Unlocked / implementation not started）` 的依赖顺序实施；整体 G1 与 G1 Gate 仍保持 `In Progress`，任何任务都应从 `docs/templates/tactical-package.md` 开始。
