@@ -20,6 +20,8 @@ from tools.run_observation_smoke import (
     write_report,
 )
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def _run(fixture: ObservationSmokeFixture, root: Path, **kwargs: Any) -> dict[str, Any]:
     roots = {
@@ -238,3 +240,12 @@ def test_report_write_rejects_linked_parent(tmp_path: Path) -> None:
     with pytest.raises(ObservationSmokeError, match="protected"):
         write_report(report, alias / "report.json")
     assert not (sealed / "report.json").exists()
+
+
+def test_published_cpu_smoke_report_verifies() -> None:
+    path = ROOT / "evidence" / "g1-obs-002b" / "g1-obs-002b-20260830-cpu.json"
+    report = json.loads(path.read_text(encoding="utf-8"))
+
+    assert report["status"] == "PASS"
+    assert report["source_commit"] == "cde7cc969a4a4d2508199460420cc8fc1ed4427f"
+    validate_report(report)

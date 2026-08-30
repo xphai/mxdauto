@@ -117,5 +117,6 @@ python -m pytest -q tests/test_contract_observation.py tests/test_observation_pr
 3. protected PR 合并且 required `quality` 成功；current-main outer run attempt 2 对同一 merge commit 完整重跑并成功；
 4. source commit、PR、run ID/attempt、失败隔离、测试结果与 artifact hash 已回填本文件。
 
-完成本包只允许启动真实 backend/evaluation 后继包；完整 `G1-OBS-002`、整体 G1 Gate 与 Core v2 输入权限
-状态均不改变，`input_owner=legacy`、Core v2 real input calls=0。
+完成本包只允许启动真实 backend/evaluation 后继包；后继 [`G1-OBS-002B`](G1-OBS-002B-onnx-backend.md)
+现已完成代码/外部资产 CPU smoke，但完整 `G1-OBS-002`、整体 G1 Gate 与 Core v2 输入权限状态均不改变，
+`input_owner=legacy`、Core v2 real input calls=0。
