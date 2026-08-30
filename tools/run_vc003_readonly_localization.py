@@ -1367,15 +1367,16 @@ def run_measurement(
                 source.stop()
             raise
         started_here = True
-    # Production anchors warm-up only after the capture source is fully open.
-    # An explicit anchor remains available solely for deterministic tests.
-    anchor = int(now() if measurement_start_ns is None else measurement_start_ns)
-    if anchor < 0:
-        raise VC003RunError("measurement_start_ns must be non-negative")
-    start = anchor + warmup_seconds * 1_000_000_000
-    end = start + measurement_seconds * 1_000_000_000
-    selector = FixedBucketSelector(start_at_ns=start)
     try:
+        # Production anchors warm-up only after the capture source is fully
+        # open.  Keep this inside the lifecycle guard because an injected
+        # clock can still fail after the backend has started.
+        anchor = int(now() if measurement_start_ns is None else measurement_start_ns)
+        if anchor < 0:
+            raise VC003RunError("measurement_start_ns must be non-negative")
+        start = anchor + warmup_seconds * 1_000_000_000
+        end = start + measurement_seconds * 1_000_000_000
+        selector = FixedBucketSelector(start_at_ns=start)
         integration = VC003LiveMarkerRunner(
             source,
             source_config=source_config,

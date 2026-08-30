@@ -205,9 +205,7 @@ def test_config_thresholds_and_small_helpers_cover_fixed_contract() -> None:
     with pytest.raises(live.VC003LiveMarkerValidationError):
         live.VC003LiveMarkerThresholds(bucket_seconds=2)
     with pytest.raises(live.VC003LiveMarkerValidationError):
-        live.build_frame_source_config(
-            replace(VC003SourceConfig(), transform_version="wrong")
-        )
+        live.build_frame_source_config(replace(VC003SourceConfig(), transform_version="wrong"))
     with pytest.raises(TypeError):
         live.build_frame_source_config(object())  # type: ignore[arg-type]
     with pytest.raises(live.VC003LiveMarkerError):
@@ -471,17 +469,19 @@ def test_selector_accepts_protocol_variants_and_enforces_first_occurrence() -> N
     selector = live.FixedBucketSelector(measurement_start_ns=1_000)
     assert selector.bucket_for(1_000) == 0
     assert selector.bucket_index(selector.end_at_ns) is None
-    assert selector.consider(FrameAdmissionResult(
-        status=FrameAdmissionStatus.ACCEPTED,
-        event=FrameAdmissionEvent(
+    assert selector.consider(
+        FrameAdmissionResult(
             status=FrameAdmissionStatus.ACCEPTED,
-            observed_at_ns=1_000,
-            reason="ok",
-            plan_suppressed=False,
-            fault_latched=False,
-        ),
-        packet=packet0,
-    ))
+            event=FrameAdmissionEvent(
+                status=FrameAdmissionStatus.ACCEPTED,
+                observed_at_ns=1_000,
+                reason="ok",
+                plan_suppressed=False,
+                fault_latched=False,
+            ),
+            packet=packet0,
+        )
+    )
     assert not selector.consider(_packet(3, 1_100, digest="3" * 64))
     assert selector.consider(packet1)
     assert selector.consider(_packet(4, 1_000 + 2 * live.BUCKET_DURATION_NS, digest="4" * 64))
@@ -527,14 +527,16 @@ def test_selector_rejects_statuses_and_handles_generic_admission_shapes() -> Non
     with pytest.raises(live.VC003LiveMarkerValidationError):
         selector.consider(packet, admitted_at_ns=101)
     with pytest.raises(live.VC003LiveMarkerValidationError):
-        selector.consider(SimpleNamespace(
-            frame_id=8,
-            captured_at_ns=100,
-            received_at_ns=100,
-            session_id="s",
-            source_id="src",
-            content_hash="9" * 64,
-        ))
+        selector.consider(
+            SimpleNamespace(
+                frame_id=8,
+                captured_at_ns=100,
+                received_at_ns=100,
+                session_id="s",
+                source_id="src",
+                content_hash="9" * 64,
+            )
+        )
 
 
 def test_selector_reaches_full_fixed_window_and_serializes_every_bucket() -> None:

@@ -741,7 +741,30 @@ def _accepted_ledger_errors(
     normalized: list[dict[str, Any]] = []
     errors: list[str] = []
     last_received = -1
+    last_captured = -1
+    last_frame_id = -1
+    allowed_fields = {
+        "status",
+        "frame_id",
+        "captured_at_ns",
+        "received_at_ns",
+        "session_id",
+        "source_id",
+        "pixel_digest",
+        "frame_digest",
+    }
+    capture = report.get("capture")
+    expected_source_id = capture.get("source_id") if isinstance(capture, Mapping) else None
+    selected_sessions = {
+        row.get("session_id")
+        for row in private_rows.values()
+        if isinstance(row.get("session_id"), str)
+    }
     for index, row in enumerate(rows):
+        unexpected = sorted(set(row) - allowed_fields)
+        if unexpected:
+            errors.append(f"accepted_ledger_extra_fields:{index}:{','.join(unexpected)}")
+        _assert_private_free(row, errors, f"accepted_ledger:{index}")
         for name in ("frame_id", "captured_at_ns", "received_at_ns"):
             value = row.get(name)
             if not isinstance(value, int) or value < 0:
@@ -771,14 +794,27 @@ def _accepted_ledger_errors(
             )
             if row.get("frame_digest") != expected_frame:
                 errors.append(f"accepted_ledger_frame_identity_digest:{index}")
-    for index, row in enumerate(rows):
         if row.get("status") not in {None, "accepted"}:
             errors.append(f"accepted_ledger_status:{index}")
         received = row.get("received_at_ns")
+        captured = row.get("captured_at_ns")
+        frame_id = row.get("frame_id")
         if not isinstance(received, int) or received < last_received:
             errors.append(f"accepted_ledger_order:{index}")
         if isinstance(received, int):
             last_received = received
+        if not isinstance(captured, int) or captured < last_captured:
+            errors.append(f"accepted_ledger_capture_order:{index}")
+        if isinstance(captured, int):
+            last_captured = captured
+        if not isinstance(frame_id, int) or frame_id <= last_frame_id:
+            errors.append(f"accepted_ledger_frame_order:{index}")
+        if isinstance(frame_id, int):
+            last_frame_id = frame_id
+        if isinstance(expected_source_id, str) and row.get("source_id") != expected_source_id:
+            errors.append(f"accepted_ledger_source:{index}")
+        if selected_sessions and row.get("session_id") not in selected_sessions:
+            errors.append(f"accepted_ledger_session:{index}")
         normalized.append({key: value for key, value in row.items() if key != "status"})
     expected_digest = report.get("admission", {}).get("accepted_frame_ledger_sha256")
     if _canonical_digest(normalized) != expected_digest:

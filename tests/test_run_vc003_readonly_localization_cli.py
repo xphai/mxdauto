@@ -163,6 +163,29 @@ def test_runner_cleans_up_after_source_start_failure(runner: Any) -> None:
     assert stopped == [True]
 
 
+def test_runner_cleans_up_if_clock_fails_after_source_start(runner: Any) -> None:
+    stopped: list[bool] = []
+    source = SimpleNamespace(
+        is_running=False,
+        start=lambda: None,
+        stop=lambda: stopped.append(True),
+    )
+
+    with pytest.raises(RuntimeError, match="synthetic clock failure"):
+        runner.run_measurement(
+            source=source,
+            source_config=VC003SourceConfig(session_id="test-session"),
+            clock=lambda: (_ for _ in ()).throw(RuntimeError("synthetic clock failure")),
+            warmup_seconds=0,
+            measurement_seconds=0,
+            source_commit="a" * 40,
+            config=runner.load_strict_json(runner.CONFIG_PATH),
+            config_sha256=runner.sha256_file(runner.CONFIG_PATH),
+        )
+
+    assert stopped == [True]
+
+
 def test_runner_writer_is_canonical_single_lf_and_atomic(tmp_path: Path, runner: Any) -> None:
     output = tmp_path / "nested" / "report.json"
     payload = {"z": [2, 1], "a": "value"}
@@ -280,6 +303,45 @@ def test_verifier_malformed_nested_shape_fails_closed(verifier: Any) -> None:
 
     assert len(errors) == 1
     assert errors[0].startswith("verifier_structure:")
+
+
+def test_accepted_ledger_rejects_extra_or_private_fields(tmp_path: Path, verifier: Any) -> None:
+    row = {
+        "status": "accepted",
+        "frame_id": 1,
+        "captured_at_ns": 10,
+        "received_at_ns": 20,
+        "session_id": "session-a",
+        "source_id": "capture-card-primary",
+        "pixel_digest": "a" * 64,
+        "raw_bytes": "LEAK",
+    }
+    row["frame_digest"] = verifier._frame_identity_digest(
+        session_id=row["session_id"],
+        source_id=row["source_id"],
+        frame_id=row["frame_id"],
+        captured_at_ns=row["captured_at_ns"],
+        admitted_at_ns=row["received_at_ns"],
+        pixel_digest_value=row["pixel_digest"],
+    )
+    normalized = {key: value for key, value in row.items() if key != "status"}
+    ledger = tmp_path / "accepted.jsonl"
+    ledger.write_bytes(verifier.canonical_json(row) + b"\n")
+    digest = verifier._canonical_digest([normalized])
+    report = {
+        "capture": {"source_id": "capture-card-primary"},
+        "admission": {
+            "accepted_count": 1,
+            "accepted_packet_count": 1,
+            "accepted_frame_ledger_sha256": digest,
+        },
+        "lineage": {"accepted_frame_ledger_sha256": digest},
+        "public_selected_rows": [],
+    }
+
+    errors = verifier._accepted_ledger_errors(ledger, report, {})
+
+    assert any(error.startswith("accepted_ledger_extra_fields:0:raw_bytes") for error in errors)
 
 
 def test_runner_rejects_symlinked_binding(tmp_path: Path, runner: Any) -> None:
